@@ -19,7 +19,7 @@ import {
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils'
 import { usePathname } from 'next/navigation'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
+import { ModeToggle } from "@/components/ui/mode-toggle"
 
 export function Navbar() {
   const router = useRouter()
@@ -154,6 +155,20 @@ export function Navbar() {
     { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
   ]
 
+  // Función para mostrar el rol de forma legible
+  function getRoleDisplay(role?: string) {
+    switch (role) {
+      case 'project_manager':
+        return 'Project Manager';
+      case 'designer':
+        return 'Diseñador';
+      case 'client':
+        return 'Cliente';
+      default:
+        return 'Usuario';
+    }
+  }
+
   return (
     <div className="border-b shadow-sm dark:shadow-gray-800/10 dark:bg-black">
       <div className="flex h-16 items-center px-4 md:px-6">
@@ -211,24 +226,17 @@ export function Navbar() {
                   variant="ghost"
                   className="rounded-full h-10 px-3 hover:bg-gray-100/90 dark:hover:bg-gray-800/90 flex gap-3"
                 >
-                  {user.user_metadata?.avatar_url ? (
-                    <Avatar className="h-8 w-8 border shadow-sm">
-                      <AvatarFallback className="text-xs">
-                        {user.user_metadata?.name
-                          ? user.user_metadata.name
-                              .split(" ")
-                              .map((n: string) => n[0])
-                              .join("")
-                          : user.email?.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                  ) : (
-                    <Avatar className="h-8 w-8 border shadow-sm">
-                      <AvatarFallback className="text-xs">
-                        {user.email?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
+                  <Avatar className="h-8 w-8 border shadow-sm">
+                    <AvatarImage src="/avatar.png" alt="Avatar" />
+                    <AvatarFallback className="text-xs">
+                      {user.user_metadata?.name
+                        ? user.user_metadata.name
+                            .split(" ")
+                            .map((n: string) => n[0])
+                            .join("")
+                        : user.email?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="flex flex-col items-start text-xs leading-none gap-1">
                     <span className="font-medium">
                       {user.user_metadata?.name
@@ -248,6 +256,9 @@ export function Navbar() {
                     <p className="text-xs leading-none text-gray-600 dark:text-gray-400 group-hover:text-blue-600">
                       {user.email}
                     </p>
+                    <Badge variant="outline" className={cn("mt-1.5", getRoleBadgeClass())}>
+                      {displayRole}
+                    </Badge>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -341,17 +352,6 @@ export function Navbar() {
               </ScrollArea>
             </SheetContent>
           </Sheet>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hover:bg-gray-100 dark:hover:bg-gray-800"
-            asChild
-          >
-            <Link href="https://github.com/yourusername/your-repo" target="_blank">
-              <Github className="h-5 w-5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" />
-            </Link>
-          </Button>
         </div>
       </div>
     </div>
