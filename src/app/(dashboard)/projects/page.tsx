@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { 
   Plus, Search, Filter, FileText, User, Calendar, Clock, 
   CheckCircle, Edit, Trash2, Eye, AlertCircle, MoreHorizontal,
-  RefreshCw, ListFilter, ChevronDown, X, Tag, Briefcase, PenLine, PlusCircle, Edit2, Upload, FileUp, Paperclip, File
+  RefreshCw, ListFilter, ChevronDown, X, Tag, Briefcase, PenLine, PlusCircle, Edit2, Upload, FileUp, Paperclip, 
+  File, Loader2, FileImage, FileCode, Download
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -58,11 +59,20 @@ interface UserData {
   role: string
 }
 
+interface FileObject {
+  name: string
+  path: string
+  type: string
+  size: number
+  url?: string
+  file?: File | Blob
+}
+
 interface Project {
   id: string
   title: string
   description: string
-  files: string[]
+  files: FileObject[]
   created_by: string
   assigned_to: string
   created_at: string
@@ -74,13 +84,12 @@ interface Project {
   assigned_to_role?: string
 }
 
-// Crear componentes personalizados para el input de archivos
 const FileInput = ({ onChange, disabled, multiple = false }: { 
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, 
   disabled?: boolean,
   multiple?: boolean 
 }) => {
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   
   return (
     <div className="w-full flex justify-start">
@@ -107,6 +116,17 @@ const FileInput = ({ onChange, disabled, multiple = false }: {
   );
 };
 
+// Añadir función para sanitizar nombres de archivos
+const sanitizeFileName = (fileName: string): string => {
+  // Eliminar caracteres especiales y espacios
+  let sanitized = fileName
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
+    .replace(/[^\w.-]/g, "_"); // Reemplazar caracteres no alfanuméricos por guiones bajos
+  
+  return sanitized;
+};
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -122,16 +142,23 @@ export default function ProjectsPage() {
     title: '',
     description: '',
     assigned_to: 'unassigned',
-    files: [] as string[]
+    files: [] as FileObject[]
   })
   
+  const [titleStatus, setTitleStatus] = useState<{
+    message: string;
+    isError: boolean;
+  } | null>(null)
+  
+  const [isTitleCheckPending, setIsTitleCheckPending] = useState(false)
+  const [titleCheckTimeout, setTitleCheckTimeout] = useState<NodeJS.Timeout | null>(null)
+
   const { toast } = useToast()
   const { user } = useAuth()
 
   const creatorOptions = [...new Set(projects.map(p => p.created_by_email))].filter(Boolean) as string[]
   const designerOptions = [...new Set(projects.map(p => p.assigned_to_email))].filter(Boolean) as string[]
 
-  // Definir roles de usuario con lógica más clara
   const isDesigner = user?.role ? 
     ['diseñador', 'designer'].includes(user.role.toLowerCase()) : 
     false
@@ -144,37 +171,44 @@ export default function ProjectsPage() {
     ['project manager', 'project_manager'].includes(user.role.toLowerCase()) : 
     false
 
-  // Actualizar las variables de permisos según los requisitos
-  // Project Manager: Ver, crear, editar y eliminar proyectos
-  // Cliente: Ver, crear proyectos, pero NO editar ni eliminar
-  // Diseñador: Solo ver proyectos, no puede crear, editar o eliminar
   const canCreate = isProjectManager || isClient
   const canEdit = isProjectManager
   const canDelete = isProjectManager
-  const canView = true // Todos pueden ver detalles
+  const canView = true
 
-  // Variable para referencia al modal
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Añadir estado para el modal de detalles
   const [viewingProject, setViewingProject] = useState<Project | null>(null)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
 
-  // Añadir estados para edición
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editFormData, setEditFormData] = useState({
     title: '',
     description: '',
     assigned_to: '',
-    files: [] as string[]
+    files: [] as FileObject[]
   })
   const [isEditingProject, setIsEditingProject] = useState(false)
   const [editProgress, setEditProgress] = useState(0)
   const [isDeleting, setIsDeleting] = useState(false)
+  
+  const [editTitleStatus, setEditTitleStatus] = useState<{
+    message: string;
+    isError: boolean;
+  } | null>(null)
+  
+  const [isEditTitleCheckPending, setIsEditTitleCheckPending] = useState(false)
+  const [editTitleCheckTimeout, setEditTitleCheckTimeout] = useState<NodeJS.Timeout | null>(null)
 
   const [newFile, setNewFile] = useState('')
   const [newEditFile, setNewEditFile] = useState('')
+
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [pendingEditChanges, setPendingEditChanges] = useState<any>(null)
+
+  const [uploadingFiles, setUploadingFiles] = useState(false)
+  const [fileProgress, setFileProgress] = useState(0)
 
   useEffect(() => {
     fetchProjects()
@@ -190,7 +224,6 @@ export default function ProjectsPage() {
 
   const fetchDesigners = async () => {
     try {
-      // Probar directamente con la tabla principal users
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select('id, email, role')
@@ -198,7 +231,7 @@ export default function ProjectsPage() {
       
       if (usersError) {
         console.error('Error al buscar diseñadores:', usersError)
-        setDesigners([]) // Si hay error, establecer un array vacío
+        setDesigners([])
         return
       }
       
@@ -211,7 +244,7 @@ export default function ProjectsPage() {
       }
     } catch (error) {
       console.error('Error fetching designers:', error)
-      setDesigners([]) // Si hay error, establecer un array vacío
+      setDesigners([])
     }
   }
 
@@ -219,7 +252,6 @@ export default function ProjectsPage() {
     try {
       setLoading(true)
       
-      // Primero intentar con la consulta completa con relaciones
       try {
         const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
@@ -231,7 +263,6 @@ export default function ProjectsPage() {
           .order('created_at', { ascending: false })
           
         if (!projectsError && projectsData) {
-          // Transformar los proyectos para la visualización
           let transformedProjects = projectsData.map(project => ({
             ...project,
             created_by_email: project.creator?.email || project.created_by,
@@ -240,7 +271,6 @@ export default function ProjectsPage() {
             assigned_to_role: project.assignee?.role || 'Usuario'
           }))
           
-          // Asignar estados aleatorios para demo
           transformedProjects = assignRandomStatuses(transformedProjects)
           
           console.log('Proyectos obtenidos con relaciones:', transformedProjects)
@@ -250,10 +280,8 @@ export default function ProjectsPage() {
         }
       } catch (relationError) {
         console.error('Error al obtener proyectos con relaciones:', relationError)
-        // Si falla, continuamos con la consulta simplificada
       }
       
-      // Consulta simplificada como fallback
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
@@ -266,18 +294,16 @@ export default function ProjectsPage() {
           description: "No se pudieron cargar los proyectos: " + projectsError.message,
           variant: "destructive",
         })
-        setProjects([]) // Establecer array vacío en caso de error
+        setProjects([])
         return
       }
 
-      // Buscar información de usuarios separadamente para cada proyecto
       let transformedProjects = await Promise.all(projectsData.map(async (project) => {
         let created_by_email = project.created_by;
         let created_by_role = 'Usuario';
         let assigned_to_email = project.assigned_to;
         let assigned_to_role = 'Diseñador';
         
-        // Intentar obtener información del creador
         if (project.created_by) {
           try {
             const { data: creatorData } = await supabase
@@ -295,7 +321,6 @@ export default function ProjectsPage() {
           }
         }
         
-        // Intentar obtener información del asignado
         if (project.assigned_to) {
           try {
             const { data: assigneeData } = await supabase
@@ -322,7 +347,6 @@ export default function ProjectsPage() {
         };
       }));
       
-      // Asignar estados aleatorios para demo
       transformedProjects = assignRandomStatuses(transformedProjects)
 
       console.log('Proyectos obtenidos:', transformedProjects)
@@ -334,85 +358,148 @@ export default function ProjectsPage() {
         description: "No se pudieron cargar los proyectos. Intente nuevamente.",
         variant: "destructive",
       })
-      setProjects([]) // Establecer array vacío en caso de error
+      setProjects([])
     } finally {
       setLoading(false)
     }
   }
 
   const createProject = async () => {
-    if (!user) return
-    
     try {
-      setIsCreatingProject(true)
-      
-      // Animación de progreso
-      setCreateProgress(25)
-      console.log("Iniciando creación de proyecto", formData)
-      
-      // Validación
-      if (!formData.title.trim()) {
+      setIsCreatingProject(true);
+
+      // Validar que se haya seleccionado un diseñador
+      if (formData.assigned_to === "unassigned") {
         toast({
           title: "Error",
-          description: "El título del proyecto es obligatorio",
+          description: "Debe seleccionar un diseñador para el proyecto",
           variant: "destructive",
-        })
-        throw new Error("Título obligatorio")
+        });
+        setIsCreatingProject(false);
+        return;
       }
       
-      setCreateProgress(50)
-      console.log("Validación completada, enviando a Supabase")
+      console.log("Archivos a subir:", formData.files);
       
-      // Crear el proyecto nuevo
-      const { data, error } = await supabase
+      // Primero crear el proyecto
+      const { data: projectData, error } = await supabase
         .from('projects')
         .insert([
           {
             title: formData.title,
             description: formData.description,
-            created_by: user.id,
+            created_by: user?.id,
             assigned_to: formData.assigned_to === "unassigned" ? null : formData.assigned_to,
-            files: formData.files,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
+            files: [] // Inicialmente vacío, actualizaremos después de subir los archivos
+          },
         ])
-        .select()
-      
-      setCreateProgress(75)
-      console.log("Respuesta de Supabase:", { data, error })
-      
+        .select();
+
       if (error) {
-        console.error("Error detallado:", error)
+        console.error('Error creating project:', error)
+        toast({
+          title: "Error",
+          description: error.message || "No se pudo crear el proyecto. Verifica los permisos de tu rol.",
+          variant: "destructive",
+        })
         throw error
       }
-
-      // Crear una notificación sobre la creación del proyecto
-      const userName = user.email.split('@')[0] // Usar la parte del email antes del @
-      console.log("Creando notificación")
       
-      try {
-        const { error: notifError } = await supabase
-          .from('notifications')
-          .insert([
-            {
-              message: `${userName} ha creado el proyecto "${formData.title}"`,
-              timestamp: new Date().toISOString(),
-              read: false,
-              user_id: user.id,
-              project_id: (data as any)?.[0]?.id || null
-            }
-          ])
+      const newProjectId = projectData?.[0]?.id;
+      console.log("Proyecto creado con ID:", newProjectId);
+      
+      // Si hay archivos para subir
+      if (formData.files.length > 0 && newProjectId) {
+        setUploadingFiles(true);
         
-        if (notifError) {
-          console.error("Error al crear la notificación:", notifError)
-          // No lanzamos error aquí para que el flujo continúe
+        const uploadedFiles = await Promise.all(
+          formData.files.map(async (file, index) => {
+            const progress = Math.round(((index + 1) / formData.files.length) * 100);
+            setFileProgress(progress);
+            
+            // Si ya tenemos la URL, significa que ya fue cargado
+            if (file.url) return file;
+            
+            try {
+              // Sanitizar el nombre del archivo antes de crear la ruta
+              const safeFileName = sanitizeFileName(file.name);
+              
+              // Crear una ruta única para el archivo en Storage
+              const filePath = `projects/${newProjectId}/${safeFileName}`;
+              
+              console.log('Intentando subir archivo a:', filePath);
+              
+              // Subir el archivo a Storage
+              const { data, error: uploadError } = await supabase.storage
+                .from('documents')
+                .upload(filePath, file.file instanceof Blob ? file.file : new Blob([]), {
+                  cacheControl: '3600',
+                  upsert: true
+                });
+              
+              if (uploadError) {
+                console.error('Error uploading file:', uploadError);
+                toast({
+                  title: "Error",
+                  description: `Error al subir el archivo ${file.name}: ${uploadError.message}`,
+                  variant: "destructive",
+                });
+                return null;
+              }
+              
+              // Construir objeto de archivo con URL
+              const fileUrl = supabase.storage.from('documents').getPublicUrl(filePath).data.publicUrl;
+              
+              console.log('Archivo subido exitosamente:', {
+                name: file.name, 
+                path: filePath,
+                type: file.type,
+                url: fileUrl
+              });
+              
+              return {
+                name: file.name, // Mantener el nombre original para mostrar al usuario
+                path: filePath,
+                type: file.type,
+                size: file.size,
+                url: fileUrl
+              };
+            } catch (err) {
+              console.error('Error processing file:', err);
+              return null;
+            }
+          })
+        );
+        
+        // Filtrar cualquier archivo que falló en cargar
+        const successfullyUploadedFiles = uploadedFiles.filter(Boolean) as FileObject[];
+        
+        console.log('Archivos subidos exitosamente:', successfullyUploadedFiles);
+        
+        // Actualizar el proyecto con la lista de archivos
+        if (successfullyUploadedFiles.length > 0) {
+          const { error: updateError } = await supabase
+            .from('projects')
+            .update({
+              files: successfullyUploadedFiles
+            })
+            .eq('id', newProjectId);
+          
+          if (updateError) {
+            console.error('Error updating project with files:', updateError);
+            toast({
+              title: "Advertencia",
+              description: "Se creó el proyecto pero hubo un problema al guardar los archivos",
+              variant: "destructive",
+            });
+          } else {
+            console.log('Proyecto actualizado con archivos:', successfullyUploadedFiles);
+          }
         }
-      } catch (notifErr) {
-        console.error("Error en notificación:", notifErr)
-        // Continuamos con el flujo aunque falle la notificación
+        
+        setUploadingFiles(false);
       }
-      
+
       console.log("Actualizando lista de proyectos")
       // Actualizar la lista de proyectos
       await fetchProjects()
@@ -446,6 +533,7 @@ export default function ProjectsPage() {
       setTimeout(() => {
         setIsCreatingProject(false)
         setCreateProgress(0)
+        setFileProgress(0)
         console.log("Estado de creación reseteado")
       }, 500)
     }
@@ -457,6 +545,47 @@ export default function ProjectsPage() {
       ...prev,
       [name]: value
     }))
+    
+    if (name === 'title' && value.trim()) {
+      setTitleStatus(null)
+      setIsTitleCheckPending(true)
+      
+      if (titleCheckTimeout) {
+        clearTimeout(titleCheckTimeout)
+      }
+      
+      const timeout = setTimeout(async () => {
+        try {
+          const { data, error } = await supabase
+            .from('projects')
+            .select('id')
+            .ilike('title', value.trim())
+            .limit(1)
+            
+          if (error) {
+            console.error("Error al verificar título:", error)
+            setTitleStatus(null)
+          } else if (data && data.length > 0) {
+            setTitleStatus({
+              message: "Ya existe un proyecto con este título",
+              isError: true
+            })
+          } else {
+            setTitleStatus({
+              message: "Título disponible",
+              isError: false
+            })
+          }
+        } catch (err) {
+          console.error("Error en la comprobación:", err)
+          setTitleStatus(null)
+        } finally {
+          setIsTitleCheckPending(false)
+        }
+      }, 500)
+      
+      setTitleCheckTimeout(timeout)
+    }
   }
 
   const handleSelectChange = (value: string) => {
@@ -467,11 +596,10 @@ export default function ProjectsPage() {
   }
 
   const getStatusBadge = (status?: string) => {
-    // Si no hay status, mostrar "Sin estado"
     if (!status) {
       return (
-        <Badge variant="outline" className="capitalize">
-          Sin estado
+        <Badge variant="outline" className="capitalize" title="Sin estado">
+          <span className="w-2 h-2 rounded-full bg-gray-400 mr-1"></span>
         </Badge>
       )
     }
@@ -479,59 +607,50 @@ export default function ProjectsPage() {
     switch (status.toLowerCase()) {
       case 'pendiente':
         return (
-          <Badge variant="outline" className="status-badge-pending capitalize bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400">
-            <AlertCircle className="h-3 w-3 mr-1" />
-            {status}
+          <Badge variant="outline" title="Pendiente" className="status-badge-pending capitalize bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400">
+            <AlertCircle className="h-3 w-3" />
           </Badge>
         )
       case 'en progreso':
         return (
-          <Badge variant="outline" className="status-badge-in-progress capitalize bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400">
-            <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-            {status}
+          <Badge variant="outline" title="En progreso" className="status-badge-in-progress capitalize bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400">
+            <RefreshCw className="h-3 w-3 animate-spin" />
           </Badge>
         )
       case 'completado':
         return (
-          <Badge variant="outline" className="status-badge-completed capitalize bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            {status}
+          <Badge variant="outline" title="Completado" className="status-badge-completed capitalize bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400">
+            <CheckCircle className="h-3 w-3" />
           </Badge>
         )
       case 'retrasado':
         return (
-          <Badge variant="outline" className="status-badge-delayed capitalize bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400">
-            <AlertCircle className="h-3 w-3 mr-1" />
-            {status}
+          <Badge variant="outline" title="Retrasado" className="status-badge-delayed capitalize bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400">
+            <AlertCircle className="h-3 w-3" />
           </Badge>
         )
       default:
         return (
-          <Badge variant="outline" className="capitalize">
+          <Badge variant="outline" title={status} className="capitalize">
             {status}
           </Badge>
         )
     }
   }
 
-  // Mejorar la lógica de los filtros
   const filteredProjects = projects.filter(project => {
-    // Filtro de búsqueda
     const matchesSearch = !searchTerm.trim() || 
       project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     
-    // Filtro de estado
     const matchesStatus = 
       !statusFilter || 
       (project.status?.toLowerCase() === statusFilter.toLowerCase());
     
-    // Filtro de creador
     const matchesCreator = 
       !creatorFilter || 
       project.created_by_email === creatorFilter;
     
-    // Filtro de diseñador asignado
     const matchesDesigner = 
       !designerFilter || 
       project.assigned_to_email === designerFilter;
@@ -554,7 +673,6 @@ export default function ProjectsPage() {
     }).format(date)
   }
 
-  // Mensaje específico para cada rol
   const getRoleMessage = () => {
     if (isDesigner) return <span className="block text-xs mt-1 text-accent">(Modo diseñador: solo visualización)</span>
     if (isProjectManager) return <span className="block text-xs mt-1 text-primary">(Project Manager: acceso completo)</span>
@@ -562,20 +680,17 @@ export default function ProjectsPage() {
     return null
   }
 
-  // Función para abrir el modal de detalles
   const viewProjectDetails = (project: Project) => {
     setViewingProject(project)
     setViewDialogOpen(true)
   }
 
-  // Implementar la eliminación real de un proyecto
   const deleteProject = async (projectId: string) => {
     if (!user) return
     
     try {
       setIsDeleting(true)
       
-      // Validar que el usuario tenga permisos para eliminar proyectos
       if (!canDelete) {
         toast({
           title: "Error",
@@ -585,7 +700,6 @@ export default function ProjectsPage() {
         return
       }
       
-      // Obtener información del proyecto antes de eliminarlo
       const { data: projectData, error: fetchError } = await supabase
         .from('projects')
         .select('title')
@@ -596,7 +710,6 @@ export default function ProjectsPage() {
         throw fetchError
       }
       
-      // Eliminar el proyecto
       const { error } = await supabase
         .from('projects')
         .delete()
@@ -606,25 +719,6 @@ export default function ProjectsPage() {
         throw error
       }
       
-      // Crear notificación de eliminación
-      const userName = user.email.split('@')[0]
-      const { error: notifError } = await supabase
-        .from('notifications')
-        .insert([
-          {
-            message: `${userName} ha eliminado el proyecto "${projectData.title}"`,
-            timestamp: new Date().toISOString(),
-            read: false,
-            user_id: user.id,
-            project_id: null
-          }
-        ])
-      
-      if (notifError) {
-        console.error("Error al crear la notificación de eliminación:", notifError)
-      }
-      
-      // Actualizar la lista de proyectos
       await fetchProjects()
       
       toast({
@@ -644,7 +738,6 @@ export default function ProjectsPage() {
     }
   }
   
-  // Cambiar el estilo del botón del ojo a azul
   const renderActionButtons = (project: Project) => {
     return (
       <div className="flex gap-1">
@@ -717,14 +810,12 @@ export default function ProjectsPage() {
     );
   };
 
-  // Asignar estados aleatorios a los proyectos
   const assignRandomStatuses = (projectsList: Project[]) => {
     if (!projectsList || projectsList.length === 0) return projectsList
     
     const statusOptions = ['pendiente', 'en progreso', 'completado', 'retrasado']
     
     return projectsList.map((project, index) => {
-      // En lugar de aleatorio, asignar en secuencia para asegurar que hay de todos los tipos
       const statusIndex = index % statusOptions.length
       return {
         ...project,
@@ -733,35 +824,37 @@ export default function ProjectsPage() {
     })
   }
 
-  const handleAddFile = () => {
-    if (newFile.trim() === '') return
-    
+  const handleAddFile = (newFile: string) => {
     setFormData(prev => ({
       ...prev,
-      files: [...prev.files, newFile]
+      files: [...prev.files, {
+        name: newFile,
+        path: '',
+        type: 'file',
+        size: 0
+      }]
     }))
-    
-    setNewFile('')
   }
-  
+
   const handleRemoveFile = (index: number) => {
     setFormData(prev => ({
       ...prev,
       files: prev.files.filter((_, i) => i !== index)
     }))
   }
-  
-  const handleAddEditFile = () => {
-    if (newEditFile.trim() === '') return
-    
+
+  const handleAddEditFile = (newEditFile: string) => {
     setEditFormData(prev => ({
       ...prev,
-      files: [...prev.files, newEditFile]
+      files: [...prev.files, {
+        name: newEditFile,
+        path: '',
+        type: 'file',
+        size: 0
+      }]
     }))
-    
-    setNewEditFile('')
   }
-  
+
   const handleRemoveEditFile = (index: number) => {
     setEditFormData(prev => ({
       ...prev,
@@ -769,17 +862,34 @@ export default function ProjectsPage() {
     }))
   }
 
-  // Añadir estas funciones para manejar la selección de archivos
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
     if (!selectedFiles || selectedFiles.length === 0) return;
     
-    // Añadir nombres de archivos seleccionados al estado
-    const fileNames = Array.from(selectedFiles).map(file => file.name);
+    // Convertir FileList a un array de objetos de archivo
+    const newFiles: FileObject[] = Array.from(selectedFiles).map(file => {
+      // Determinar el tipo de archivo
+      let fileType = 'file';
+      if (file.type.includes('image')) fileType = 'image';
+      else if (file.type.includes('pdf')) fileType = 'pdf';
+      else if (file.type.includes('html') || 
+               file.type.includes('javascript') || 
+               file.type.includes('css') || 
+               file.type.includes('json')) fileType = 'code';
+      else if (file.type.includes('text')) fileType = 'text';
+      
+      return {
+        name: file.name,
+        path: '',
+        type: fileType,
+        size: file.size,
+        file: file // Referencia al archivo físico para subir después
+      };
+    });
     
     setFormData(prev => ({
       ...prev,
-      files: [...prev.files, ...fileNames]
+      files: [...prev.files, ...newFiles]
     }));
     
     // Limpiar el input de archivos para permitir seleccionar los mismos archivos nuevamente
@@ -790,19 +900,36 @@ export default function ProjectsPage() {
     const selectedFiles = e.target.files;
     if (!selectedFiles || selectedFiles.length === 0) return;
     
-    // Añadir nombres de archivos seleccionados al estado
-    const fileNames = Array.from(selectedFiles).map(file => file.name);
+    // Convertir FileList a un array de objetos de archivo
+    const newFiles: FileObject[] = Array.from(selectedFiles).map(file => {
+      // Determinar el tipo de archivo
+      let fileType = 'file';
+      if (file.type.includes('image')) fileType = 'image';
+      else if (file.type.includes('pdf')) fileType = 'pdf';
+      else if (file.type.includes('html') || 
+               file.type.includes('javascript') || 
+               file.type.includes('css') || 
+               file.type.includes('json')) fileType = 'code';
+      else if (file.type.includes('text')) fileType = 'text';
+      
+      return {
+        name: file.name,
+        path: '',
+        type: fileType,
+        size: file.size,
+        file: file // Referencia al archivo físico para subir después
+      };
+    });
     
     setEditFormData(prev => ({
       ...prev,
-      files: [...prev.files, ...fileNames]
+      files: [...prev.files, ...newFiles]
     }));
     
     // Limpiar el input de archivos para permitir seleccionar los mismos archivos nuevamente
     e.target.value = '';
   };
 
-  // Abrir modal de edición con datos del proyecto
   const handleEditProject = (project: Project) => {
     setEditingProject(project)
     setEditFormData({
@@ -814,16 +941,56 @@ export default function ProjectsPage() {
     setEditDialogOpen(true)
   }
 
-  // Manejar cambios en el formulario de edición
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setEditFormData(prev => ({
       ...prev,
       [name]: value
     }))
+    
+    if (name === 'title' && value.trim() && editingProject) {
+      setEditTitleStatus(null)
+      setIsEditTitleCheckPending(true)
+      
+      if (editTitleCheckTimeout) {
+        clearTimeout(editTitleCheckTimeout)
+      }
+      
+      const timeout = setTimeout(async () => {
+        try {
+          const { data, error } = await supabase
+            .from('projects')
+            .select('id')
+            .ilike('title', value.trim())
+            .neq('id', editingProject.id)
+            .limit(1)
+            
+          if (error) {
+            console.error("Error al verificar título:", error)
+            setEditTitleStatus(null)
+          } else if (data && data.length > 0) {
+            setEditTitleStatus({
+              message: "Ya existe otro proyecto con este título",
+              isError: true
+            })
+          } else {
+            setEditTitleStatus({
+              message: "Título disponible",
+              isError: false
+            })
+          }
+        } catch (err) {
+          console.error("Error en la comprobación:", err)
+          setEditTitleStatus(null)
+        } finally {
+          setIsEditTitleCheckPending(false)
+        }
+      }, 500)
+      
+      setEditTitleCheckTimeout(timeout)
+    }
   }
 
-  // Manejar cambios en los selectores del formulario de edición
   const handleEditSelectChange = (field: string, value: string) => {
     setEditFormData(prev => ({
       ...prev,
@@ -831,101 +998,235 @@ export default function ProjectsPage() {
     }))
   }
 
-  // Corregir función saveProjectChanges para evitar que se quede cargando
-  const saveProjectChanges = async () => {
-    if (!user || !editingProject) return
-    
-    try {
-      setIsEditingProject(true)
-      setEditProgress(25)
-      
-      // Validación
-      if (!editFormData.title.trim()) {
-        toast({
-          title: "Error",
-          description: "El título del proyecto es obligatorio",
-          variant: "destructive",
-        })
-        setIsEditingProject(false)
-        return
-      }
-      
-      setEditProgress(50)
-      
-      // Validar que el usuario tenga permisos para editar proyectos
-      if (!canEdit) {
-        toast({
-          title: "Error",
-          description: "No tienes permisos para editar proyectos.",
-          variant: "destructive",
-        })
-        setIsEditingProject(false)
-        return
-      }
-      
-      // Actualizar el proyecto
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          title: editFormData.title,
-          description: editFormData.description,
-          assigned_to: editFormData.assigned_to === "" ? null : editFormData.assigned_to,
-          files: editFormData.files,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', editingProject.id)
-      
-      setEditProgress(75)
-      
-      if (error) {
-        throw error
-      }
-      
-      // Crear notificación de edición
-      const userName = user.email.split('@')[0]
-      const { error: notifError } = await supabase
-        .from('notifications')
-        .insert([
-          {
-            message: `${userName} ha actualizado el proyecto "${editFormData.title}"`,
-            timestamp: new Date().toISOString(),
-            read: false,
-            user_id: user.id,
-            project_id: editingProject.id
-          }
-        ])
-      
-      if (notifError) {
-        console.error("Error al crear la notificación de edición:", notifError)
-      }
-      
-      // Actualizar la lista de proyectos
-      await fetchProjects()
-      
-      setEditProgress(100)
-      
-      toast({
-        title: "Éxito",
-        description: "Proyecto actualizado correctamente",
-        className: "bg-green-100 border-green-500 text-green-800",
-      })
-      
-      // Cerrar el modal después de editar el proyecto
-      setEditDialogOpen(false)
-    } catch (error: any) {
-      console.error('Error updating project:', error)
+  const initiateProjectUpdate = () => {
+    // Validar que se haya seleccionado un diseñador
+    if (editFormData.assigned_to === "unassigned") {
       toast({
         title: "Error",
-        description: error.message || "No se pudo actualizar el proyecto.",
+        description: "Debe seleccionar un diseñador para el proyecto",
         variant: "destructive",
-      })
-    } finally {
-      setTimeout(() => {
-        setIsEditingProject(false)
-        setEditProgress(0)
-      }, 500)
+      });
+      return;
     }
-  }
+
+    // Guardar los cambios pendientes
+    setPendingEditChanges({
+      id: editingProject?.id,
+      title: editFormData.title,
+      description: editFormData.description,
+      assigned_to: editFormData.assigned_to,
+    });
+    
+    // Abrir el diálogo de confirmación
+    setConfirmDialogOpen(true);
+  };
+
+  // Corregir la función updateProject
+  const updateProject = async () => {
+    if (!pendingEditChanges) return;
+    
+    try {
+      setIsEditingProject(true);
+      
+      // Procesar archivos nuevos primero, si hay alguno
+      const allFiles = [...editFormData.files];
+      const uploadedNewFiles: FileObject[] = [];
+      
+      // Subir archivos nuevos
+      for (const file of editFormData.files) {
+        // Si el archivo ya tiene URL, significa que ya existe y no necesitamos subirlo de nuevo
+        if (file.url) continue;
+        
+        try {
+          if (file.file) {
+            // Sanitizar el nombre del archivo antes de crear la ruta
+            const safeFileName = sanitizeFileName(file.name);
+            
+            // Crear una ruta única para el archivo en Storage
+            const filePath = `projects/${pendingEditChanges.id}/${safeFileName}`;
+            
+            console.log('Intentando subir archivo a:', filePath);
+            
+            // Subir el archivo a Storage
+            const { data, error: uploadError } = await supabase.storage
+              .from('documents')
+              .upload(filePath, file.file instanceof Blob ? file.file : new Blob([]), {
+                cacheControl: '3600',
+                upsert: true
+              });
+            
+            if (uploadError) {
+              console.error('Error uploading file:', uploadError);
+              continue;
+            }
+            
+            // Construir objeto de archivo con URL
+            const fileUrl = supabase.storage.from('documents').getPublicUrl(filePath).data.publicUrl;
+            
+            console.log('Archivo subido exitosamente durante actualización:', {
+              name: file.name, 
+              path: filePath,
+              type: file.type || 'file',
+              size: file.size || 0,
+              url: fileUrl
+            });
+            
+            uploadedNewFiles.push({
+              name: file.name,
+              path: filePath,
+              type: file.type || 'file',
+              size: file.size || 0,
+              url: fileUrl
+            });
+          }
+        } catch (err) {
+          console.error('Error processing file:', err);
+        }
+      }
+      
+      // Combinar archivos existentes (con URL) y nuevos archivos subidos
+      const updatedFiles = allFiles.filter(file => file.url).concat(uploadedNewFiles);
+      
+      console.log('Actualizando proyecto con archivos:', updatedFiles);
+
+      const { error: updateError } = await supabase
+        .from('projects')
+        .update({
+          title: pendingEditChanges.title,
+          description: pendingEditChanges.description,
+          assigned_to: pendingEditChanges.assigned_to === "unassigned" ? null : pendingEditChanges.assigned_to,
+          files: updatedFiles
+        })
+        .eq('id', pendingEditChanges.id);
+
+      if (updateError) {
+        console.error('Error updating project:', updateError);
+        toast({
+          title: "Error",
+          description: "Hubo un problema al actualizar el proyecto",
+          variant: "destructive",
+        });
+      } else {
+        fetchProjects();
+        setEditDialogOpen(false);
+        setConfirmDialogOpen(false);
+        toast({
+          title: "Éxito",
+          description: "Proyecto actualizado correctamente",
+        });
+      }
+    } catch (error) {
+      console.error('Error updating project:', error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al actualizar el proyecto",
+        variant: "destructive",
+      });
+    } finally {
+      setIsEditingProject(false);
+    }
+  };
+
+  const onOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setPendingEditChanges(null);
+    }
+  };
+
+  const renderFileCards = (files: FileObject[]) => {
+    if (!files || files.length === 0) {
+      return (
+        <div className="text-center py-6 text-muted-foreground">
+          No hay archivos adjuntos
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+        {files.map((file, index) => (
+          <Card key={index} className="overflow-hidden">
+            <div className="bg-gray-100 dark:bg-gray-800 p-4 flex justify-center items-center">
+              {getFileIcon(file.type)}
+            </div>
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm font-medium truncate">{file.name}</CardTitle>
+              <CardDescription className="text-xs">
+                {file.size ? formatFileSize(file.size) : 'Desconocido'}
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="py-2 bg-gray-50 dark:bg-gray-900 flex justify-end gap-2">
+              {file.url && (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 px-2 text-blue-600"
+                    onClick={() => window.open(file.url, '_blank')}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 px-2 text-green-600"
+                    onClick={() => downloadFile(file.url!, file.name)}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  const getFileIcon = (fileType: string) => {
+    switch (fileType) {
+      case 'pdf':
+        return <FileText className="h-6 w-6 text-red-500" />;
+      case 'image':
+        return <FileImage className="h-6 w-6 text-purple-500" />;
+      case 'code':
+        return <FileCode className="h-6 w-6 text-blue-500" />;
+      case 'text':
+        return <FileText className="h-6 w-6 text-emerald-500" />;
+      default:
+        return <File className="h-6 w-6 text-gray-500" />;
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const downloadFile = async (url: string, fileName: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo descargar el archivo",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -938,22 +1239,21 @@ export default function ProjectsPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/30 dark:via-indigo-900/30 dark:to-purple-900/30 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
-        {/* Efectos de brillo */}
-        <div className="absolute -top-16 -left-16 w-40 h-40 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"></div>
-        <div className="absolute -bottom-16 -right-16 w-40 h-40 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 backdrop-blur-sm"></div>
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-50/70 via-slate-50 to-indigo-50/70 dark:from-gray-900 dark:via-black dark:to-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse dark:bg-blue-900"></div>
+        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse dark:bg-indigo-900"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5 backdrop-blur-sm dark:from-blue-900/20 dark:to-indigo-900/20"></div>
         
-        <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-black to-gray-800 drop-shadow-sm">
-              Gestion de Proyectos
+        <div className="relative flex flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left md:items-center">
+          <div className="mx-auto md:mx-0">
+            <h1 className="text-3xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-black to-gray-700 drop-shadow-sm tracking-tight dark:from-white dark:to-gray-300">
+              Gestión de Proyectos
             </h1>
             
-            <span className="inline-block bg-blue-100 text-blue-800 py-0.5 px-1.5 rounded-full text-[9px] mt-1 dark:bg-blue-900/40 dark:text-blue-300">
-              {isProjectManager && "Project Manager: acceso completo"}
-              {isClient && "Cliente: puedes crear proyectos"}
-              {isDesigner && "Diseñador: solo visualización"}
+            <span className="inline-block bg-blue-100 text-blue-800 py-0.5 px-2 rounded-full text-xs mt-1 dark:bg-blue-900/40 dark:text-white font-medium">
+              {isProjectManager && "Acceso completo"}
+              {isClient && "Puedes crear proyectos"}
+              {isDesigner && "Solo visualización"}
             </span>
           </div>
           
@@ -962,7 +1262,7 @@ export default function ProjectsPage() {
               <DialogTrigger asChild>
                 <Button className="relative overflow-hidden bg-black hover:bg-gray-800 shadow-sm hover:shadow-black/10 transition-all duration-300 border border-gray-800 h-8 px-3 text-xs text-white">
                   <Plus className="mr-1 h-3.5 w-3.5 text-white" />
-                  <span className="font-medium">Nuevo Proyecto</span>
+                  <span className="font-medium">Agregar</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
@@ -992,8 +1292,19 @@ export default function ProjectsPage() {
                       onChange={handleInputChange}
                       placeholder="Ej. Rediseño de marca"
                       disabled={isCreatingProject}
-                      className="rounded-md"
+                      className={`rounded-md ${titleStatus?.isError ? 'border-destructive focus-visible:ring-destructive' : titleStatus && !titleStatus.isError ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
                     />
+                    {isTitleCheckPending && (
+                      <div className="text-xs text-muted-foreground flex items-center mt-1">
+                        <div className="animate-spin w-3 h-3 border border-muted-foreground rounded-full border-t-transparent mr-1"></div>
+                        Verificando disponibilidad...
+                      </div>
+                    )}
+                    {titleStatus && (
+                      <p className={`text-xs ${titleStatus.isError ? 'text-destructive' : 'text-green-500'} mt-1`}>
+                        {titleStatus.message}
+                      </p>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
@@ -1010,7 +1321,7 @@ export default function ProjectsPage() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="assigned_to">Asignar a diseñador</Label>
+                    <Label htmlFor="assigned_to">Asignar a diseñador <span className="text-destructive">*</span></Label>
                     <Select 
                       disabled={isCreatingProject} 
                       onValueChange={handleSelectChange}
@@ -1052,7 +1363,7 @@ export default function ProjectsPage() {
                             <div key={index} className="flex items-center justify-between bg-background rounded px-3 py-1.5 text-sm">
                               <div className="flex items-center">
                                 <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                                <span>{file}</span>
+                                <span>{file.name}</span>
                               </div>
                               <Button 
                                 variant="ghost" 
@@ -1079,7 +1390,7 @@ export default function ProjectsPage() {
                   </DialogClose>
                   <Button 
                     onClick={createProject}
-                    disabled={isCreatingProject}
+                    disabled={isCreatingProject || titleStatus?.isError === true}
                     className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
                   >
                     {isCreatingProject ? (
@@ -1104,24 +1415,24 @@ export default function ProjectsPage() {
             <div className="flex flex-wrap items-center gap-3">
               <Button 
                 variant="default" 
-                className="bg-blue-500 hover:bg-blue-600 text-white h-8 px-3 text-sm"
+                className="bg-blue-500 hover:bg-blue-600 text-white h-8 px-3 text-xs shadow-sm"
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <Filter className="h-3.5 w-3.5 text-white" />
                 {(statusFilter || creatorFilter || designerFilter) && (
-                  <Badge variant="secondary" className="ml-2 text-xs">
+                  <Badge variant="secondary" className="ml-2 text-xs bg-white text-blue-700">
                     {[statusFilter, creatorFilter, designerFilter].filter(Boolean).length}
                   </Badge>
                 )}
               </Button>
               
               <div className="relative w-40 md:w-64">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground dark:text-black" />
                 <Input
                   placeholder="Buscar proyectos..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 w-full"
+                  className="pl-9 w-full border-gray-200 dark:border-gray-800 text-gray-900 dark:text-black"
                 />
               </div>
             </div>
@@ -1129,27 +1440,27 @@ export default function ProjectsPage() {
             <TabsList className="bg-gray-100 dark:bg-gray-800 p-1 rounded-full border border-gray-200 dark:border-gray-700">
               <TabsTrigger value="grid" className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700">
                 <div className="flex items-center gap-2">
-                  <div className="bg-pink-100 dark:bg-pink-900/30 w-6 h-6 flex items-center justify-center rounded-full">
-                    <Tag className="h-3.5 w-3.5 text-pink-600 dark:text-pink-400" />
+                  <div className="bg-pink-100 dark:bg-pink-900/30 w-5 h-5 flex items-center justify-center rounded-full">
+                    <Tag className="h-3 w-3 text-pink-600 dark:text-pink-400" />
                   </div>
-                  <span className="hidden sm:inline">Tarjetas</span>
+                  <span className="hidden sm:inline text-xs">Tarjetas</span>
                 </div>
               </TabsTrigger>
               <TabsTrigger value="list" className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700">
                 <div className="flex items-center gap-2">
-                  <div className="bg-violet-100 dark:bg-violet-900/30 w-6 h-6 flex items-center justify-center rounded-full">
-                    <ListFilter className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                  <div className="bg-violet-100 dark:bg-violet-900/30 w-5 h-5 flex items-center justify-center rounded-full">
+                    <ListFilter className="h-3 w-3 text-violet-600 dark:text-violet-400" />
                   </div>
-                  <span className="hidden sm:inline">Lista</span>
+                  <span className="hidden sm:inline text-xs">Lista</span>
                 </div>
               </TabsTrigger>
             </TabsList>
           </div>
 
           {showFilters && (
-            <div className="bg-muted/50 p-4 rounded-lg space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-medium">Filtrar por:</h3>
+            <div className="bg-white dark:bg-gray-900 p-5 rounded-lg space-y-4 shadow-sm border border-gray-200 dark:border-gray-800">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-medium text-sm tracking-tight">Filtrar proyectos</h3>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -1163,38 +1474,38 @@ export default function ProjectsPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm mb-2 font-medium">Estado</p>
+                  <p className="text-xs mb-2 font-medium text-gray-500 dark:text-gray-400">Estado</p>
                   <Select
                     value={statusFilter || "all"}
                     onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full text-xs rounded-md h-9 border-gray-200 dark:border-gray-800">
                       <SelectValue placeholder="Seleccionar estado" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos los estados</SelectItem>
                       <SelectItem value="pendiente">
                         <div className="flex items-center">
-                          <AlertCircle className="h-4 w-4 mr-2 text-amber-500" />
-                          <span>Pendiente</span>
+                          <AlertCircle className="h-3 w-3 mr-2 text-amber-500" />
+                          <span className="text-xs">Pendiente</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="en progreso">
                         <div className="flex items-center">
-                          <RefreshCw className="h-4 w-4 mr-2 text-blue-500" />
-                          <span>En Progreso</span>
+                          <RefreshCw className="h-3 w-3 mr-2 text-blue-500" />
+                          <span className="text-xs">En Progreso</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="completado">
                         <div className="flex items-center">
-                          <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                          <span>Completado</span>
+                          <CheckCircle className="h-3 w-3 mr-2 text-green-500" />
+                          <span className="text-xs">Completado</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="retrasado">
                         <div className="flex items-center">
-                          <AlertCircle className="h-4 w-4 mr-2 text-red-500" />
-                          <span>Retrasado</span>
+                          <AlertCircle className="h-3 w-3 mr-2 text-red-500" />
+                          <span className="text-xs">Retrasado</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -1202,12 +1513,12 @@ export default function ProjectsPage() {
                 </div>
                 
                 <div>
-                  <p className="text-sm mb-2 font-medium">Creador</p>
+                  <p className="text-xs mb-2 font-medium text-gray-500 dark:text-gray-400">Creador</p>
                   <Select
                     value={creatorFilter || "all"}
                     onValueChange={(value) => setCreatorFilter(value === "all" ? null : value)}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full text-xs rounded-md h-9 border-gray-200 dark:border-gray-800">
                       <SelectValue placeholder="Seleccionar creador" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1231,12 +1542,12 @@ export default function ProjectsPage() {
                 </div>
                 
                 <div>
-                  <p className="text-sm mb-2 font-medium">Diseñador</p>
+                  <p className="text-xs mb-2 font-medium text-gray-500 dark:text-gray-400">Diseñador</p>
                   <Select
                     value={designerFilter || "all"}
                     onValueChange={(value) => setDesignerFilter(value === "all" ? null : value)}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full text-xs rounded-md h-9 border-gray-200 dark:border-gray-800">
                       <SelectValue placeholder="Seleccionar diseñador" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1263,60 +1574,60 @@ export default function ProjectsPage() {
           )}
         </div>
 
-        <TabsContent value="grid" className="mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <TabsContent value="grid" className="mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {filteredProjects.length > 0 ? (
               filteredProjects.map((project) => (
                 <Card 
                   key={project.id} 
-                  className="card-hover border border-border/50 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px]"
+                  className="card-hover border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] max-w-xs flex flex-col"
                 >
-                  <div className="h-2 bg-gradient-to-r from-primary to-accent"></div>
-                  <CardHeader className="pt-6">
-                    <div className="flex justify-between items-start gap-4">
-                      <div className="space-y-1">
-                        <CardTitle className="text-xl">{project.title}</CardTitle>
+                  <div className="h-1 bg-gradient-to-r from-gray-800 to-black"></div>
+                  <CardHeader className="p-4 pb-2">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <CardTitle className="text-base font-medium overflow-hidden">{project.title}</CardTitle>
                       </div>
-                      {getStatusBadge(project.status)}
+                      <div title={project.status} className="tooltip">
+                        {getStatusBadge(project.status)}
+                      </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4 italic font-light">
-                      {project.description}
+                  <CardContent className="p-4 pt-1 pb-2 flex-grow">
+                    <p className="text-xs text-muted-foreground mb-2 line-clamp-2 font-light italic">
+                      {project.description || "Sin descripción"}
                     </p>
-                    <div className="space-y-2">
-                      <div className="relative overflow-hidden flex items-center gap-1 text-sm bg-gradient-to-br from-blue-50/80 via-indigo-50/80 to-purple-50/80 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 p-3 rounded-md border border-blue-100/50 dark:border-blue-800/30">
-                        <div className="absolute -top-10 -left-10 w-20 h-20 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
-                        <User className="h-4 w-4 text-black dark:text-gray-200" />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="relative overflow-hidden flex items-center gap-1 text-xs bg-gradient-to-br from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-blue-900/20 p-2 rounded-md border border-blue-100/50 dark:border-blue-800/30">
+                        <div className="absolute -top-10 -left-10 w-20 h-20 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
+                        <User className="h-3 w-3 text-blue-700 dark:text-blue-400" />
                         <div>
-                          <p className="font-medium text-xs text-black dark:text-white">Creado por:</p>
-                          <p className="text-black dark:text-gray-300 text-xs">
-                            {project.created_by_email || 'No asignado'} 
-                            {project.created_by_role ? ` (${project.created_by_role})` : ''}
+                          <p className="font-medium text-[10px] text-gray-600 dark:text-gray-400">Creado por:</p>
+                          <p className="text-gray-800 dark:text-gray-200 text-[10px] truncate">
+                            {project.created_by_email ? project.created_by_email.split('@')[0] : 'No asignado'}
                           </p>
                         </div>
                       </div>
-                      <div className="relative overflow-hidden flex items-center gap-1 text-sm bg-gradient-to-br from-purple-50/80 via-pink-50/80 to-blue-50/80 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-blue-900/20 p-3 rounded-md border border-purple-100/50 dark:border-purple-800/30">
-                        <div className="absolute -bottom-10 -right-10 w-20 h-20 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
-                        <User className="h-4 w-4 text-black dark:text-gray-200" />
+                      <div className="relative overflow-hidden flex items-center gap-1 text-xs bg-gradient-to-br from-indigo-50/80 via-blue-50/80 to-sky-50/80 dark:from-indigo-900/20 dark:via-blue-900/20 dark:to-sky-900/20 p-2 rounded-md border border-indigo-100/50 dark:border-indigo-800/30">
+                        <div className="absolute -bottom-10 -right-10 w-20 h-20 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
+                        <User className="h-3 w-3 text-indigo-700 dark:text-indigo-400" />
                         <div>
-                          <p className="font-medium text-xs text-black dark:text-white">Asignado a:</p>
-                          <p className="text-black dark:text-gray-300 text-xs">
-                            {project.assigned_to_email || 'No asignado'}
-                            {project.assigned_to_role ? ` (${project.assigned_to_role})` : ''}
+                          <p className="font-medium text-[10px] text-gray-600 dark:text-gray-400">Asignado a:</p>
+                          <p className="text-gray-800 dark:text-gray-200 text-[10px] truncate">
+                            {project.assigned_to_email ? project.assigned_to_email.split('@')[0] : 'No asignado'}
                           </p>
                         </div>
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-between border-t pt-4">
-                    <div className="flex items-center gap-0.5">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">
-                        {project.files?.length || 0} archivos
+                  <CardFooter className="flex justify-between p-3 pt-2 border-t border-gray-100 dark:border-gray-800 mt-auto">
+                    <div className="flex items-center gap-1">
+                      <FileText className="h-3 w-3 text-gray-500" />
+                      <span className="text-[10px] text-gray-500">
+                        {project.files?.length || 0}
                       </span>
-                      <Clock className="h-4 w-4 text-muted-foreground ml-1" />
-                      <span className="text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3 text-gray-500 ml-1" />
+                      <span className="text-[10px] text-gray-500">
                         {formatDate(project.updated_at)}
                       </span>
                     </div>
@@ -1388,7 +1699,7 @@ export default function ProjectsPage() {
                         </div>
                         
                         <div className="space-y-2">
-                          <Label htmlFor="assigned_to-empty">Asignar a diseñador</Label>
+                          <Label htmlFor="assigned_to-empty">Asignar a diseñador <span className="text-destructive">*</span></Label>
                           <Select 
                             disabled={isCreatingProject} 
                             onValueChange={handleSelectChange}
@@ -1423,7 +1734,7 @@ export default function ProjectsPage() {
                         </DialogClose>
                         <Button 
                           onClick={createProject}
-                          disabled={isCreatingProject}
+                          disabled={isCreatingProject || titleStatus?.isError === true}
                           className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
                         >
                           {isCreatingProject ? (
@@ -1511,7 +1822,6 @@ export default function ProjectsPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Modal de detalles del proyecto - Mejorado */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="sm:max-w-[650px] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-gray-200 dark:border-gray-700">
           {viewingProject && (
@@ -1565,22 +1875,40 @@ export default function ProjectsPage() {
                     </div>
                   </div>
                   
-                  <div>
-                    <h3 className="font-medium mb-2">Archivos del proyecto</h3>
-                    <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
-                      {viewingProject.files && viewingProject.files.length > 0 ? (
-                        <div className="space-y-2">
-                          {viewingProject.files.map((file, index) => (
-                            <div key={index} className="flex items-center gap-2 text-sm">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              <span>{file}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No hay archivos adjuntos</p>
-                      )}
-                    </div>
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold mb-2">Archivos adjuntos</h3>
+                    {viewingProject && viewingProject.files && viewingProject.files.length > 0 ? (
+                      <div className="space-y-2">
+                        {viewingProject.files.map((file, index) => (
+                          <div key={index} className="flex items-center gap-2 text-sm">
+                            {getFileIcon(file.type)}
+                            <span>{file.name}</span>
+                            {file.url && (
+                              <div className="ml-auto flex gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 w-6 p-0 text-blue-600"
+                                  onClick={() => window.open(file.url, '_blank')}
+                                >
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 w-6 p-0 text-green-600"
+                                  onClick={() => downloadFile(file.url!, file.name)}
+                                >
+                                  <Download className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">No hay archivos adjuntos</p>
+                    )}
                   </div>
                   
                   <div>
@@ -1625,7 +1953,6 @@ export default function ProjectsPage() {
         </DialogContent>
       </Dialog>
       
-      {/* Modal de edición de proyecto */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-gray-200 dark:border-gray-700">
           {editingProject && (
@@ -1656,8 +1983,19 @@ export default function ProjectsPage() {
                     onChange={handleEditInputChange}
                     placeholder="Ej. Rediseño de marca"
                     disabled={isEditingProject}
-                    className="rounded-md"
+                    className={`rounded-md ${editTitleStatus?.isError ? 'border-destructive focus-visible:ring-destructive' : editTitleStatus && !editTitleStatus.isError ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
                   />
+                  {isEditTitleCheckPending && (
+                    <div className="text-xs text-muted-foreground flex items-center mt-1">
+                      <div className="animate-spin w-3 h-3 border border-muted-foreground rounded-full border-t-transparent mr-1"></div>
+                      Verificando disponibilidad...
+                    </div>
+                  )}
+                  {editTitleStatus && (
+                    <p className={`text-xs ${editTitleStatus.isError ? 'text-destructive' : 'text-green-500'} mt-1`}>
+                      {editTitleStatus.message}
+                    </p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -1674,7 +2012,7 @@ export default function ProjectsPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="edit-assigned_to">Asignar a diseñador</Label>
+                  <Label htmlFor="edit-assigned_to">Asignar a diseñador <span className="text-destructive">*</span></Label>
                   <Select 
                     disabled={isEditingProject} 
                     onValueChange={(value) => handleEditSelectChange('assigned_to', value)}
@@ -1717,7 +2055,7 @@ export default function ProjectsPage() {
                         <div key={index} className="flex items-center justify-between bg-background rounded px-3 py-1.5 text-sm">
                           <div className="flex items-center">
                             <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span>{file}</span>
+                            <span>{file.name}</span>
                           </div>
                           <Button 
                             variant="ghost" 
@@ -1737,31 +2075,66 @@ export default function ProjectsPage() {
                 )}
               </div>
               
-              <DialogFooter className="gap-2 flex justify-center sm:justify-center border-t border-gray-200 dark:border-gray-700 pt-4">
-                <Button 
-                  variant="destructive" 
-                  onClick={() => setEditDialogOpen(false)}
-                  disabled={isEditingProject}
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  onClick={saveProjectChanges}
-                  disabled={isEditingProject}
-                  className="bg-indigo-700 hover:bg-indigo-800 text-white"
-                >
-                  {isEditingProject ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Guardando...
-                    </>
-                  ) : (
-                    'Guardar cambios'
-                  )}
-                </Button>
+              <DialogFooter className="mt-4 flex justify-between items-center">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditDialogOpen(false)}
+                    disabled={isEditingProject}
+                  >
+                    Cancelar
+                  </Button>
+                  
+                  <Button 
+                    type="button"
+                    onClick={initiateProjectUpdate}
+                    disabled={
+                      isEditingProject || 
+                      !editFormData.title || 
+                      (editTitleStatus?.isError || false) ||
+                      isEditTitleCheckPending
+                    }
+                  >
+                    {isEditingProject ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Actualizando...
+                      </>
+                    ) : (
+                      <>Guardar cambios</>
+                    )}
+                  </Button>
+                </div>
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmar actualización</DialogTitle>
+            <DialogDescription>
+              ¿Está seguro que desea actualizar este proyecto?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDialogOpen(false)}
+              disabled={isEditingProject}
+            >
+              No, cancelar
+            </Button>
+            <Button 
+              onClick={updateProject}
+              disabled={isEditingProject}
+            >
+              Sí, confirmar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

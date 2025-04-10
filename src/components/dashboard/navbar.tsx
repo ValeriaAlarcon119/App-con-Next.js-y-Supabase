@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/use-auth'
 import { 
-  LogOut, User, Settings, Sun, Moon, Bell, LayoutDashboard, 
-  FileText, Briefcase, Home, Menu, X, ChevronDown 
+  LogOut, User, Settings, Sun, Moon, LayoutDashboard, 
+  FileText, Briefcase, Home, Menu, X, ChevronDown, Github 
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import {
@@ -25,14 +25,10 @@ import { supabase } from '@/lib/supabase/client'
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import Image from 'next/image'
 import React from 'react'
-
-// Definir interfaz para las notificaciones
-interface Notification {
-  id: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-}
+import { cn } from '@/lib/utils'
+import { usePathname } from 'next/navigation'
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 
 export function Navbar() {
   const router = useRouter()
@@ -43,9 +39,7 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const notificationsRef = useRef<HTMLDivElement>(null)
+  const pathname = usePathname()
   
   useEffect(() => {
     const getUserRole = async () => {
@@ -61,8 +55,6 @@ export function Navbar() {
 
       console.log('[DEBUG] Email del usuario:', user.email)
       console.log('[DEBUG] ID del usuario:', user.id)
-
-    
 
       if (user.role) {
         console.log('[DEBUG] Rol detectado desde user.role:', user.role)
@@ -114,44 +106,7 @@ export function Navbar() {
     }
   }, [])
 
-  // Efecto para obtener notificaciones de Supabase
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('notifications')
-          .select('*')
-          .order('timestamp', { ascending: false })
-          .limit(5)
-        
-        if (data) {
-          setNotifications(data)
-        }
-      } catch (error) {
-        console.error('Error al obtener notificaciones:', error)
-      }
-    }
-
-    fetchNotifications()
-
-    // Suscripción a nuevas notificaciones
-    const subscription = supabase
-      .channel('public:notifications')
-      .on('postgres_changes', { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'notifications' 
-        }, payload => {
-          setNotifications(prev => [payload.new as Notification, ...prev.slice(0, 4)])
-        })
-      .subscribe()
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
-
-  // Función para traducir roles de inglés a espa
+  // Función para traducir roles de inglés a español
   const translateRole = (role: string): string => {
     if (!role || typeof role !== 'string') {
       return 'Usuario';
@@ -199,210 +154,206 @@ export function Navbar() {
     { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
   ]
 
-  // Efecto para detectar clics fuera del menú de notificaciones
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
-        setNotificationsOpen(false)
-      }
-    }
-    
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
-
-  // Función para marcar notificación como leída
-  const markAsRead = async (id: string) => {
-    try {
-      await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', id)
-      
-      setNotifications(prev => 
-        prev.map(notif => 
-          notif.id === id ? { ...notif, read: true } : notif
-        )
-      )
-    } catch (error) {
-      console.error('Error al marcar notificación como leída:', error)
-    }
-  }
-
-  // Contar notificaciones no leídas
-  const unreadCount = notifications.filter(n => !n.read).length
-
-  // Formatear fecha relativa
-  const formatRelativeTime = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
-    
-    if (diffMinutes < 1) return 'hace un momento'
-    if (diffMinutes < 60) return `hace ${diffMinutes} min`
-    
-    const diffHours = Math.floor(diffMinutes / 60)
-    if (diffHours < 24) return `hace ${diffHours} h`
-    
-    const diffDays = Math.floor(diffHours / 24)
-    if (diffDays < 7) return `hace ${diffDays} d`
-    
-    return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
-  }
-
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/home" className="flex items-center transition-transform hover:scale-105">
-            <div className="relative h-10 w-40">
-              <Image
-                src="/logo.png"
-                alt="Grayola Logo"
-                width={160}
-                height={40}
-                className="object-contain"
-                priority
-              />
-            </div>
-          </Link>
-          
-          {/* Mostrar menú de navegación en escritorio */}
-          <div className="hidden md:flex items-center gap-1 ml-6">
+    <div className="border-b shadow-sm dark:shadow-gray-800/10 dark:bg-black">
+      <div className="flex h-16 items-center px-4 md:px-6">
+        <Link href="/dashboard" className="flex items-center mr-6">
+          <Image
+            src="/logo.png"
+            width={180}
+            height={50}
+            alt="Logo"
+            priority
+            className="shrink-0"
+          />
+        </Link>
+        <nav className="mx-4 flex-1">
+          <ul className="flex gap-2 text-sm font-medium">
             {navigationItems.map((item) => (
-              <Button 
-                key={item.name}
-                variant="ghost" 
-                size="sm"
-                className="flex items-center gap-2 hover:bg-primary/5 text-black dark:text-white font-semibold transition-colors hover:text-black dark:hover:text-white"
-                onClick={() => router.push(item.href)}
-              >
-                {React.cloneElement(item.icon, { className: "h-5 w-5 text-black dark:text-white" })}
-                <span>{item.name}</span>
-              </Button>
+              <li key={item.name}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "px-4 py-2 rounded-md inline-flex items-center gap-2 transition-colors font-medium group",
+                    pathname === item.href
+                      ? "bg-primary/10 text-primary"
+                      : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/90"
+                  )}
+                >
+                  <span className={cn(
+                    pathname === item.href
+                      ? "text-primary"
+                      : "text-gray-700 dark:text-gray-200 group-hover:text-blue-600"
+                  )}>
+                    {item.icon}
+                  </span>
+                  <span className="group-hover:text-blue-600">{item.name}</span>
+                </Link>
+              </li>
             ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Badge className={`capitalize ${getRoleBadgeClass()}`}>
-            {displayRole}
-          </Badge>
-          
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-9 w-9 hover:bg-primary/5" 
+          </ul>
+        </nav>
+        <div className="ml-auto flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="rounded-full h-10 w-10 hover:bg-gray-100/90 dark:hover:bg-gray-800/90 text-gray-700 dark:text-gray-200 hover:text-blue-600"
+            aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
           >
-            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Cambiar tema</span>
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
-          {/* Reemplazar DropdownMenu con un componente personalizado basado en estado */}
-          <div className="relative hidden md:block">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="gap-2 hover:bg-primary/5 hidden md:flex"
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
-            >
-              <Avatar className="h-8 w-8 border border-primary/20">
-                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-primary font-medium">
-                  {user && user.email ? user.email[0].toUpperCase() : 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col items-start text-sm">
-                <span className="font-medium line-clamp-1">
-                  {user && user.email ? user.email.split('@')[0] : 'Usuario'}
-                </span>
-                <span className="text-xs text-muted-foreground capitalize">
-                  {displayRole}
-                </span>
-              </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            </Button>
-            
-            {userMenuOpen && (
-              <div 
-                ref={userMenuRef}
-                className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700 py-1 text-sm"
-              >
-              
-                <div 
-                  className="flex items-center px-4 py-2 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-                  onClick={() => {
-                    handleSignOut()
-                    setUserMenuOpen(false)
-                  }}
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="rounded-full h-10 px-3 hover:bg-gray-100/90 dark:hover:bg-gray-800/90 flex gap-3"
+                >
+                  {user.user_metadata?.avatar_url ? (
+                    <Avatar className="h-8 w-8 border shadow-sm">
+                      <AvatarFallback className="text-xs">
+                        {user.user_metadata?.name
+                          ? user.user_metadata.name
+                              .split(" ")
+                              .map((n: string) => n[0])
+                              .join("")
+                          : user.email?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <Avatar className="h-8 w-8 border shadow-sm">
+                      <AvatarFallback className="text-xs">
+                        {user.email?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div className="flex flex-col items-start text-xs leading-none gap-1">
+                    <span className="font-medium">
+                      {user.user_metadata?.name
+                        ? user.user_metadata.name
+                        : user.email?.split("@")[0]}
+                    </span>
+                    <Badge variant="secondary" className="px-1.5 text-[10px] h-4 shadow-sm">
+                      {displayRole}
+                    </Badge>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 mt-1.5" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal group">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">{user.user_metadata?.name}</p>
+                    <p className="text-xs leading-none text-gray-600 dark:text-gray-400 group-hover:text-blue-600">
+                      {user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard" className="flex items-center group">
+                      <LayoutDashboard className="mr-2 h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-blue-600" />
+                      <span className="text-gray-600 dark:text-gray-400 group-hover:text-blue-600">Dashboard</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard" className="flex items-center group">
+                      <User className="mr-2 h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-blue-600" />
+                      <span className="text-gray-600 dark:text-gray-400 group-hover:text-blue-600">Perfil</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="flex items-center group">
+                      <Settings className="mr-2 h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-blue-600" />
+                      <span className="text-gray-600 dark:text-gray-400 group-hover:text-blue-600">Ajustes</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="cursor-pointer text-red-600 hover:text-red-600 dark:text-red-400 hover:dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+                  onClick={handleSignOut}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Cerrar sesión</span>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          {/* Menú móvil */}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full h-10 w-10 md:hidden hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
                 <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-[300px] sm:w-[400px]">
-              <div className="flex flex-col h-full">
-                <div className="py-4">
-                  <div className="flex items-center gap-4 mb-4">
-                    <Avatar className="h-10 w-10 border border-primary/20">
-                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-primary">
-                        {user && user.email ? user.email[0].toUpperCase() : 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium truncate">{user && user.email ? user.email : 'Usuario'}</p>
-                      <Badge className={`capitalize mt-1 ${getRoleBadgeClass()}`}>
-                        {displayRole}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex-1">
-                  <div className="space-y-2">
-                    {navigationItems.map((item) => (
-                      <Button 
-                        key={item.name}
-                        variant="ghost" 
-                        size="sm"
-                        className="w-full justify-start py-6 text-black dark:text-white font-semibold hover:text-black dark:hover:text-white"
-                        onClick={() => router.push(item.href)}
-                      >
-                        {React.cloneElement(item.icon, { className: "h-5 w-5 text-black dark:text-white" })}
-                        <span className="ml-2">{item.name}</span>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="pt-4 border-t">
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start py-3 px-3 h-auto text-red-600 hover:bg-red-500/10 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Cerrar sesión
-                  </Button>
-                </div>
+            <SheetContent side="left" className="pr-0">
+              <div className="px-2 mb-6 flex items-center justify-center">
+                <Image
+                  src="/logo.png"
+                  width={200}
+                  height={60}
+                  alt="Logo"
+                  priority
+                />
               </div>
+              <ScrollArea className="my-4 h-[calc(100vh-8rem)] pb-10">
+                <div className="pl-4 pr-6">
+                  <Accordion
+                    type="single"
+                    collapsible
+                    className="w-full"
+                    defaultValue="item-1"
+                  >
+                    <AccordionItem value="item-1" className="border-none">
+                      <AccordionTrigger className="py-2 text-sm hover:no-underline hover:bg-gray-100 dark:hover:bg-gray-800 px-2 rounded-md">Navegación</AccordionTrigger>
+                      <AccordionContent>
+                        <div className="flex flex-col space-y-1 pl-2">
+                          {navigationItems.map((item) => (
+                            <Link
+                              key={item.name}
+                              href={item.href}
+                              className={cn(
+                                "pl-6 pr-2 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
+                                pathname === item.href
+                                  ? "bg-primary/10 text-primary font-medium"
+                                  : "text-gray-700 dark:text-gray-200"
+                              )}
+                            >
+                              <div className="flex items-center">
+                                {item.icon && <div className="mr-2 h-4 w-4">{item.icon}</div>}
+                                <span>{item.name}</span>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
+              </ScrollArea>
             </SheetContent>
           </Sheet>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:bg-gray-100 dark:hover:bg-gray-800"
+            asChild
+          >
+            <Link href="https://github.com/yourusername/your-repo" target="_blank">
+              <Github className="h-5 w-5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" />
+            </Link>
+          </Button>
         </div>
       </div>
-    </nav>
+    </div>
   )
 } 

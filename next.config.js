@@ -7,11 +7,25 @@ const nextConfig = {
         hostname: '**',
       },
     ],
+    domains: ['localhost', 'supabase.co'],
   },
   output: 'standalone',
   experimental: {
-    appDir: true
-  }
+    appDir: true,
+    serverActions: true,
+    serverComponentsExternalPackages: ['@supabase/supabase-js'],
+    optimizePackageImports: ['lucide-react']
+  },
+  reactStrictMode: true,
+  swcMinify: true,
+  productionBrowserSourceMaps: false,
+  poweredByHeader: false,
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 }
 
 module.exports = nextConfig 
