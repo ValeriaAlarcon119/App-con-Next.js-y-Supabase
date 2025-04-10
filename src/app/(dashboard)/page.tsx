@@ -1,4 +1,6 @@
-import { useAuth } from '@/lib/hooks/use-auth'
+"use client"
+
+import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase/client'
