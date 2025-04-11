@@ -440,6 +440,17 @@ export default function DashboardPage() {
                     asignaciones.
                   </p>
                 </div>
+                
+                <div className="border rounded-lg p-4 bg-pink-50 dark:bg-pink-950/20">
+                  <h3 className="font-medium flex items-center gap-2 text-pink-800 dark:text-pink-400">
+                    <Bell className="h-5 w-5" />
+                    Ajustes de Notificaciones
+                  </h3>
+                  <p className="text-sm mt-1 text-pink-700 dark:text-pink-300">
+                    Implementar configuración de notificaciones para diseñadores cuando se actualizan o 
+                    eliminan proyectos asignados. Crear panel de gestión de notificaciones completo.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

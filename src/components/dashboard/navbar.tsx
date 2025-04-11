@@ -456,7 +456,7 @@ export function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="rounded-full h-10 px-3 hover:bg-gray-100/90 dark:hover:bg-gray-800/90 flex gap-3"
+                  className="rounded-full h-10 px-3 hover:bg-gray-100/90 dark:hover:bg-gray-800/90 flex gap-3 group"
                 >
                   <Avatar className="h-8 w-8 border shadow-sm">
                     <AvatarImage src="/avatar.png" alt="Avatar" />
@@ -470,7 +470,7 @@ export function Navbar() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col items-start text-xs leading-none gap-1">
-                    <span className="font-medium">
+                    <span className="font-medium group-hover:text-gray-900 dark:group-hover:text-white">
                       {user.user_metadata?.name
                         ? user.user_metadata.name
                         : user.email?.split("@")[0]}

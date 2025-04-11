@@ -119,6 +119,34 @@ const sanitizeFileName = (fileName: string): string => {
   return sanitized;
 };
 
+const getFileTypeFromName = (fileName: string | undefined | null): string => {
+  if (!fileName) return 'file';
+  
+  const extension = String(fileName).split('.').pop()?.toLowerCase() || '';
+  
+  // Determinar el tipo de archivo basado en la extensión
+  if (['pdf'].includes(extension)) return 'pdf';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'svg', 'ico'].includes(extension)) return 'image';
+  if (['html', 'css', 'js', 'jsx', 'ts', 'tsx', 'json', 'xml', 'py', 'java', 'c', 'cpp', 'cs', 'php', 'rb', 'go', 'swift', 'kotlin'].includes(extension)) return 'code';
+  if (['txt', 'md', 'doc', 'docx', 'rtf', 'odt', 'xls', 'xlsx', 'csv', 'ppt', 'pptx', 'pages', 'numbers', 'key', 'odf', 'ods', 'odp'].includes(extension)) return 'text';
+  
+  const mimeTypes: { [key: string]: string } = {
+    'pdf': 'pdf',
+    'doc': 'word',
+    'docx': 'word',
+    'xls': 'excel',
+    'xlsx': 'excel',
+    'png': 'image',
+    'jpg': 'image',
+    'jpeg': 'image',
+    'gif': 'image',
+    'svg': 'image',
+    'txt': 'text'
+  };
+  
+  return mimeTypes[extension] || 'file';
+};
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -306,6 +334,7 @@ export default function ProjectsPage() {
   const createProject = async () => {
     try {
       setIsCreatingProject(true);
+      setCreateProgress(10);
 
       if (formData.assigned_to === "unassigned") {
         toast({
@@ -318,7 +347,9 @@ export default function ProjectsPage() {
       }
       
       console.log("Archivos a subir:", formData.files);
+      setCreateProgress(20);
       
+      // Primero creamos el proyecto sin archivos
       const { data: projectData, error } = await supabase
         .from('projects')
         .insert([
@@ -342,20 +373,33 @@ export default function ProjectsPage() {
         throw error
       }
       
+      setCreateProgress(40);
       const newProjectId = projectData?.[0]?.id;
       console.log("Proyecto creado con ID:", newProjectId);
       
+      // Si hay archivos para subir
       if (formData.files.length > 0 && newProjectId) {
         setUploadingFiles(true);
+        setCreateProgress(50);
         
-        const uploadedFiles = await Promise.all(
-          formData.files.map(async (file, index) => {
-            const progress = Math.round(((index + 1) / formData.files.length) * 100);
+        // Array para almacenar archivos subidos exitosamente
+        const successfullyUploadedFiles: FileObject[] = [];
+        
+        // Subir archivos uno por uno en lugar de usar Promise.all para evitar bloqueos
+        for (let i = 0; i < formData.files.length; i++) {
+          const file = formData.files[i];
+          const progress = Math.round(((i + 1) / formData.files.length) * 100);
             setFileProgress(progress);
-            
-            if (file.url) return file;
-            
-            try {
+          setCreateProgress(50 + Math.floor((i / formData.files.length) * 40)); // Progreso de 50 a 90
+          
+          // Si ya tiene URL, lo agregamos directamente
+          if (file.url) {
+            successfullyUploadedFiles.push(file);
+            continue;
+          }
+          
+          try {
+            // Sanitizamos el nombre del archivo para evitar problemas
               const safeFileName = sanitizeFileName(file.name);
               const filePath = `projects/${newProjectId}/${safeFileName}`;
               
@@ -371,11 +415,11 @@ export default function ProjectsPage() {
               if (uploadError) {
                 console.error('Error uploading file:', uploadError);
                 toast({
-                  title: "Error",
-                  description: `Error al subir el archivo ${file.name}: ${uploadError.message}`,
+                title: "Advertencia",
+                description: `Error al subir el archivo ${file.name}. El proyecto se creará sin este archivo.`,
                   variant: "destructive",
                 });
-                return null;
+              continue; // Continuamos con el siguiente archivo
               }
               
               const fileUrl = supabase.storage.from('documents').getPublicUrl(filePath).data.publicUrl;
@@ -387,24 +431,24 @@ export default function ProjectsPage() {
                 url: fileUrl
               });
               
-              return {
-                name: file.name, 
+            // Agregamos el archivo exitoso a nuestra lista
+            successfullyUploadedFiles.push({
+              name: file.name, 
                 path: filePath,
                 type: file.type,
                 size: file.size,
                 url: fileUrl
-              };
+            });
             } catch (err) {
               console.error('Error processing file:', err);
-              return null;
+            // Continuamos con el siguiente archivo en caso de error
             }
-          })
-        );
+        }
         
-        const successfullyUploadedFiles = uploadedFiles.filter(Boolean) as FileObject[];
-        
+        setCreateProgress(90);
         console.log('Archivos subidos exitosamente:', successfullyUploadedFiles);
         
+        // Actualizamos el proyecto con los archivos subidos exitosamente
         if (successfullyUploadedFiles.length > 0) {
           const { error: updateError } = await supabase
             .from('projects')
@@ -428,39 +472,40 @@ export default function ProjectsPage() {
         setUploadingFiles(false);
       }
 
-      console.log("Actualizando lista de proyectos")
-   
-      await fetchProjects()
+      setCreateProgress(95);
+      console.log("Actualizando lista de proyectos");
+      await fetchProjects();
+      setCreateProgress(100);
       
       setFormData({
         title: '',
         description: '',
         assigned_to: 'unassigned',
         files: []
-      })
+      });
       
       toast({
         title: "Éxito",
         description: "Proyecto creado correctamente",
         className: "bg-green-100 border-green-500 text-green-800",
-      })
+      });
       
-      setDialogOpen(false)
+      setDialogOpen(false);
     } catch (error: any) {
-      console.error('Error creating project:', error)
+      console.error('Error creating project:', error);
       toast({
         title: "Error",
         description: error.message || "No se pudo crear el proyecto. Verifica los permisos de tu rol.",
         variant: "destructive",
-      })
+      });
     } finally {
-      console.log("Finalizando proceso...")
+      console.log("Finalizando proceso...");
       setTimeout(() => {
-        setIsCreatingProject(false)
-        setCreateProgress(0)
-        setFileProgress(0)
-        console.log("Estado de creación reseteado")
-      }, 500)
+        setIsCreatingProject(false);
+        setCreateProgress(0);
+        setFileProgress(0);
+        console.log("Estado de creación reseteado");
+      }, 500);
     }
   }
 
@@ -649,7 +694,6 @@ export default function ProjectsPage() {
             };
           }
           
-          // Asegurarnos de que tenemos un objeto válido con propiedades
           if (!file || typeof file !== 'object') {
             return {
               name: 'Archivo desconocido',
@@ -659,12 +703,10 @@ export default function ProjectsPage() {
             };
           }
           
-          // Extraer el nombre del archivo
           let fileName = '';
           if (file.name) {
             fileName = file.name;
           } else if (file.path) {
-            // Extraer nombre de archivo de la ruta
             const pathParts = file.path.split('/');
             fileName = pathParts[pathParts.length - 1];
           } else if (file.originalName) {
@@ -673,10 +715,8 @@ export default function ProjectsPage() {
             fileName = 'archivo';
           }
           
-          // Determinar el tipo y extensión
           const fileType = file.type || getFileTypeFromName(fileName);
           
-          // Crear objeto completo
           return {
             name: fileName,
             path: file.path || '',
@@ -688,16 +728,14 @@ export default function ProjectsPage() {
           console.error('Error procesando archivo:', error, file);
           return null;
         }
-      }).filter(Boolean) as FileObject[]; // Filtrar valores nulos
+      }).filter(Boolean) as FileObject[]; 
     }
 
     console.log('Archivos procesados:', processedFiles);
 
-    // Obtener archivos desde supabase directamente cuando no hay información
     if (processedFiles.length > 0 && processedFiles.every(file => !file.name.includes('.'))) {
       console.log('Los archivos no tienen extensión, intentando obtener desde supabase...');
       
-      // Intentar obtener archivos desde el bucket de supabase
       supabase.storage.from('documents')
         .list(`projects/${project.id}`)
         .then(({ data, error }) => {
@@ -709,7 +747,6 @@ export default function ProjectsPage() {
           if (data && data.length > 0) {
             console.log('Archivos encontrados en supabase:', data);
             
-            // Transformar los datos a objetos FileObject
             const supabaseFiles = data.map(file => {
               const filePath = `projects/${project.id}/${file.name}`;
               const fileUrl = supabase.storage.from('documents').getPublicUrl(filePath).data.publicUrl;
@@ -722,7 +759,6 @@ export default function ProjectsPage() {
               } as FileObject;
             });
             
-            // Actualizar la vista con los archivos de supabase
             const updatedProject = {
               ...project,
               files: supabaseFiles
@@ -734,7 +770,6 @@ export default function ProjectsPage() {
         });
     }
 
-    // Actualizar el proyecto con los archivos procesados
     const updatedProject = {
       ...project,
       files: processedFiles
@@ -804,7 +839,7 @@ export default function ProjectsPage() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="icon-button text-blue-600 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-900/20"
+            className="icon-button text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
             onClick={() => viewProjectDetails(project)}
             title="Ver detalles"
           >
@@ -816,7 +851,7 @@ export default function ProjectsPage() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="icon-button text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-900/20"
+            className="icon-button text-indigo-700 hover:text-indigo-800 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-900/20"
             onClick={() => handleEditProject(project)}
             title="Editar proyecto"
           >
@@ -830,7 +865,7 @@ export default function ProjectsPage() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="icon-button text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/20"
+                className="icon-button text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
                 title="Eliminar proyecto"
               >
                 <Trash2 className="h-4 w-4" />
@@ -925,7 +960,9 @@ export default function ProjectsPage() {
     const selectedFiles = e.target.files;
     if (!selectedFiles || selectedFiles.length === 0) return;
     
+    // Procesar los archivos seleccionados
     const newFiles: FileObject[] = Array.from(selectedFiles).map(file => {
+      // Determinar el tipo de archivo según su MIME type
       let fileType = 'file';
       if (file.type.includes('image')) fileType = 'image';
       else if (file.type.includes('pdf')) fileType = 'pdf';
@@ -936,6 +973,19 @@ export default function ProjectsPage() {
                file.type.includes('json')) fileType = 'code';
       else if (file.type.includes('text')) fileType = 'text';
       
+      // Si no podemos determinar por MIME type, intentamos con la extensión
+      if (fileType === 'file') {
+        const extension = file.name.split('.').pop()?.toLowerCase();
+        if (extension) {
+          if (extension === 'pdf') fileType = 'pdf';
+          else if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(extension)) fileType = 'image';
+          else if (['doc', 'docx'].includes(extension)) fileType = 'word';
+          else if (['html', 'css', 'js', 'jsx', 'ts', 'tsx'].includes(extension)) fileType = 'code';
+          else if (['txt', 'md'].includes(extension)) fileType = 'text';
+        }
+      }
+      
+      // Crear el objeto de archivo para la interfaz
       return {
         name: file.name,
         path: '',
@@ -945,35 +995,53 @@ export default function ProjectsPage() {
       };
     });
     
+    console.log('Archivos seleccionados:', newFiles);
+    
+    // Actualizar el estado con los nuevos archivos
     setFormData(prev => ({
       ...prev,
       files: [...prev.files, ...newFiles]
     }));
     
+    // Limpiar el input de archivos
     e.target.value = '';
   };
 
-  const handleEditFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = e.target.files;
-    if (!selectedFiles || selectedFiles.length === 0) return;
-    
-    const newFiles: FileObject[] = Array.from(selectedFiles).map(file => {
+  const handleEditFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (!e.target.files || e.target.files.length === 0) return;
+
+      const newFiles = Array.from(e.target.files).map(file => {
+        // Obtener el nombre del archivo y su extensión
+        const fileName = file.name;
+        const extension = fileName.split('.').pop()?.toLowerCase() || '';
+        
+      // Determinar el tipo de archivo
       let fileType = 'file';
       if (file.type.includes('image')) fileType = 'image';
       else if (file.type.includes('pdf')) fileType = 'pdf';
-      else if (file.type.includes('word') || file.type.includes('document')) fileType = 'word';
+        else if (file.type.includes('word') || file.type.includes('document')) fileType = 'word';
       else if (file.type.includes('html') || 
                file.type.includes('javascript') || 
                file.type.includes('css') || 
                file.type.includes('json')) fileType = 'code';
       else if (file.type.includes('text')) fileType = 'text';
+        
+        // Si no podemos determinar por MIME type, intentamos con la extensión
+        if (fileType === 'file') {
+          if (extension === 'pdf') fileType = 'pdf';
+          else if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(extension)) fileType = 'image';
+          else if (['doc', 'docx'].includes(extension)) fileType = 'word';
+          else if (['html', 'css', 'js', 'jsx', 'ts', 'tsx'].includes(extension)) fileType = 'code';
+          else if (['txt', 'md'].includes(extension)) fileType = 'text';
+        }
       
       return {
-        name: file.name,
-        path: '',
+          name: fileName,
         type: fileType,
         size: file.size,
-        file: file 
+          path: URL.createObjectURL(file),
+          file: file
       };
     });
     
@@ -982,19 +1050,146 @@ export default function ProjectsPage() {
       files: [...prev.files, ...newFiles]
     }));
     
+      // Limpiar el input
     e.target.value = '';
+      setNewEditFile('');
+    } catch (error) {
+      console.error('Error al seleccionar archivos:', error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al procesar los archivos seleccionados",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleEditProject = (project: Project) => {
-    setEditingProject(project)
+  const handleEditProject = async (project: Project) => {
+    try {
+      setEditingProject(project);
+      setEditDialogOpen(true);
+      
+      console.log('⭐ Archivos originales del proyecto:', project.files);
+      
+      // Usar exactamente la misma lógica que funciona en viewProjectDetails
+      let processedFiles: FileObject[] = [];
+      
+      if (project.files && Array.isArray(project.files)) {
+        // Convertir cada archivo a un objeto FileObject completo
+        processedFiles = project.files.map((file: any) => {
+          try {
+            // Si es un string, convertirlo a objeto
+            if (typeof file === 'string') {
+              const fileName = String(file).trim();
+              const fileType = getFileTypeFromName(fileName);
+              return {
+                name: fileName,
+                path: file,
+                type: fileType,
+                size: 0,
+                url: file
+              };
+            }
+            
+            if (!file || typeof file !== 'object') {
+              return {
+                name: 'Archivo desconocido',
+                path: '',
+                type: 'file',
+                size: 0
+              };
+            }
+            
+            let fileName = '';
+            if (file.name) {
+              fileName = file.name;
+            } else if (file.path) {
+              const pathParts = file.path.split('/');
+              fileName = pathParts[pathParts.length - 1];
+            } else if (file.originalName) {
+              fileName = file.originalName;
+            } else {
+              fileName = 'Archivo';
+            }
+            
+            const fileType = file.type || getFileTypeFromName(fileName);
+            
+            return {
+              name: fileName,
+              path: file.path || '',
+              type: fileType,
+              size: file.size || 0,
+              url: file.path ? supabase.storage.from('documents').getPublicUrl(file.path).data.publicUrl : undefined
+            };
+          } catch (error) {
+            console.error('Error procesando archivo:', error, file);
+            return null;
+          }
+        }).filter(Boolean) as FileObject[]; 
+      }
+
+      console.log('⭐ Procesando archivos para el modal de edición:', processedFiles);
+
+      // Si los archivos no tienen extensión, intentar obtener desde supabase
+      if (processedFiles.length > 0 && processedFiles.every(file => !file.name.includes('.'))) {
+        console.log('⭐ Los archivos no tienen extensión, intentando obtener desde supabase...');
+        
+        try {
+          const { data, error } = await supabase.storage.from('documents').list(`projects/${project.id}`);
+          
+          if (error) {
+            console.error('Error al listar archivos:', error);
+          } else if (data && data.length > 0) {
+            console.log('⭐ Archivos encontrados en supabase:', data);
+            
+            const supabaseFiles = data.map(file => {
+              const filePath = `projects/${project.id}/${file.name}`;
+              const fileUrl = supabase.storage.from('documents').getPublicUrl(filePath).data.publicUrl;
+              return {
+                name: file.name,
+                path: filePath,
+                type: getFileTypeFromName(file.name),
+                size: file.metadata?.size || 0,
+                url: fileUrl
+              } as FileObject;
+            });
+            
+            processedFiles = supabaseFiles;
+            console.log('⭐ Archivos actualizados desde Supabase:', processedFiles);
+          }
+        } catch (supabaseError) {
+          console.error('Error al obtener archivos de Supabase:', supabaseError);
+        }
+      }
+
+      // Imprimir cada archivo procesado para verificar
+      processedFiles.forEach((file, index) => {
+        const extension = getFileExtension(file.name);
+        const displayName = getFileNameWithoutExtension(file.name);
+        console.log(`⭐ Archivo ${index} procesado para edición:`, { 
+          fileName: file.name, 
+          displayName,
+          extension, 
+          fileType: file.type,
+          path: file.path,
+          url: file.url
+        });
+      });
+
     setEditFormData({
       title: project.title,
       description: project.description || '',
-      assigned_to: project.assigned_to || 'unassigned',
-      files: project.files || []
-    })
-    setEditDialogOpen(true)
-  }
+        assigned_to: project.assigned_to || '',
+        files: processedFiles
+      });
+    } catch (error) {
+      console.error('Error al preparar la edición del proyecto:', error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al cargar los datos del proyecto",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -1080,18 +1275,48 @@ export default function ProjectsPage() {
     try {
       setIsEditingProject(true);
       
-      const allFiles = [...editFormData.files];
+      // 1. Obtener los archivos actuales del proyecto
+      const { data: currentProject, error: fetchError } = await supabase
+        .from('projects')
+        .select('files')
+        .eq('id', pendingEditChanges.id)
+        .single();
+      
+      if (fetchError) {
+        console.error('Error al obtener archivos actuales:', fetchError);
+        toast({
+          title: "Error",
+          description: "No se pudieron recuperar los archivos actuales del proyecto",
+          variant: "destructive",
+        });
+        throw fetchError;
+      }
+      
+      console.log('⭐ Archivos actuales del proyecto en la base de datos:', currentProject.files);
+      
+      // 2. Separar archivos existentes (con URL) de los nuevos archivos en el formulario
+      const existingFiles = editFormData.files.filter(file => file.url);
+      const newFiles = editFormData.files.filter(file => !file.url && file.file);
+      
+      console.log('⭐ Archivos existentes en el formulario:', existingFiles.length);
+      console.log('⭐ Archivos nuevos a subir:', newFiles.length);
+      
       const uploadedNewFiles: FileObject[] = [];
       
-      for (const file of editFormData.files) {
-        if (file.url) continue;
+      // 3. Subir solo los archivos nuevos
+      setFileProgress(0);
+      for (let i = 0; i < newFiles.length; i++) {
+        const file = newFiles[i];
         
         try {
           if (file.file) {
+            const progress = Math.round(((i + 1) / newFiles.length) * 100);
+            setFileProgress(progress);
+            
             const safeFileName = sanitizeFileName(file.name);
             const filePath = `projects/${pendingEditChanges.id}/${safeFileName}`;
             
-            console.log('Intentando subir archivo a:', filePath);
+            console.log('Intentando subir archivo nuevo a:', filePath);
             
             const { data, error: uploadError } = await supabase.storage
               .from('documents')
@@ -1102,15 +1327,20 @@ export default function ProjectsPage() {
             
             if (uploadError) {
               console.error('Error uploading file:', uploadError);
+              toast({
+                title: "Error",
+                description: `Error al subir el archivo ${file.name}: ${uploadError.message}`,
+                variant: "destructive",
+              });
               continue;
             }
             
             const fileUrl = supabase.storage.from('documents').getPublicUrl(filePath).data.publicUrl;
             
-            console.log('Archivo subido exitosamente durante actualización:', {
+            console.log('Archivo nuevo subido exitosamente:', {
               name: file.name, 
               path: filePath,
-              type: file.type || 'file',
+              type: file.type || getFileTypeFromName(file.name),
               size: file.size || 0,
               url: fileUrl
             });
@@ -1118,7 +1348,7 @@ export default function ProjectsPage() {
             uploadedNewFiles.push({
               name: file.name,
               path: filePath,
-              type: file.type || 'file',
+              type: file.type || getFileTypeFromName(file.name),
               size: file.size || 0,
               url: fileUrl
             });
@@ -1127,9 +1357,15 @@ export default function ProjectsPage() {
           console.error('Error processing file:', err);
         }
       }
-      const updatedFiles = allFiles.filter(file => file.url).concat(uploadedNewFiles);
       
-      console.log('Actualizando proyecto con archivos:', updatedFiles);
+      // 4. ESTE ES EL CAMBIO CLAVE: Usar los archivos existentes del formulario (NO los de la BD)
+      // para preservar los que el usuario ha decidido mantener, junto con los nuevos archivos subidos.
+      const combinedFiles = [...existingFiles, ...uploadedNewFiles];
+      
+      console.log('⭐ Actualizando proyecto con archivos:', combinedFiles);
+      console.log('⭐ - Archivos existentes mantenidos:', existingFiles.length);
+      console.log('⭐ - Archivos nuevos subidos:', uploadedNewFiles.length);
+      console.log('⭐ - Total archivos:', combinedFiles.length);
 
       const { error: updateError } = await supabase
         .from('projects')
@@ -1137,35 +1373,127 @@ export default function ProjectsPage() {
           title: pendingEditChanges.title,
           description: pendingEditChanges.description,
           assigned_to: pendingEditChanges.assigned_to === "unassigned" ? null : pendingEditChanges.assigned_to,
-          files: updatedFiles
+          files: combinedFiles
         })
         .eq('id', pendingEditChanges.id);
 
       if (updateError) {
-        console.error('Error updating project:', updateError);
-        toast({
-          title: "Error",
-          description: "Hubo un problema al actualizar el proyecto",
-          variant: "destructive",
-        });
-      } else {
-        fetchProjects();
-        setEditDialogOpen(false);
-        setConfirmDialogOpen(false);
-        toast({
-          title: "Éxito",
-          description: "Proyecto actualizado correctamente",
-        });
+        throw updateError;
       }
-    } catch (error) {
+      
+      // Recargamos los proyectos actualizados
+      await fetchProjects();
+      
+      // Actualizar el proyecto en vista detalle si está visible
+      if (viewingProject && viewingProject.id === pendingEditChanges.id) {
+        console.log('⭐ Actualizando vista de detalles con la información más reciente');
+        
+        // Obtener los datos actualizados del proyecto
+        const { data: updatedProjectData, error: getError } = await supabase
+          .from('projects')
+          .select(`
+            *,
+            creator:users!created_by(email, role),
+            assignee:users!assigned_to(email, role)
+          `)
+          .eq('id', pendingEditChanges.id)
+          .single();
+        
+        if (getError) {
+          console.error('Error al obtener proyecto actualizado:', getError);
+        } else if (updatedProjectData) {
+          console.log('⭐ Proyecto actualizado para vista detalle:', updatedProjectData);
+          
+          // Procesar los archivos para mantener consistencia
+          let processedFiles: FileObject[] = [];
+          
+          if (updatedProjectData.files && Array.isArray(updatedProjectData.files)) {
+            processedFiles = updatedProjectData.files.map((file: any) => {
+              try {
+                // Si es un string, convertirlo a objeto
+                if (typeof file === 'string') {
+                  const fileName = String(file).trim();
+                  const fileType = getFileTypeFromName(fileName);
+                  return {
+                    name: fileName,
+                    path: file,
+                    type: fileType,
+                    size: 0,
+                    url: file
+                  };
+                }
+                
+                if (!file || typeof file !== 'object') {
+                  return {
+                    name: 'Archivo desconocido',
+                    path: '',
+                    type: 'file',
+                    size: 0
+                  };
+                }
+                
+                let fileName = '';
+                if (file.name) {
+                  fileName = file.name;
+                } else if (file.path) {
+                  const pathParts = file.path.split('/');
+                  fileName = pathParts[pathParts.length - 1];
+                } else if (file.originalName) {
+                  fileName = file.originalName;
+                } else {
+                  fileName = 'Archivo';
+                }
+                
+                const fileType = file.type || getFileTypeFromName(fileName);
+                
+                return {
+                  name: fileName,
+                  path: file.path || '',
+                  type: fileType,
+                  size: file.size || 0,
+                  url: file.path ? supabase.storage.from('documents').getPublicUrl(file.path).data.publicUrl : file.url
+                };
+              } catch (error) {
+                console.error('Error procesando archivo:', error, file);
+                return null;
+              }
+            }).filter(Boolean) as FileObject[];
+          }
+          
+          // Actualizar el proyecto en vista detalle con los datos más recientes
+          const updatedProject = {
+            ...updatedProjectData,
+            created_by_email: updatedProjectData.creator?.email,
+            created_by_role: updatedProjectData.creator?.role,
+            assigned_to_email: updatedProjectData.assignee?.email,
+            assigned_to_role: updatedProjectData.assignee?.role,
+            files: processedFiles
+          };
+          
+          setViewingProject(updatedProject);
+          console.log('⭐ Vista detalle actualizada con nuevos archivos:', updatedProject.files);
+        }
+      }
+      
+      toast({
+        title: "Éxito",
+        description: "Proyecto actualizado correctamente",
+        className: "bg-green-100 border-green-500 text-green-800",
+      });
+      
+      setPendingEditChanges(null);
+      setEditDialogOpen(false);
+      setConfirmDialogOpen(false);
+    } catch (error: any) {
       console.error('Error updating project:', error);
       toast({
         title: "Error",
-        description: "Hubo un problema al actualizar el proyecto",
+        description: error.message || "No se pudo actualizar el proyecto. Verifica los permisos de tu rol.",
         variant: "destructive",
       });
     } finally {
       setIsEditingProject(false);
+      setFileProgress(0);
     }
   };
 
@@ -1204,7 +1532,7 @@ export default function ProjectsPage() {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 px-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                    className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
                     onClick={() => window.open(file.url, '_blank')}
                     title="Ver archivo"
                   >
@@ -1213,7 +1541,7 @@ export default function ProjectsPage() {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 px-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                    className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
                     onClick={() => downloadFile(file.url!, file.name)}
                     title="Descargar archivo"
                   >
@@ -1337,10 +1665,10 @@ export default function ProjectsPage() {
     const extension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
     
     if (['pdf'].includes(extension)) return 'pdf';
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'svg', 'ico'].includes(extension)) return 'image';
-    if (['html', 'css', 'js', 'ts', 'jsx', 'tsx', 'json', 'xml', 'py', 'java', 'c', 'cpp', 'cs', 'php', 'rb', 'go', 'swift', 'kotlin'].includes(extension)) return 'code';
-    if (['txt', 'md', 'doc', 'docx', 'rtf', 'odt', 'xls', 'xlsx', 'csv', 'ppt', 'pptx', 'pages', 'numbers', 'key', 'odf', 'ods', 'odp'].includes(extension)) return 'text';
-    
+    if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(extension)) return 'image';
+    if (['doc', 'docx'].includes(extension)) return 'word';
+    if (['html', 'css', 'js', 'jsx', 'ts', 'tsx'].includes(extension)) return 'code';
+    if (['txt', 'md'].includes(extension)) return 'text';
     return 'file';
   }
 
@@ -1926,11 +2254,8 @@ export default function ProjectsPage() {
                     {viewingProject.files && viewingProject.files.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                         {viewingProject.files.map((file, index) => {
-                          // Este archivo está recuperando los datos de supabase sin los nombres originales
-                          // Intentamos extraer el nombre real del archivo desde la ruta si está disponible
+                      
                           let fileName = file.name || 'Archivo';
-                          
-                          // Si tenemos una ruta, extraer el nombre de archivo
                           if (file.path && !fileName.includes('.')) {
                             const pathParts = file.path.split('/');
                             if (pathParts.length > 0) {
@@ -1964,19 +2289,19 @@ export default function ProjectsPage() {
                               <CardFooter className="py-2 bg-gray-50 dark:bg-gray-900 flex justify-end gap-2">
                                 {file.url && (
                                   <>
-                                    <Button
+                  <Button
                                       variant="ghost" 
                                       size="sm" 
-                                      className="h-8 px-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                      className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
                                       onClick={() => window.open(file.url, '_blank')}
                                       title="Ver archivo"
                                     >
                                       <Eye className="h-4 w-4" />
-                                    </Button>
-                                    <Button 
+                  </Button>
+                  <Button 
                                       variant="ghost" 
                                       size="sm" 
-                                      className="h-8 px-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                      className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
                                       onClick={() => downloadFile(file.url!, fileName)}
                                       title="Descargar archivo"
                                     >
@@ -2115,46 +2440,50 @@ export default function ProjectsPage() {
               <div>
                 <Label htmlFor="edit-files">Archivos</Label>
                 <div className="mt-2">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {editFormData.files.map((file, index) => (
-                      <div key={index} className="relative group">
-                        <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                          {getFileIcon(file.type)}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {file.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {file.size ? `${(file.size / 1024).toFixed(2)} KB` : ''}
-                            </p>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => {
-                              setEditFormData(prev => ({
-                                ...prev,
-                                files: prev.files.filter((_, i) => i !== index)
-                              }))
-                            }}
-                          >
-                            <X className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
+                  <FileInput
+                    onChange={handleEditFileSelect}
+                    disabled={isEditingProject}
+                    multiple
+                  />
+                  {editFormData.files.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      <p className="text-sm font-medium">Archivos seleccionados:</p>
+                      <div className="bg-muted/50 rounded-md p-2 space-y-1">
+                        {editFormData.files.map((file, index) => {
+                          const fileName = file.name || 'Archivo';
+                          const extension = getFileExtension(fileName);
+                          const nameWithoutExt = getFileNameWithoutExtension(fileName);
+                          const fileType = file.type || getFileTypeFromName(fileName);
+                          
+                          console.log(`⭐ Renderizando archivo ${index} en modal edición:`, { 
+                            fileName, 
+                            nameWithoutExt,
+                            extension, 
+                            fileType,
+                            url: file.url
+                          });
+                          
+                          return (
+                            <div key={index} className="flex items-center justify-between bg-background rounded px-3 py-1.5 text-sm">
+                              <div className="flex items-center">
+                                {getFileIcon(fileType)}
+                                <span className="ml-2">{fileName}</span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-destructive"
+                                onClick={() => handleRemoveEditFile(index)}
+                                disabled={isEditingProject}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
-                  <div className="mt-4">
-                    <Input
-                      id="edit-files"
-                      type="file"
-                      multiple
-                      onChange={handleEditFileSelect}
-                      className="cursor-pointer"
-                    />
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
               </div>

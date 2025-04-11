@@ -250,7 +250,7 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between border-t pt-6 px-6">
-                <Button variant="outline" onClick={() => router.push('/dashboard')}>Cancelar</Button>
+                <Button variant="outline" className="dark:bg-white dark:text-black dark:hover:bg-gray-200" onClick={() => router.push('/dashboard')}>Cancelar</Button>
                 <Button onClick={handleSaveProfile} disabled={isLoading}>
                   {isLoading ? (
                     <>
@@ -313,7 +313,7 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between border-t pt-6 px-6">
-                <Button variant="outline" onClick={() => router.push('/dashboard')}>Cancelar</Button>
+                <Button variant="outline" className="dark:bg-white dark:text-black dark:hover:bg-gray-200" onClick={() => router.push('/dashboard')}>Cancelar</Button>
                 <Button onClick={handleSaveProfile} disabled={isLoading}>
                   {isLoading ? (
                     <>

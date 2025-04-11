@@ -72,6 +72,8 @@ export default function DocumentsPage() {
         .single()
 
       if (!userRole) throw new Error('No se pudo obtener el rol del usuario')
+      
+      console.log("Rol del usuario:", userRole.role)
 
       let query = supabase
         .from('projects')
@@ -83,11 +85,13 @@ export default function DocumentsPage() {
           assigned_to
         `)
 
-      if (userRole.role === 'client') {
+      const role = userRole.role ? userRole.role.toLowerCase() : '';
+      if (role === 'client' || role === 'cliente') {
         query = query.eq('created_by', userData.user.id)
-      } else if (userRole.role === 'designer') {
+      } else if (role === 'designer' || role === 'diseñador') {
         query = query.eq('assigned_to', userData.user.id)
       }
+      // No aplicamos ningún filtro para project managers
 
       const { data: projects, error } = await query
       
@@ -95,41 +99,92 @@ export default function DocumentsPage() {
         throw error
       }
 
-      console.log("Proyectos obtenidos:", projects)
+      console.log("Proyectos obtenidos:", projects?.length || 0)
 
       const allFiles: FileObject[] = []
       
       projects?.forEach((project: any) => {
-        if (project.files && Array.isArray(project.files)) {
+        if (!project.files || !Array.isArray(project.files)) {
+          console.log(`Proyecto ${project.id} no tiene archivos o no es un array:`, project.files);
+          return;
+        }
+        
+        console.log(`Procesando archivos del proyecto ${project.title} (${project.id}):`, project.files.length);
+        
           project.files.forEach((file: any) => {
+          try {
+            // Procesar los archivos que son strings
             if (typeof file === 'string') {
               const cleanFileName = String(file).replace(/[\{\}\"\'\`]+/g, '').trim()
+              const extension = cleanFileName.split('.').pop()?.toLowerCase() || '';
+              
+              // Determinar el tipo de archivo basado en la extensión
+              let fileType = 'file';
+              if (extension === 'pdf') fileType = 'pdf';
+              else if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(extension)) fileType = 'image';
+              else if (['doc', 'docx'].includes(extension)) fileType = 'word';
+              else if (['html', 'css', 'js', 'jsx', 'ts', 'tsx'].includes(extension)) fileType = 'code';
+              else if (['txt', 'md'].includes(extension)) fileType = 'text';
+              
               allFiles.push({
                 name: cleanFileName,
-                path: '',
-                type: getFileTypeFromName(cleanFileName),
+                path: file,
+                type: fileType,
                 size: 0,
                 projectId: project.id,
-                projectTitle: project.title
+                projectTitle: project.title,
+                url: file
               })
-            } else {
-              const cleanFileName = String(file.name || 'Archivo').replace(/[\{\}\"\'\`]+/g, '').trim()
+            }
+            // Procesar los archivos que son objetos
+            else if (file && typeof file === 'object') {
+              // Obtener nombre de archivo limpio
+              let cleanFileName = String(file.name || 'Archivo').replace(/[\{\}\"\'\`]+/g, '').trim()
+              
+              // Si no hay nombre con extensión pero hay una ruta, extraer el nombre de la ruta
+              if ((!cleanFileName || !cleanFileName.includes('.') || cleanFileName === 'Archivo') && file.path) {
+                const pathParts = file.path.split('/');
+                if (pathParts.length > 0) {
+                  const nameFromPath = decodeURIComponent(pathParts[pathParts.length - 1]);
+                  if (nameFromPath && nameFromPath.includes('.')) {
+                    cleanFileName = nameFromPath;
+                  }
+                }
+              }
+              
+              // Determinar el tipo de archivo basado en la extensión
+              const extension = cleanFileName.split('.').pop()?.toLowerCase() || '';
+              let fileType = file.type || 'file';
+              
+              if (fileType === 'file') {
+                if (extension === 'pdf') fileType = 'pdf';
+                else if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(extension)) fileType = 'image';
+                else if (['doc', 'docx'].includes(extension)) fileType = 'word';
+                else if (['html', 'css', 'js', 'jsx', 'ts', 'tsx'].includes(extension)) fileType = 'code';
+                else if (['txt', 'md'].includes(extension)) fileType = 'text';
+              }
+              
+              // Construir la URL del archivo si tiene path
+              const fileUrl = file.path ? supabase.storage.from('documents').getPublicUrl(file.path).data.publicUrl : file.url;
+              
               allFiles.push({
                 name: cleanFileName,
                 path: file.path || '',
-                type: file.type || getFileTypeFromName(cleanFileName),
+                type: fileType,
                 size: file.size || 0,
-                url: file.path ? supabase.storage.from('documents').getPublicUrl(file.path).data.publicUrl : undefined,
+                url: fileUrl,
                 projectId: project.id,
                 projectTitle: project.title
               })
             }
-          })
+          } catch (error) {
+            console.error('Error procesando archivo individual:', error, file);
         }
+        })
       })
       
-      console.log('Total de documentos procesados:', allFiles.length)
-      setDocuments(allFiles)
+      console.log('Total de documentos procesados:', allFiles.length);
+      setDocuments(allFiles);
 
     } catch (error) {
       console.error('Error al cargar documentos:', error)
@@ -194,37 +249,37 @@ export default function DocumentsPage() {
 
     if (extension === 'pdf') {
       return (
-        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-red-50 to-red-100 dark:from-red-200/40 dark:to-red-300/30 border border-red-200 dark:border-red-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-red-100 to-red-200 dark:from-red-300/40 dark:to-red-400/30 border-2 border-red-300 dark:border-red-400/70 shadow-md group-hover:shadow-lg transition-all duration-300">
           <div className="absolute flex items-center justify-center w-14 h-14 bg-white dark:bg-gray-800 rounded-sm shadow-sm">
-            <div className="absolute inset-0 bg-red-500 dark:bg-red-300 opacity-10 rounded-sm"></div>
-            <span className="text-lg font-bold text-red-600 dark:text-red-300">PDF</span>
+            <div className="absolute inset-0 bg-red-500 dark:bg-red-400 opacity-20 rounded-sm"></div>
+            <span className="text-lg font-bold text-red-600 dark:text-red-400">PDF</span>
           </div>
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 dark:bg-red-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 dark:bg-red-400 rounded-full border-2 border-white dark:border-gray-800"></div>
         </div>
       );
     } 
  
     else if (['jpg', 'jpeg'].includes(extension)) {
       return (
-        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-200/40 dark:to-purple-300/30 border border-purple-200 dark:border-purple-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-purple-100 to-purple-200 dark:from-purple-300/40 dark:to-purple-400/30 border-2 border-purple-300 dark:border-purple-400/70 shadow-md group-hover:shadow-lg transition-all duration-300">
           <div className="absolute inset-0 m-3 rounded-md overflow-hidden">
-            <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-500 dark:from-purple-300 dark:to-pink-300 opacity-30"></div>
+            <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-500 dark:from-purple-300 dark:to-pink-400 opacity-40"></div>
             <FileImage className="absolute inset-0 m-auto h-8 w-8 text-purple-600 dark:text-purple-300" />
           </div>
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 dark:bg-purple-300 rounded-full border-2 border-white dark:border-gray-800"></div>
-          <div className="absolute bottom-1 right-1 text-xs font-medium text-purple-700 dark:text-purple-300">JPG</div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 dark:bg-purple-400 rounded-full border-2 border-white dark:border-gray-800"></div>
+          <div className="absolute bottom-1 right-1 text-xs font-medium text-purple-800 dark:text-purple-300">JPG</div>
         </div>
       );
     }
     else if (['png'].includes(extension)) {
       return (
-        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-200/40 dark:to-indigo-300/30 border border-indigo-200 dark:border-indigo-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-indigo-100 to-indigo-200 dark:from-indigo-300/40 dark:to-indigo-400/30 border-2 border-indigo-300 dark:border-indigo-400/70 shadow-md group-hover:shadow-lg transition-all duration-300">
           <div className="absolute inset-0 m-3 rounded-md overflow-hidden">
-            <div className="w-full h-full bg-gradient-to-br from-indigo-400 to-blue-500 dark:from-indigo-300 dark:to-blue-300 opacity-30"></div>
+            <div className="w-full h-full bg-gradient-to-br from-indigo-400 to-blue-500 dark:from-indigo-300 dark:to-blue-400 opacity-40"></div>
             <FileImage className="absolute inset-0 m-auto h-8 w-8 text-indigo-600 dark:text-indigo-300" />
           </div>
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 dark:bg-indigo-300 rounded-full border-2 border-white dark:border-gray-800"></div>
-          <div className="absolute bottom-1 right-1 text-xs font-medium text-indigo-700 dark:text-indigo-300">PNG</div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 dark:bg-indigo-400 rounded-full border-2 border-white dark:border-gray-800"></div>
+          <div className="absolute bottom-1 right-1 text-xs font-medium text-indigo-800 dark:text-indigo-300">PNG</div>
         </div>
       );
     }
@@ -359,57 +414,57 @@ export default function DocumentsPage() {
     switch (type) {
       case 'pdf':
         return (
-          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-red-50 to-red-100 dark:from-red-200/40 dark:to-red-300/30 border border-red-200 dark:border-red-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-red-100 to-red-200 dark:from-red-300/40 dark:to-red-400/30 border-2 border-red-300 dark:border-red-400/70 shadow-md group-hover:shadow-lg transition-all duration-300">
             <div className="absolute flex items-center justify-center w-14 h-14 bg-white dark:bg-gray-800 rounded-sm shadow-sm">
-              <div className="absolute inset-0 bg-red-500 dark:bg-red-300 opacity-10 rounded-sm"></div>
-              <span className="text-lg font-bold text-red-600 dark:text-red-300">PDF</span>
+              <div className="absolute inset-0 bg-red-500 dark:bg-red-400 opacity-20 rounded-sm"></div>
+              <span className="text-lg font-bold text-red-600 dark:text-red-400">PDF</span>
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 dark:bg-red-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 dark:bg-red-400 rounded-full border-2 border-white dark:border-gray-800"></div>
           </div>
         );
       case 'image':
         return (
-          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-200/40 dark:to-purple-300/30 border border-purple-200 dark:border-purple-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-purple-100 to-purple-200 dark:from-purple-300/40 dark:to-purple-400/30 border-2 border-purple-300 dark:border-purple-400/70 shadow-md group-hover:shadow-lg transition-all duration-300">
             <div className="absolute inset-0 m-3 rounded-md overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-500 dark:from-purple-300 dark:to-pink-300 opacity-20"></div>
-              <div className="absolute w-3 h-3 rounded-full bg-purple-400 dark:bg-purple-300 left-1 top-1"></div>
-              <div className="absolute right-0 bottom-0 left-3 top-3 rounded-tr-md border-t-2 border-r-2 border-purple-400 dark:border-purple-300"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-500 dark:from-purple-300 dark:to-pink-400 opacity-30"></div>
+              <div className="absolute w-3 h-3 rounded-full bg-purple-500 dark:bg-purple-400 left-1 top-1"></div>
+              <div className="absolute right-0 bottom-0 left-3 top-3 rounded-tr-md border-t-2 border-r-2 border-purple-500 dark:border-purple-400"></div>
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 dark:bg-purple-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 dark:bg-purple-400 rounded-full border-2 border-white dark:border-gray-800"></div>
           </div>
         );
       case 'code':
         return (
-          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-200/40 dark:to-blue-300/30 border border-blue-200 dark:border-blue-800/30 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-300/40 dark:to-blue-400/30 border-2 border-blue-300 dark:border-blue-400/70 shadow-md group-hover:shadow-lg transition-all duration-300">
             <div className="absolute inset-0 m-3 rounded-md overflow-hidden flex items-center justify-center">
               <div className="flex flex-col space-y-1.5 items-start">
-                <div className="w-10 h-1 bg-blue-400 dark:bg-blue-300 rounded-full"></div>
-                <div className="w-6 h-1 bg-blue-300 dark:bg-blue-200 rounded-full ml-3"></div>
-                <div className="w-8 h-1 bg-blue-400 dark:bg-blue-300 rounded-full ml-2"></div>
+                <div className="w-10 h-1 bg-blue-500 dark:bg-blue-400 rounded-full"></div>
+                <div className="w-6 h-1 bg-blue-400 dark:bg-blue-300 rounded-full ml-3"></div>
+                <div className="w-8 h-1 bg-blue-500 dark:bg-blue-400 rounded-full ml-2"></div>
               </div>
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 dark:bg-blue-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 dark:bg-blue-400 rounded-full border-2 border-white dark:border-gray-800"></div>
           </div>
         );
       case 'text':
         return (
-          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-200/40 dark:to-emerald-300/30 border border-emerald-200 dark:border-emerald-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-emerald-100 to-emerald-200 dark:from-emerald-300/40 dark:to-emerald-400/30 border-2 border-emerald-300 dark:border-emerald-400/70 shadow-md group-hover:shadow-lg transition-all duration-300">
             <div className="absolute inset-0 m-3 rounded-md overflow-hidden flex flex-col items-start justify-start p-2">
-              <div className="w-full h-1 bg-emerald-300 dark:bg-emerald-300 rounded-full mb-1.5"></div>
-              <div className="w-3/4 h-1 bg-emerald-300 dark:bg-emerald-300 rounded-full mb-1.5"></div>
-              <div className="w-2/3 h-1 bg-emerald-300 dark:bg-emerald-300 rounded-full mb-1.5"></div>
-              <div className="w-1/2 h-1 bg-emerald-300 dark:bg-emerald-300 rounded-full"></div>
+              <div className="w-full h-1 bg-emerald-500 dark:bg-emerald-400 rounded-full mb-1.5"></div>
+              <div className="w-3/4 h-1 bg-emerald-500 dark:bg-emerald-400 rounded-full mb-1.5"></div>
+              <div className="w-2/3 h-1 bg-emerald-500 dark:bg-emerald-400 rounded-full mb-1.5"></div>
+              <div className="w-1/2 h-1 bg-emerald-500 dark:bg-emerald-400 rounded-full"></div>
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 dark:bg-emerald-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 dark:bg-emerald-400 rounded-full border-2 border-white dark:border-gray-800"></div>
           </div>
         );
       default:
         return (
-          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-200/40 dark:to-amber-300/30 border border-amber-200 dark:border-amber-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
-            <div className="absolute flex items-center justify-center w-10 h-14 bg-white dark:bg-gray-800 rounded-sm shadow-sm border border-amber-200 dark:border-amber-300/70">
-              <div className="absolute top-0 right-0 w-4 h-4 origin-bottom-left -rotate-12 bg-amber-100 dark:bg-amber-300/50"></div>
+          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-amber-100 to-amber-200 dark:from-amber-300/40 dark:to-amber-400/30 border-2 border-amber-300 dark:border-amber-400/70 shadow-md group-hover:shadow-lg transition-all duration-300">
+            <div className="absolute flex items-center justify-center w-10 h-14 bg-white dark:bg-gray-800 rounded-sm shadow-sm border border-amber-300 dark:border-amber-400/70">
+              <div className="absolute top-0 right-0 w-4 h-4 origin-bottom-left -rotate-12 bg-amber-200 dark:bg-amber-400/50"></div>
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 dark:bg-amber-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 dark:bg-amber-400 rounded-full border-2 border-white dark:border-gray-800"></div>
           </div>
         );
     }
@@ -502,7 +557,7 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="container mx-auto py-10 pt-24 px-4 bg-white dark:bg-white min-h-screen">
+    <div className="container mx-auto py-6 pt-12 px-4 bg-white dark:bg-white min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-900">Documentos</h1>

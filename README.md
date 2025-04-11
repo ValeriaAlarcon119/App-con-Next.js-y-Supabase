@@ -95,8 +95,8 @@ La aplicación facilita la gestión de proyectos de diseño permitiendo a client
   - Diseñador asignado
 
 ### Gestión de Documentos
-- Subida de documentos con validación estricta de formatos
-- Organización por proyectos
+
+- Organización por proyectos cada diseñador puede ver los documntos de los proyectos que le han asignado y solo los manager pueden asignar documentos en los poyectos y ver el total de documentos.
 - Filtrado por tipos de documento
 - Sistema de almacenamiento seguro con Supabase Storage
 
