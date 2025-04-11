@@ -6,7 +6,7 @@ import {
   Plus, Search, Filter, FileText, User, Calendar, Clock, 
   CheckCircle, Edit, Trash2, Eye, AlertCircle, MoreHorizontal,
   RefreshCw, ListFilter, ChevronDown, X, Tag, Briefcase, PenLine, PlusCircle, Edit2, Upload, FileUp, Paperclip, 
-  File, Loader2, FileImage, FileCode, Download
+  File, Loader2, FileImage, FileCode, Download, Building2, Paintbrush, ShieldCheck
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -1228,6 +1228,64 @@ export default function ProjectsPage() {
     }
   };
 
+  // Función para obtener la clase de color según el rol
+  const getRoleColorClass = (role?: string) => {
+    if (!role) return '';
+    
+    const normalizedRole = role.toLowerCase();
+    if (normalizedRole === 'cliente' || normalizedRole === 'client') 
+      return 'text-blue-600 dark:text-blue-400';
+    if (normalizedRole === 'diseñador' || normalizedRole === 'designer') 
+      return 'text-purple-600 dark:text-purple-400';
+    if (normalizedRole === 'project_manager' || normalizedRole === 'project manager' || normalizedRole === 'administrador') 
+      return 'text-green-600 dark:text-green-400';
+    
+    return '';
+  }
+
+  // Función para obtener la clase de fondo según el rol
+  const getRoleBackgroundClass = (role?: string) => {
+    if (!role) return 'bg-white/50 dark:bg-gray-800/50';
+    
+    const normalizedRole = role.toLowerCase();
+    if (normalizedRole === 'cliente' || normalizedRole === 'client') 
+      return 'bg-gradient-to-br from-white/80 to-blue-50/80 dark:from-gray-800/80 dark:to-blue-900/20';
+    if (normalizedRole === 'diseñador' || normalizedRole === 'designer') 
+      return 'bg-gradient-to-br from-white/80 to-purple-50/80 dark:from-gray-800/80 dark:to-purple-900/20';
+    if (normalizedRole === 'project_manager' || normalizedRole === 'project manager' || normalizedRole === 'administrador') 
+      return 'bg-gradient-to-br from-white/80 to-green-50/80 dark:from-gray-800/80 dark:to-green-900/20';
+    
+    return 'bg-white/50 dark:bg-gray-800/50';
+  }
+
+  // Función para obtener el color del borde según el rol
+  const getRoleBorderClass = (role?: string) => {
+    if (!role) return 'border-t-gray-200 dark:border-t-gray-700';
+    
+    const normalizedRole = role.toLowerCase();
+    if (normalizedRole === 'cliente' || normalizedRole === 'client') 
+      return 'border-t-blue-300 dark:border-t-blue-700';
+    if (normalizedRole === 'diseñador' || normalizedRole === 'designer') 
+      return 'border-t-purple-300 dark:border-t-purple-700';
+    if (normalizedRole === 'project_manager' || normalizedRole === 'project manager' || normalizedRole === 'administrador') 
+      return 'border-t-green-300 dark:border-t-green-700';
+    
+    return 'border-t-gray-200 dark:border-t-gray-700';
+  }
+
+  // Función para obtener el icono según el rol
+  const getRoleIcon = (role?: string) => {
+    const normalizedRole = role?.toLowerCase() || '';
+    if (normalizedRole === 'cliente' || normalizedRole === 'client') 
+      return <Building2 className="h-3 w-3" />;
+    if (normalizedRole === 'diseñador' || normalizedRole === 'designer') 
+      return <Paintbrush className="h-3 w-3" />;
+    if (normalizedRole === 'project_manager' || normalizedRole === 'project manager' || normalizedRole === 'administrador') 
+      return <ShieldCheck className="h-3 w-3" />;
+    
+    return <User className="h-3 w-3" />;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
@@ -1852,24 +1910,34 @@ export default function ProjectsPage() {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div className={`p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700 ${getRoleBackgroundClass(viewingProject.created_by_role)} border-t-2 ${getRoleBorderClass(viewingProject.created_by_role)} relative`}>
+                      <span className={`absolute right-2 top-2 inline-flex items-center justify-center rounded-full p-1 ${getRoleColorClass(viewingProject.created_by_role)} bg-white/80 dark:bg-gray-800/80 border border-current`} title={viewingProject.created_by_role || 'Usuario'}>
+                        {getRoleIcon(viewingProject.created_by_role)}
+                      </span>
                       <h3 className="font-medium mb-2">Creado por</h3>
                       <div className="flex items-center gap-2 text-sm">
-                        <User className="h-4 w-4 text-primary" />
-                        <span>
+                        <User className={`h-4 w-4 ${getRoleColorClass(viewingProject.created_by_role)}`} />
+                        <span className={getRoleColorClass(viewingProject.created_by_role)}>
                           {viewingProject.created_by_email || 'No asignado'} 
-                          {viewingProject.created_by_role ? ` (${viewingProject.created_by_role})` : ''}
+                          <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
+                            ({viewingProject.created_by_role || 'Usuario'})
+                          </span>
                         </span>
                       </div>
                     </div>
                     
-                    <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div className={`p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700 ${getRoleBackgroundClass(viewingProject.assigned_to_role)} border-t-2 ${getRoleBorderClass(viewingProject.assigned_to_role)} relative`}>
+                      <span className={`absolute right-2 top-2 inline-flex items-center justify-center rounded-full p-1 ${getRoleColorClass(viewingProject.assigned_to_role)} bg-white/80 dark:bg-gray-800/80 border border-current`} title={viewingProject.assigned_to_role || 'Usuario'}>
+                        {getRoleIcon(viewingProject.assigned_to_role)}
+                      </span>
                       <h3 className="font-medium mb-2">Asignado a</h3>
                       <div className="flex items-center gap-2 text-sm">
-                        <User className="h-4 w-4 text-accent" />
-                        <span>
+                        <User className={`h-4 w-4 ${getRoleColorClass(viewingProject.assigned_to_role)}`} />
+                        <span className={getRoleColorClass(viewingProject.assigned_to_role)}>
                           {viewingProject.assigned_to_email || 'No asignado'}
-                          {viewingProject.assigned_to_role ? ` (${viewingProject.assigned_to_role})` : ''}
+                          <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
+                            ({viewingProject.assigned_to_role || 'Usuario'})
+                          </span>
                         </span>
                       </div>
                     </div>

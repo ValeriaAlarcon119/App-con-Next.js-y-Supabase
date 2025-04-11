@@ -8,7 +8,9 @@ import {
   Files,
   BookOpen,
   Upload,
-  FileText
+  FileText,
+  Settings,
+  Bell
 } from "lucide-react"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -396,40 +398,51 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle>Tareas Pendientes</CardTitle>
               <CardDescription>
-                Listado de tareas pendientes asociadas a tus proyectos
+                Lista de tareas pendientes para completar el desarrollo
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-start space-x-4">
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium leading-none">
-                      Descargar archivos de proyectos
-                    </label>
-                    <p className="text-xs text-muted-foreground">
-                      Estado: Pendiente
-                    </p>
-                  </div>
+                <div className="border rounded-lg p-4 bg-amber-50 dark:bg-amber-950/20">
+                  <h3 className="font-medium flex items-center gap-2 text-amber-800 dark:text-amber-400">
+                    <CheckCircle className="h-5 w-5" />
+                    Gestión de Estados de Proyectos
+                  </h3>
+                  <p className="text-sm mt-1 text-amber-700 dark:text-amber-300">
+                    Implementar lógica completa del estado de cada proyecto, incluyendo notificaciones 
+                    automáticas cuando un proyecto cambia de estado.
+                  </p>
                 </div>
-                <div className="flex items-start space-x-4">
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium leading-none">
-                      Mejorar diseño de la interfaz
-                    </label>
-                    <p className="text-xs text-muted-foreground">
-                      Estado: Pendiente
-                    </p>
-                  </div>
+                
+                <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-950/20">
+                  <h3 className="font-medium flex items-center gap-2 text-blue-800 dark:text-blue-400">
+                    <Settings className="h-5 w-5" />
+                    Gestión de Usuarios
+                  </h3>
+                  <p className="text-sm mt-1 text-blue-700 dark:text-blue-300">
+                    Mejorar la lógica en configuración para gestionar la edición de usuarios y sus permisos.
+                  </p>
                 </div>
-                <div className="flex items-start space-x-4">
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium leading-none">
-                      Implementar sistema de notificaciones
-                    </label>
-                    <p className="text-xs text-muted-foreground">
-                      Estado: Pendiente
-                    </p>
-                  </div>
+                
+                <div className="border rounded-lg p-4 bg-violet-50 dark:bg-violet-950/20">
+                  <h3 className="font-medium flex items-center gap-2 text-violet-800 dark:text-violet-400">
+                    <BookOpen className="h-5 w-5" />
+                    Internacionalización
+                  </h3>
+                  <p className="text-sm mt-1 text-violet-700 dark:text-violet-300">
+                    Implementar soporte completo para idioma inglés en toda la aplicación.
+                  </p>
+                </div>
+                
+                <div className="border rounded-lg p-4 bg-green-50 dark:bg-green-950/20">
+                  <h3 className="font-medium flex items-center gap-2 text-green-800 dark:text-green-400">
+                    <Bell className="h-5 w-5" />
+                    Sistema de Notificaciones
+                  </h3>
+                  <p className="text-sm mt-1 text-green-700 dark:text-green-300">
+                    Mejorar el funcionamiento de notificaciones para alertar sobre cambios en proyectos y 
+                    asignaciones.
+                  </p>
                 </div>
               </div>
             </CardContent>

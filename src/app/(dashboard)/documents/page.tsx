@@ -331,7 +331,7 @@ export default function DocumentsPage() {
           <Button 
             variant="outline" 
             onClick={() => setShowFilters(!showFilters)}
-            className="w-10 h-10 p-0 flex items-center justify-center text-blue-600 dark:text-blue-500 border-blue-200 dark:border-blue-800"
+            className="w-10 h-10 p-0 flex items-center justify-center text-blue-600 dark:text-blue-500 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20"
           >
             <Filter className="h-5 w-5" />
           </Button>
@@ -339,12 +339,12 @@ export default function DocumentsPage() {
       </div>
       
       {showFilters && (
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6 border border-gray-200 dark:border-blue-800/60">
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-[200px]">
               <label className="text-sm font-medium mb-1 block">Tipo de documento</label>
               <select 
-                className="w-full p-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                className="w-full p-2 rounded-md border border-gray-300 dark:border-blue-800 bg-white dark:bg-gray-800 dark:text-gray-100"
                 value={typeFilter || ''}
                 onChange={(e) => setTypeFilter(e.target.value || null)}
               >
@@ -359,7 +359,7 @@ export default function DocumentsPage() {
             <div className="flex-1 min-w-[200px]">
               <label className="text-sm font-medium mb-1 block">Proyecto</label>
               <select 
-                className="w-full p-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                className="w-full p-2 rounded-md border border-gray-300 dark:border-blue-800 bg-white dark:bg-gray-800 dark:text-gray-100"
                 value={categoryFilter || ''}
                 onChange={(e) => setCategoryFilter(e.target.value || null)}
               >
@@ -369,7 +369,7 @@ export default function DocumentsPage() {
                 ))}
               </select>
             </div>
-            <Button variant="ghost" onClick={clearFilters} className="h-10">
+            <Button variant="ghost" onClick={clearFilters} className="h-10 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20">
               <X className="mr-2 h-4 w-4" />
               Limpiar filtros
             </Button>
