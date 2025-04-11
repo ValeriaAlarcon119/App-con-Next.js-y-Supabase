@@ -134,7 +134,7 @@ export default function SettingsPage() {
     <div className="container mx-auto py-8 px-4 max-w-screen-xl">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Ajustes</h1>
+          <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-900">Ajustes</h1>
           <p className="text-muted-foreground">Personaliza tu experiencia y administra tu cuenta</p>
         </div>
       </div>

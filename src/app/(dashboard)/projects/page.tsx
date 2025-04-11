@@ -23,14 +23,7 @@ import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+
 import {
   Dialog,
   DialogContent,
@@ -105,7 +98,7 @@ const FileInput = ({ onChange, disabled, multiple = false }: {
       <Button
         type="button"
         variant="outline"
-        className="w-auto bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200"
+        className="w-auto bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 hover:from-gray-100 hover:to-gray-200 dark:hover:from-gray-700 dark:hover:to-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-200 shadow-sm hover:shadow-md"
         onClick={() => inputRef.current?.click()}
         disabled={disabled}
       >
@@ -116,13 +109,12 @@ const FileInput = ({ onChange, disabled, multiple = false }: {
   );
 };
 
-// Añadir función para sanitizar nombres de archivos
 const sanitizeFileName = (fileName: string): string => {
-  // Eliminar caracteres especiales y espacios
+
   let sanitized = fileName
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
-    .replace(/[^\w.-]/g, "_"); // Reemplazar caracteres no alfanuméricos por guiones bajos
+    .replace(/[\u0300-\u036f]/g, "") 
+    .replace(/[^\w.-]/g, "_"); 
   
   return sanitized;
 };
@@ -368,7 +360,6 @@ export default function ProjectsPage() {
     try {
       setIsCreatingProject(true);
 
-      // Validar que se haya seleccionado un diseñador
       if (formData.assigned_to === "unassigned") {
         toast({
           title: "Error",
@@ -381,7 +372,6 @@ export default function ProjectsPage() {
       
       console.log("Archivos a subir:", formData.files);
       
-      // Primero crear el proyecto
       const { data: projectData, error } = await supabase
         .from('projects')
         .insert([
@@ -390,7 +380,7 @@ export default function ProjectsPage() {
             description: formData.description,
             created_by: user?.id,
             assigned_to: formData.assigned_to === "unassigned" ? null : formData.assigned_to,
-            files: [] // Inicialmente vacío, actualizaremos después de subir los archivos
+            files: [] 
           },
         ])
         .select();
@@ -408,7 +398,6 @@ export default function ProjectsPage() {
       const newProjectId = projectData?.[0]?.id;
       console.log("Proyecto creado con ID:", newProjectId);
       
-      // Si hay archivos para subir
       if (formData.files.length > 0 && newProjectId) {
         setUploadingFiles(true);
         
@@ -417,19 +406,17 @@ export default function ProjectsPage() {
             const progress = Math.round(((index + 1) / formData.files.length) * 100);
             setFileProgress(progress);
             
-            // Si ya tenemos la URL, significa que ya fue cargado
             if (file.url) return file;
             
             try {
-              // Sanitizar el nombre del archivo antes de crear la ruta
+             
               const safeFileName = sanitizeFileName(file.name);
               
-              // Crear una ruta única para el archivo en Storage
+             
               const filePath = `projects/${newProjectId}/${safeFileName}`;
               
               console.log('Intentando subir archivo a:', filePath);
               
-              // Subir el archivo a Storage
               const { data, error: uploadError } = await supabase.storage
                 .from('documents')
                 .upload(filePath, file.file instanceof Blob ? file.file : new Blob([]), {
@@ -447,7 +434,6 @@ export default function ProjectsPage() {
                 return null;
               }
               
-              // Construir objeto de archivo con URL
               const fileUrl = supabase.storage.from('documents').getPublicUrl(filePath).data.publicUrl;
               
               console.log('Archivo subido exitosamente:', {
@@ -458,7 +444,7 @@ export default function ProjectsPage() {
               });
               
               return {
-                name: file.name, // Mantener el nombre original para mostrar al usuario
+                name: file.name, 
                 path: filePath,
                 type: file.type,
                 size: file.size,
@@ -471,12 +457,10 @@ export default function ProjectsPage() {
           })
         );
         
-        // Filtrar cualquier archivo que falló en cargar
         const successfullyUploadedFiles = uploadedFiles.filter(Boolean) as FileObject[];
         
         console.log('Archivos subidos exitosamente:', successfullyUploadedFiles);
         
-        // Actualizar el proyecto con la lista de archivos
         if (successfullyUploadedFiles.length > 0) {
           const { error: updateError } = await supabase
             .from('projects')
@@ -501,10 +485,9 @@ export default function ProjectsPage() {
       }
 
       console.log("Actualizando lista de proyectos")
-      // Actualizar la lista de proyectos
+   
       await fetchProjects()
-      
-      // Resetear el formulario
+ 
       setFormData({
         title: '',
         description: '',
@@ -518,7 +501,6 @@ export default function ProjectsPage() {
         className: "bg-green-100 border-green-500 text-green-800",
       })
       
-      // Cerrar el modal después de crear el proyecto
       setDialogOpen(false)
     } catch (error: any) {
       console.error('Error creating project:', error)
@@ -528,7 +510,6 @@ export default function ProjectsPage() {
         variant: "destructive",
       })
     } finally {
-      // Asegurar que siempre se resetee el estado de creación
       console.log("Finalizando proceso...")
       setTimeout(() => {
         setIsCreatingProject(false)
@@ -571,10 +552,14 @@ export default function ProjectsPage() {
               isError: true
             })
           } else {
-            setTitleStatus({
-              message: "Título disponible",
-              isError: false
-            })
+            if (value.trim()) {
+              setTitleStatus({
+                message: "Título disponible",
+                isError: false
+              })
+            } else {
+              setTitleStatus(null)
+            }
           }
         } catch (err) {
           console.error("Error en la comprobación:", err)
@@ -585,6 +570,10 @@ export default function ProjectsPage() {
       }, 500)
       
       setTitleCheckTimeout(timeout)
+    } else if (name === 'title' && !value.trim()) {
+
+      setTitleStatus(null)
+      setIsTitleCheckPending(false)
     }
   }
 
@@ -745,7 +734,7 @@ export default function ProjectsPage() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="icon-button text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            className="icon-button text-blue-600 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-900/20"
             onClick={() => viewProjectDetails(project)}
             title="Ver detalles"
           >
@@ -757,7 +746,7 @@ export default function ProjectsPage() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="icon-button text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+            className="icon-button text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-900/20"
             onClick={() => handleEditProject(project)}
             title="Editar proyecto"
           >
@@ -771,7 +760,7 @@ export default function ProjectsPage() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="icon-button text-destructive hover:bg-destructive/10"
+                className="icon-button text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/20"
                 title="Eliminar proyecto"
               >
                 <Trash2 className="h-4 w-4" />
@@ -866,9 +855,8 @@ export default function ProjectsPage() {
     const selectedFiles = e.target.files;
     if (!selectedFiles || selectedFiles.length === 0) return;
     
-    // Convertir FileList a un array de objetos de archivo
     const newFiles: FileObject[] = Array.from(selectedFiles).map(file => {
-      // Determinar el tipo de archivo
+
       let fileType = 'file';
       if (file.type.includes('image')) fileType = 'image';
       else if (file.type.includes('pdf')) fileType = 'pdf';
@@ -883,7 +871,7 @@ export default function ProjectsPage() {
         path: '',
         type: fileType,
         size: file.size,
-        file: file // Referencia al archivo físico para subir después
+        file: file 
       };
     });
     
@@ -892,7 +880,6 @@ export default function ProjectsPage() {
       files: [...prev.files, ...newFiles]
     }));
     
-    // Limpiar el input de archivos para permitir seleccionar los mismos archivos nuevamente
     e.target.value = '';
   };
 
@@ -900,9 +887,9 @@ export default function ProjectsPage() {
     const selectedFiles = e.target.files;
     if (!selectedFiles || selectedFiles.length === 0) return;
     
-    // Convertir FileList a un array de objetos de archivo
+
     const newFiles: FileObject[] = Array.from(selectedFiles).map(file => {
-      // Determinar el tipo de archivo
+  
       let fileType = 'file';
       if (file.type.includes('image')) fileType = 'image';
       else if (file.type.includes('pdf')) fileType = 'pdf';
@@ -917,7 +904,7 @@ export default function ProjectsPage() {
         path: '',
         type: fileType,
         size: file.size,
-        file: file // Referencia al archivo físico para subir después
+        file: file 
       };
     });
     
@@ -926,7 +913,6 @@ export default function ProjectsPage() {
       files: [...prev.files, ...newFiles]
     }));
     
-    // Limpiar el input de archivos para permitir seleccionar los mismos archivos nuevamente
     e.target.value = '';
   };
 
@@ -999,7 +985,7 @@ export default function ProjectsPage() {
   }
 
   const initiateProjectUpdate = () => {
-    // Validar que se haya seleccionado un diseñador
+
     if (editFormData.assigned_to === "unassigned") {
       toast({
         title: "Error",
@@ -1009,7 +995,6 @@ export default function ProjectsPage() {
       return;
     }
 
-    // Guardar los cambios pendientes
     setPendingEditChanges({
       id: editingProject?.id,
       title: editFormData.title,
@@ -1017,37 +1002,30 @@ export default function ProjectsPage() {
       assigned_to: editFormData.assigned_to,
     });
     
-    // Abrir el diálogo de confirmación
     setConfirmDialogOpen(true);
   };
 
-  // Corregir la función updateProject
   const updateProject = async () => {
     if (!pendingEditChanges) return;
     
     try {
       setIsEditingProject(true);
       
-      // Procesar archivos nuevos primero, si hay alguno
       const allFiles = [...editFormData.files];
       const uploadedNewFiles: FileObject[] = [];
       
-      // Subir archivos nuevos
       for (const file of editFormData.files) {
-        // Si el archivo ya tiene URL, significa que ya existe y no necesitamos subirlo de nuevo
         if (file.url) continue;
         
         try {
           if (file.file) {
-            // Sanitizar el nombre del archivo antes de crear la ruta
+   
             const safeFileName = sanitizeFileName(file.name);
             
-            // Crear una ruta única para el archivo en Storage
             const filePath = `projects/${pendingEditChanges.id}/${safeFileName}`;
             
             console.log('Intentando subir archivo a:', filePath);
-            
-            // Subir el archivo a Storage
+ 
             const { data, error: uploadError } = await supabase.storage
               .from('documents')
               .upload(filePath, file.file instanceof Blob ? file.file : new Blob([]), {
@@ -1060,7 +1038,6 @@ export default function ProjectsPage() {
               continue;
             }
             
-            // Construir objeto de archivo con URL
             const fileUrl = supabase.storage.from('documents').getPublicUrl(filePath).data.publicUrl;
             
             console.log('Archivo subido exitosamente durante actualización:', {
@@ -1083,8 +1060,6 @@ export default function ProjectsPage() {
           console.error('Error processing file:', err);
         }
       }
-      
-      // Combinar archivos existentes (con URL) y nuevos archivos subidos
       const updatedFiles = allFiles.filter(file => file.url).concat(uploadedNewFiles);
       
       console.log('Actualizando proyecto con archivos:', updatedFiles);
@@ -1228,7 +1203,6 @@ export default function ProjectsPage() {
     }
   };
 
-  // Función para obtener la clase de color según el rol
   const getRoleColorClass = (role?: string) => {
     if (!role) return '';
     
@@ -1243,7 +1217,6 @@ export default function ProjectsPage() {
     return '';
   }
 
-  // Función para obtener la clase de fondo según el rol
   const getRoleBackgroundClass = (role?: string) => {
     if (!role) return 'bg-white/50 dark:bg-gray-800/50';
     
@@ -1258,7 +1231,6 @@ export default function ProjectsPage() {
     return 'bg-white/50 dark:bg-gray-800/50';
   }
 
-  // Función para obtener el color del borde según el rol
   const getRoleBorderClass = (role?: string) => {
     if (!role) return 'border-t-gray-200 dark:border-t-gray-700';
     
@@ -1273,7 +1245,6 @@ export default function ProjectsPage() {
     return 'border-t-gray-200 dark:border-t-gray-700';
   }
 
-  // Función para obtener el icono según el rol
   const getRoleIcon = (role?: string) => {
     const normalizedRole = role?.toLowerCase() || '';
     if (normalizedRole === 'cliente' || normalizedRole === 'client') 
@@ -1292,180 +1263,179 @@ export default function ProjectsPage() {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         <p className="mt-4 text-muted-foreground">Cargando proyectos...</p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-50/70 via-slate-50 to-indigo-50/70 dark:from-gray-900 dark:via-black dark:to-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse dark:bg-blue-900"></div>
-        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse dark:bg-indigo-900"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5 backdrop-blur-sm dark:from-blue-900/20 dark:to-indigo-900/20"></div>
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-100 via-slate-100 to-indigo-100 dark:from-gray-900 dark:via-black dark:to-gray-900 p-4 rounded-xl shadow-sm border border-gray-300 dark:border-gray-800">
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse dark:bg-blue-900"></div>
+        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse dark:bg-indigo-900"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 backdrop-blur-sm dark:from-blue-900/20 dark:to-indigo-900/20"></div>
         
         <div className="relative flex flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left md:items-center">
           <div className="mx-auto md:mx-0">
-            <h1 className="text-3xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-black to-gray-700 drop-shadow-sm tracking-tight dark:from-white dark:to-gray-300">
+            <h1 className="text-3xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 drop-shadow-sm tracking-tight dark:from-white dark:to-gray-300">
               Gestión de Proyectos
             </h1>
             
-            <span className="inline-block bg-blue-100 text-blue-800 py-0.5 px-2 rounded-full text-xs mt-1 dark:bg-blue-900/40 dark:text-white font-medium">
+            <span className="inline-block bg-blue-200 text-blue-900 py-0.5 px-2 rounded-full text-xs mt-1 dark:bg-blue-900/40 dark:text-white font-medium">
               {isProjectManager && "Acceso completo"}
               {isClient && "Puedes crear proyectos"}
               {isDesigner && "Solo visualización"}
             </span>
           </div>
-          
-          {canCreate && (
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="relative overflow-hidden bg-black hover:bg-gray-800 shadow-sm hover:shadow-black/10 transition-all duration-300 border border-gray-800 h-8 px-3 text-xs text-white">
-                  <Plus className="mr-1 h-3.5 w-3.5 text-white" />
-                  <span className="font-medium">Agregar</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Briefcase className="h-5 w-5 text-primary" />
-                    Crear nuevo proyecto
-                  </DialogTitle>
-                  <DialogDescription>
-                    Completa los detalles del proyecto y asígnalo a un diseñador.
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-6 py-4">
-                  {isCreatingProject && (
-                    <div className="mb-4">
-                      <Progress value={createProgress} className="h-2" />
-                    </div>
-                  )}
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Título del proyecto <span className="text-destructive">*</span></Label>
-                    <Input 
-                      id="title"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      placeholder="Ej. Rediseño de marca"
-                      disabled={isCreatingProject}
-                      className={`rounded-md ${titleStatus?.isError ? 'border-destructive focus-visible:ring-destructive' : titleStatus && !titleStatus.isError ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
-                    />
-                    {isTitleCheckPending && (
-                      <div className="text-xs text-muted-foreground flex items-center mt-1">
-                        <div className="animate-spin w-3 h-3 border border-muted-foreground rounded-full border-t-transparent mr-1"></div>
-                        Verificando disponibilidad...
-                      </div>
-                    )}
-                    {titleStatus && (
-                      <p className={`text-xs ${titleStatus.isError ? 'text-destructive' : 'text-green-500'} mt-1`}>
-                        {titleStatus.message}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Descripción</Label>
-                    <Textarea 
-                      id="description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      placeholder="Detalla los objetivos y requisitos del proyecto"
-                      disabled={isCreatingProject}
-                      className="rounded-md min-h-[120px]"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="assigned_to">Asignar a diseñador <span className="text-destructive">*</span></Label>
-                    <Select 
-                      disabled={isCreatingProject} 
-                      onValueChange={handleSelectChange}
-                      value={formData.assigned_to}
-                    >
-                      <SelectTrigger className="rounded-md">
-                        <SelectValue placeholder="Seleccionar diseñador" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unassigned">Sin asignar</SelectItem>
-                        {designers.length > 0 ? (
-                          designers.map(designer => (
-                            <SelectItem key={designer.id} value={designer.id}>
-                              {designer.email} (Diseñador)
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="no-designers" disabled>
-                            No hay diseñadores disponibles
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Archivos del proyecto</Label>
-                    <FileInput 
-                      onChange={handleFileSelect}
-                      disabled={isCreatingProject}
-                      multiple
-                    />
-                    
-                    {formData.files.length > 0 && (
-                      <div className="mt-2 space-y-2">
-                        <p className="text-sm font-medium">Archivos añadidos:</p>
-                        <div className="bg-muted/50 rounded-md p-2 space-y-1">
-                          {formData.files.map((file, index) => (
-                            <div key={index} className="flex items-center justify-between bg-background rounded px-3 py-1.5 text-sm">
-                              <div className="flex items-center">
-                                <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                                <span>{file.name}</span>
-                              </div>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6 text-destructive"
-                                onClick={() => handleRemoveFile(index)}
-                                disabled={isCreatingProject}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <DialogFooter className="gap-2 flex justify-center sm:justify-center">
-                  <DialogClose asChild>
-                    <Button variant="destructive" disabled={isCreatingProject}>
-                      Cancelar
-                    </Button>
-                  </DialogClose>
-                  <Button 
-                    onClick={createProject}
-                    disabled={isCreatingProject || titleStatus?.isError === true}
-                    className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
-                  >
-                    {isCreatingProject ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Creando...
-                      </>
-                    ) : (
-                      'Crear proyecto'
-                    )}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
+
+          <Button
+            className="bg-black text-white dark:bg-white dark:text-black hover:opacity-90 transition-all"
+            onClick={() => setDialogOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar
+          </Button>
         </div>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-primary" />
+              Crear nuevo proyecto
+            </DialogTitle>
+            <DialogDescription>
+              Completa los detalles del proyecto y asígnalo a un diseñador.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {isCreatingProject && (
+              <div className="mb-4">
+                <Progress value={createProgress} className="h-2" />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="title-empty">Título del proyecto <span className="text-destructive">*</span></Label>
+              <Input
+                id="title-empty"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                placeholder="Ej. Rediseño de marca"
+                disabled={isCreatingProject}
+                className={`rounded-md ${titleStatus?.isError ? 'border-destructive focus-visible:ring-destructive' : titleStatus && !titleStatus.isError ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
+              />
+              {isTitleCheckPending && (
+                <div className="text-xs text-muted-foreground flex items-center mt-1">
+                  <div className="animate-spin w-3 h-3 border border-muted-foreground rounded-full border-t-transparent mr-1"></div>
+                  Verificando disponibilidad...
+                </div>
+              )}
+              {titleStatus && (
+                <p className={`text-xs ${titleStatus.isError ? 'text-destructive' : 'text-green-500'} mt-1`}>
+                  {titleStatus.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description-empty">Descripción</Label>
+              <Textarea
+                id="description-empty"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Detalla los objetivos y requisitos del proyecto"
+                disabled={isCreatingProject}
+                className="rounded-md min-h-[120px]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="assigned_to-empty">Asignar a diseñador <span className="text-destructive">*</span></Label>
+              <Select
+                disabled={isCreatingProject}
+                onValueChange={handleSelectChange}
+                value={formData.assigned_to}
+              >
+                <SelectTrigger className="rounded-md">
+                  <SelectValue placeholder="Seleccionar diseñador" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Sin asignar</SelectItem>
+                  {designers.length > 0 ? (
+                    designers.map(designer => (
+                      <SelectItem key={designer.id} value={designer.id}>
+                        {designer.email} (Diseñador)
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-designers" disabled>
+                      No hay diseñadores disponibles
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Archivos del proyecto</Label>
+              <FileInput
+                onChange={handleFileSelect}
+                disabled={isCreatingProject}
+                multiple
+              />
+              {formData.files.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  <p className="text-sm font-medium">Archivos seleccionados:</p>
+                  <div className="bg-muted/50 rounded-md p-2 space-y-1">
+                    {formData.files.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between bg-background rounded px-3 py-1.5 text-sm">
+                        <div className="flex items-center">
+                          {getFileIcon(file.type)}
+                          <span className="ml-2">{file.name}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-destructive"
+                          onClick={() => handleRemoveFile(index)}
+                          disabled={isCreatingProject}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 flex justify-center sm:justify-center">
+            <DialogClose asChild>
+              <Button variant="outline" disabled={isCreatingProject}>
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button
+              onClick={createProject}
+              disabled={isCreatingProject || titleStatus?.isError === true}
+              className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
+            >
+              {isCreatingProject ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Creando...
+                </>
+              ) : (
+                'Crear proyecto'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Tabs defaultValue="grid" className="w-full">
         <div className="flex flex-col gap-4">
@@ -1473,24 +1443,24 @@ export default function ProjectsPage() {
             <div className="flex flex-wrap items-center gap-3">
               <Button 
                 variant="default" 
-                className="bg-blue-500 hover:bg-blue-600 text-white h-8 px-3 text-xs shadow-sm"
+                className="bg-black hover:bg-gray-900 text-white h-8 px-3 text-xs shadow-sm dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-white"
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <Filter className="h-3.5 w-3.5 text-white" />
                 {(statusFilter || creatorFilter || designerFilter) && (
-                  <Badge variant="secondary" className="ml-2 text-xs bg-white text-blue-700">
+                  <Badge variant="secondary" className="ml-2 text-xs bg-white text-black dark:bg-gray-800 dark:text-white">
                     {[statusFilter, creatorFilter, designerFilter].filter(Boolean).length}
                   </Badge>
                 )}
               </Button>
               
               <div className="relative w-40 md:w-64">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground dark:text-black" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-300" />
                 <Input
                   placeholder="Buscar proyectos..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 w-full border-gray-200 dark:border-gray-800 text-gray-900 dark:text-black"
+                  className="pl-9 w-full border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white bg-white dark:bg-black"
                 />
               </div>
             </div>
@@ -1652,16 +1622,19 @@ export default function ProjectsPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-1 pb-2 flex-grow">
-                    <p className="text-xs text-muted-foreground mb-2 line-clamp-2 font-light italic">
-                      {project.description || "Sin descripción"}
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="relative overflow-hidden flex items-center gap-1 text-xs bg-gradient-to-br from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-blue-900/20 p-2 rounded-md border border-blue-100/50 dark:border-blue-800/30">
-                        <div className="absolute -top-10 -left-10 w-20 h-20 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
-                        <User className="h-3 w-3 text-blue-700 dark:text-blue-400" />
+                    <div className="p-4 rounded-md shadow-sm border border-gray-300 dark:border-gray-700 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800">
+                      <h3 className="font-medium mb-2">Detalles del proyecto</h3>
+                      <p className="text-sm text-gray-800 dark:text-gray-300">
+                        {project.description || "Sin descripción"}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-4">
+                      <div className="relative overflow-hidden flex items-center gap-1 text-xs bg-gradient-to-br from-blue-100 via-indigo-100 to-blue-100 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-blue-900/20 p-2 rounded-md border border-blue-200 dark:border-blue-800/30">
+                        <div className="absolute -top-10 -left-10 w-20 h-20 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse dark:bg-blue-900"></div>
+                        <User className="h-3 w-3 text-blue-800 dark:text-blue-400" />
                         <div>
-                          <p className="font-medium text-[10px] text-gray-600 dark:text-gray-400">Creado por:</p>
-                          <p className="text-gray-800 dark:text-gray-200 text-[10px] truncate">
+                          <p className="font-medium text-[10px] text-gray-700 dark:text-gray-400">Creado por:</p>
+                          <p className="text-gray-900 dark:text-gray-200 text-[10px] truncate">
                             {project.created_by_email ? project.created_by_email.split('@')[0] : 'No asignado'}
                           </p>
                         </div>
@@ -1680,12 +1653,12 @@ export default function ProjectsPage() {
                   </CardContent>
                   <CardFooter className="flex justify-between p-3 pt-2 border-t border-gray-100 dark:border-gray-800 mt-auto">
                     <div className="flex items-center gap-1">
-                      <FileText className="h-3 w-3 text-gray-500" />
-                      <span className="text-[10px] text-gray-500">
+                      <FileText className="h-3 w-3 text-gray-500 dark:text-white" />
+                      <span className="text-[10px] text-gray-500 dark:text-white">
                         {project.files?.length || 0}
                       </span>
-                      <Clock className="h-3 w-3 text-gray-500 ml-1" />
-                      <span className="text-[10px] text-gray-500">
+                      <Clock className="h-3 w-3 text-gray-500 dark:text-white ml-1" />
+                      <span className="text-[10px] text-gray-500 dark:text-white">
                         {formatDate(project.updated_at)}
                       </span>
                     </div>
@@ -1705,108 +1678,13 @@ export default function ProjectsPage() {
                     : "Crea tu primer proyecto para comenzar"}
                 </p>
                 {canCreate && !searchTerm && !statusFilter && !creatorFilter && !designerFilter && (
-                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="mt-4 bg-gradient-to-r from-primary to-accent hover:opacity-90">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Crear primer proyecto
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[500px]">
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                          <Briefcase className="h-5 w-5 text-primary" />
-                          Crear nuevo proyecto
-                        </DialogTitle>
-                        <DialogDescription>
-                          Completa los detalles del proyecto y asígnalo a un diseñador.
-                        </DialogDescription>
-                      </DialogHeader>
-                      
-                      <div className="space-y-6 py-4">
-                        {isCreatingProject && (
-                          <div className="mb-4">
-                            <Progress value={createProgress} className="h-2" />
-                          </div>
-                        )}
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="title-empty">Título del proyecto <span className="text-destructive">*</span></Label>
-                          <Input 
-                            id="title-empty"
-                            name="title"
-                            value={formData.title}
-                            onChange={handleInputChange}
-                            placeholder="Ej. Rediseño de marca"
-                            disabled={isCreatingProject}
-                            className="rounded-md"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="description-empty">Descripción</Label>
-                          <Textarea 
-                            id="description-empty"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleInputChange}
-                            placeholder="Detalla los objetivos y requisitos del proyecto"
-                            disabled={isCreatingProject}
-                            className="rounded-md min-h-[120px]"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="assigned_to-empty">Asignar a diseñador <span className="text-destructive">*</span></Label>
-                          <Select 
-                            disabled={isCreatingProject} 
-                            onValueChange={handleSelectChange}
-                            value={formData.assigned_to}
-                          >
-                            <SelectTrigger className="rounded-md">
-                              <SelectValue placeholder="Seleccionar diseñador" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="unassigned">Sin asignar</SelectItem>
-                              {designers.length > 0 ? (
-                                designers.map(designer => (
-                                  <SelectItem key={designer.id} value={designer.id}>
-                                    {designer.email} (Diseñador)
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <SelectItem value="no-designers" disabled>
-                                  No hay diseñadores disponibles
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      
-                      <DialogFooter className="gap-2 flex justify-center sm:justify-center">
-                        <DialogClose asChild>
-                          <Button variant="outline" disabled={isCreatingProject}>
-                            Cancelar
-                          </Button>
-                        </DialogClose>
-                        <Button 
-                          onClick={createProject}
-                          disabled={isCreatingProject || titleStatus?.isError === true}
-                          className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
-                        >
-                          {isCreatingProject ? (
-                            <>
-                              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                              Creando...
-                            </>
-                          ) : (
-                            'Crear proyecto'
-                          )}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <Button 
+                    className="mt-4 bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                    onClick={() => setDialogOpen(true)}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Crear primer proyecto
+                  </Button>
                 )}
               </div>
             )}
@@ -1881,7 +1759,7 @@ export default function ProjectsPage() {
       </Tabs>
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="sm:max-w-[650px] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-gray-200 dark:border-gray-700">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-gray-200 dark:border-gray-700">
           {viewingProject && (
             <>
               <DialogHeader>
@@ -1889,15 +1767,6 @@ export default function ProjectsPage() {
                   <Briefcase className="h-6 w-6 text-primary" />
                   {viewingProject.title}
                 </DialogTitle>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-2">
-                  <span className="flex items-center text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    Creado el {formatDate(viewingProject.created_at)}
-                  </span>
-                  <div className="sm:ml-auto">
-                    {getStatusBadge(viewingProject.status)}
-                  </div>
-                </div>
               </DialogHeader>
               
               <div className="py-4">
@@ -1908,273 +1777,8 @@ export default function ProjectsPage() {
                       {viewingProject.description || "Sin descripción"}
                     </p>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className={`p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700 ${getRoleBackgroundClass(viewingProject.created_by_role)} border-t-2 ${getRoleBorderClass(viewingProject.created_by_role)} relative`}>
-                      <span className={`absolute right-2 top-2 inline-flex items-center justify-center rounded-full p-1 ${getRoleColorClass(viewingProject.created_by_role)} bg-white/80 dark:bg-gray-800/80 border border-current`} title={viewingProject.created_by_role || 'Usuario'}>
-                        {getRoleIcon(viewingProject.created_by_role)}
-                      </span>
-                      <h3 className="font-medium mb-2">Creado por</h3>
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className={`h-4 w-4 ${getRoleColorClass(viewingProject.created_by_role)}`} />
-                        <span className={getRoleColorClass(viewingProject.created_by_role)}>
-                          {viewingProject.created_by_email || 'No asignado'} 
-                          <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
-                            ({viewingProject.created_by_role || 'Usuario'})
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className={`p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700 ${getRoleBackgroundClass(viewingProject.assigned_to_role)} border-t-2 ${getRoleBorderClass(viewingProject.assigned_to_role)} relative`}>
-                      <span className={`absolute right-2 top-2 inline-flex items-center justify-center rounded-full p-1 ${getRoleColorClass(viewingProject.assigned_to_role)} bg-white/80 dark:bg-gray-800/80 border border-current`} title={viewingProject.assigned_to_role || 'Usuario'}>
-                        {getRoleIcon(viewingProject.assigned_to_role)}
-                      </span>
-                      <h3 className="font-medium mb-2">Asignado a</h3>
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className={`h-4 w-4 ${getRoleColorClass(viewingProject.assigned_to_role)}`} />
-                        <span className={getRoleColorClass(viewingProject.assigned_to_role)}>
-                          {viewingProject.assigned_to_email || 'No asignado'}
-                          <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
-                            ({viewingProject.assigned_to_role || 'Usuario'})
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6">
-                    <h3 className="text-lg font-semibold mb-2">Archivos adjuntos</h3>
-                    {viewingProject && viewingProject.files && viewingProject.files.length > 0 ? (
-                      <div className="space-y-2">
-                        {viewingProject.files.map((file, index) => (
-                          <div key={index} className="flex items-center gap-2 text-sm">
-                            {getFileIcon(file.type)}
-                            <span>{file.name}</span>
-                            {file.url && (
-                              <div className="ml-auto flex gap-1">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="h-6 w-6 p-0 text-blue-600"
-                                  onClick={() => window.open(file.url, '_blank')}
-                                >
-                                  <Eye className="h-3 w-3" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="h-6 w-6 p-0 text-green-600"
-                                  onClick={() => downloadFile(file.url!, file.name)}
-                                >
-                                  <Download className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">No hay archivos adjuntos</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium mb-2">Información adicional</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm bg-white/50 dark:bg-gray-800/50 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span>{viewingProject.files?.length || 0} archivos</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span>Actualizado: {formatDate(viewingProject.updated_at)}</span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
-              
-              <DialogFooter className="gap-2 flex justify-center sm:justify-center pt-4 border-t border-gray-200 dark:border-gray-700">
-                <Button 
-                  variant="destructive" 
-                  onClick={() => setViewDialogOpen(false)}
-                >
-                  Cerrar
-                </Button>
-                {canEdit && (
-                  <Button 
-                    variant="outline"
-                    className="text-indigo-700 border-indigo-700 hover:bg-indigo-100 dark:text-indigo-400 dark:border-indigo-400 dark:hover:bg-indigo-900/20"
-                    onClick={() => {
-                      setViewDialogOpen(false)
-                      handleEditProject(viewingProject)
-                    }}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar
-                  </Button>
-                )}
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-gray-200 dark:border-gray-700">
-          {editingProject && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Edit2 className="h-5 w-5 text-primary" />
-                  Editar proyecto
-                </DialogTitle>
-                <DialogDescription>
-                  Actualiza los detalles del proyecto.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-6 py-4">
-                {isEditingProject && (
-                  <div className="mb-4">
-                    <Progress value={editProgress} className="h-2" />
-                  </div>
-                )}
-                
-                <div className="space-y-2">
-                  <Label htmlFor="edit-title">Título del proyecto <span className="text-destructive">*</span></Label>
-                  <Input 
-                    id="edit-title"
-                    name="title"
-                    value={editFormData.title}
-                    onChange={handleEditInputChange}
-                    placeholder="Ej. Rediseño de marca"
-                    disabled={isEditingProject}
-                    className={`rounded-md ${editTitleStatus?.isError ? 'border-destructive focus-visible:ring-destructive' : editTitleStatus && !editTitleStatus.isError ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
-                  />
-                  {isEditTitleCheckPending && (
-                    <div className="text-xs text-muted-foreground flex items-center mt-1">
-                      <div className="animate-spin w-3 h-3 border border-muted-foreground rounded-full border-t-transparent mr-1"></div>
-                      Verificando disponibilidad...
-                    </div>
-                  )}
-                  {editTitleStatus && (
-                    <p className={`text-xs ${editTitleStatus.isError ? 'text-destructive' : 'text-green-500'} mt-1`}>
-                      {editTitleStatus.message}
-                    </p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="edit-description">Descripción</Label>
-                  <Textarea 
-                    id="edit-description"
-                    name="description"
-                    value={editFormData.description}
-                    onChange={handleEditInputChange}
-                    placeholder="Detalla los objetivos y requisitos del proyecto"
-                    disabled={isEditingProject}
-                    className="rounded-md min-h-[120px]"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="edit-assigned_to">Asignar a diseñador <span className="text-destructive">*</span></Label>
-                  <Select 
-                    disabled={isEditingProject} 
-                    onValueChange={(value) => handleEditSelectChange('assigned_to', value)}
-                    value={editFormData.assigned_to || "unassigned"}
-                  >
-                    <SelectTrigger className="rounded-md">
-                      <SelectValue placeholder="Seleccionar diseñador" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unassigned">Sin asignar</SelectItem>
-                      {designers.length > 0 ? (
-                        designers.map(designer => (
-                          <SelectItem key={designer.id} value={designer.id}>
-                            {designer.email} (Diseñador)
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no-designers" disabled>
-                          No hay diseñadores disponibles
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Archivos del proyecto</Label>
-                <FileInput 
-                  onChange={handleEditFileSelect}
-                  disabled={isEditingProject}
-                  multiple
-                />
-                
-                {editFormData.files.length > 0 ? (
-                  <div className="mt-2 space-y-2">
-                    <p className="text-sm font-medium">Archivos del proyecto:</p>
-                    <div className="bg-muted/50 rounded-md p-2 space-y-1">
-                      {editFormData.files.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between bg-background rounded px-3 py-1.5 text-sm">
-                          <div className="flex items-center">
-                            <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span>{file.name}</span>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-6 w-6 text-destructive"
-                            onClick={() => handleRemoveEditFile(index)}
-                            disabled={isEditingProject}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground mt-2">No hay archivos adjuntos</p>
-                )}
-              </div>
-              
-              <DialogFooter className="mt-4 flex justify-between items-center">
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setEditDialogOpen(false)}
-                    disabled={isEditingProject}
-                  >
-                    Cancelar
-                  </Button>
-                  
-                  <Button 
-                    type="button"
-                    onClick={initiateProjectUpdate}
-                    disabled={
-                      isEditingProject || 
-                      !editFormData.title || 
-                      (editTitleStatus?.isError || false) ||
-                      isEditTitleCheckPending
-                    }
-                  >
-                    {isEditingProject ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Actualizando...
-                      </>
-                    ) : (
-                      <>Guardar cambios</>
-                    )}
-                  </Button>
-                </div>
-              </DialogFooter>
             </>
           )}
         </DialogContent>
@@ -2205,6 +1809,147 @@ export default function ProjectsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5 text-primary" />
+              Editar proyecto
+            </DialogTitle>
+            <DialogDescription>
+              Modifica los detalles del proyecto y asígnalo a un diseñador.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {isEditingProject && (
+              <div className="mb-4">
+                <Progress value={editProgress} className="h-2" />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Título del proyecto <span className="text-destructive">*</span></Label>
+              <Input
+                id="edit-title"
+                name="title"
+                value={editFormData.title}
+                onChange={handleEditInputChange}
+                placeholder="Ej. Rediseño de marca"
+                disabled={isEditingProject}
+                className={`rounded-md ${editTitleStatus?.isError ? 'border-destructive focus-visible:ring-destructive' : editTitleStatus && !editTitleStatus.isError ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
+              />
+              {isEditTitleCheckPending && (
+                <div className="text-xs text-muted-foreground flex items-center mt-1">
+                  <div className="animate-spin w-3 h-3 border border-muted-foreground rounded-full border-t-transparent mr-1"></div>
+                  Verificando disponibilidad...
+                </div>
+              )}
+              {editTitleStatus && (
+                <p className={`text-xs ${editTitleStatus.isError ? 'text-destructive' : 'text-green-500'} mt-1`}>
+                  {editTitleStatus.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Descripción</Label>
+              <Textarea
+                id="edit-description"
+                name="description"
+                value={editFormData.description}
+                onChange={handleEditInputChange}
+                placeholder="Detalla los objetivos y requisitos del proyecto"
+                disabled={isEditingProject}
+                className="rounded-md min-h-[120px]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-assigned_to">Asignar a diseñador <span className="text-destructive">*</span></Label>
+              <Select
+                disabled={isEditingProject}
+                onValueChange={(value) => handleEditSelectChange('assigned_to', value)}
+                value={editFormData.assigned_to}
+              >
+                <SelectTrigger className="rounded-md">
+                  <SelectValue placeholder="Seleccionar diseñador" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Sin asignar</SelectItem>
+                  {designers.length > 0 ? (
+                    designers.map(designer => (
+                      <SelectItem key={designer.id} value={designer.id}>
+                        {designer.email} (Diseñador)
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-designers" disabled>
+                      No hay diseñadores disponibles
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Archivos del proyecto</Label>
+              <FileInput
+                onChange={handleEditFileSelect}
+                disabled={isEditingProject}
+                multiple
+              />
+              {editFormData.files.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  <p className="text-sm font-medium">Archivos:</p>
+                  <div className="bg-muted/50 rounded-md p-2 space-y-1">
+                    {editFormData.files.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between bg-background rounded px-3 py-1.5 text-sm">
+                        <div className="flex items-center">
+                          {getFileIcon(file.type)}
+                          <span className="ml-2">{file.name}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-destructive"
+                          onClick={() => handleRemoveEditFile(index)}
+                          disabled={isEditingProject}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 flex justify-center sm:justify-end">
+            <DialogClose asChild>
+              <Button variant="outline" disabled={isEditingProject}>
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button
+              onClick={initiateProjectUpdate}
+              disabled={isEditingProject || editTitleStatus?.isError === true}
+              className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
+            >
+              {isEditingProject ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Actualizando...
+                </>
+              ) : (
+                'Actualizar proyecto'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
-} 
+}

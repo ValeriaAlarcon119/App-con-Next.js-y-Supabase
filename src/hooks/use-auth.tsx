@@ -65,6 +65,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .eq('id', userId)
         .single()
         
+      if (error) {
+        console.error("Error obteniendo datos de usuario:", error.message)
+        return null
+      }
+      
       if (data) {
         // Obtener datos de sesión para combinar con datos de la tabla users
         const { data: sessionData } = await supabase.auth.getSession()
@@ -76,10 +81,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           role: data.role,
         }
         
+        console.log("Usuario con rol:", userWithRole)
         setUser(userWithRole)
+        return userWithRole
       }
+      
+      return null
     } catch (error) {
+      console.error("Error en getUserData:", error)
       setUser(null)
+      return null
     }
   }
 

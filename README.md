@@ -174,9 +174,10 @@ Los siguientes usuarios están disponibles para crear y asignar proyectos, y ver
 | **Diseñador** | prueba1@gmail.com | e5a446fa-ee2f-4e8a-9476-38328e192654 |
 
 > **Notas importantes:** 
-> - La contraseña para todos los usuarios es `123456`
+
 > - Cuando un usuario inicia sesión, su rol se muestra en la barra de navegación
 > - Se pueden utilizar estos usuarios para crear proyectos y asignarlos entre diferentes clientes y diseñadores
+
 
 > **Nota**: Actualmente no se pueden crear nuevos usuarios debido a que se ha alcanzado el límite gratuito en Supabase. Las credenciales anteriores permiten probar todas las funcionalidades de la aplicación.
 

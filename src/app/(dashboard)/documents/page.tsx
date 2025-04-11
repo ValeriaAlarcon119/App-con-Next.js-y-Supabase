@@ -5,18 +5,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   Search,
-  FileText,
   FileImage,
-  FileCode,
-  Clock,
-  Calendar,
   Download,
   Eye,
   Filter,
-  ChevronDown,
+
   X,
   File,
-  Folder
+  Folder,
+  File as FilePdf
 } from 'lucide-react'
 import {
   Card,
@@ -26,14 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 
@@ -63,7 +53,7 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
 
-  // Cargar documentos de todos los proyectos
+
   useEffect(() => {
     fetchDocuments()
   }, [])
@@ -71,7 +61,7 @@ export default function DocumentsPage() {
   const fetchDocuments = async () => {
     try {
       setLoading(true)
-      // Obtener todos los proyectos con sus archivos
+
       const { data: projects, error } = await supabase
         .from('projects')
         .select('id, title, files')
@@ -82,22 +72,24 @@ export default function DocumentsPage() {
 
       console.log("Proyectos obtenidos:", projects);
 
-      // Extraer todos los archivos de los proyectos
+
       const allFiles: FileObject[] = []
       
       projects.forEach((project: Project) => {
         if (project.files && Array.isArray(project.files) && project.files.length > 0) {
           console.log(`Proyecto: ${project.title}, Archivos:`, project.files);
           
-          // Procesar cada archivo del proyecto
+ 
           project.files.forEach((file: any) => {
-            // Comprobar si el archivo es un string (solo el nombre) o un objeto
+
+            let cleanFileName = '';
+            
             if (typeof file === 'string') {
-              // Si es solo un string, crear un objeto completo
-              const fileName = file;
-              const fileType = getFileTypeFromName(fileName);
+
+              cleanFileName = String(file).replace(/[\{\}\"\'\`]+/g, '').trim();
+              const fileType = getFileTypeFromName(cleanFileName);
               allFiles.push({
-                name: fileName,
+                name: cleanFileName,
                 path: '',
                 type: fileType,
                 size: 0,
@@ -105,11 +97,11 @@ export default function DocumentsPage() {
                 projectTitle: project.title
               });
             } else {
-              // Si ya es un objeto, asegurarse de que tenga todos los campos
+              cleanFileName = String(file.name || 'Archivo').replace(/[\{\}\"\'\`]+/g, '').trim();
               const fileObj = {
-                name: file.name || 'Archivo',
+                name: cleanFileName,
                 path: file.path || '',
-                type: file.type || getFileTypeFromName(file.name || ''),
+                type: file.type || getFileTypeFromName(cleanFileName),
                 size: file.size || 0,
                 url: file.url || '',
                 projectId: project.id,
@@ -140,25 +132,18 @@ export default function DocumentsPage() {
   const getFileTypeFromName = (filename: string) => {
     if (!filename) return 'file';
     
-    console.log("Detectando tipo para:", filename);
-    
-    // Asegurarse de que filename es un string
     const filenameStr = String(filename);
     
-    // Convertir a minúsculas y quitar espacios
     const cleanName = filenameStr.toLowerCase().trim();
     
-    // Conseguir la extensión
     const parts = cleanName.split('.');
     const extension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
     
-    console.log("Extensión detectada:", extension);
-    
-    // Mapeo de extensiones a tipos
+
     if (['pdf'].includes(extension)) return 'pdf';
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif'].includes(extension)) return 'image';
-    if (['html', 'css', 'js', 'ts', 'jsx', 'tsx', 'json', 'xml', 'py', 'java', 'c', 'cpp', 'cs', 'php', 'rb'].includes(extension)) return 'code';
-    if (['txt', 'md', 'doc', 'docx', 'rtf', 'odt', 'xls', 'xlsx', 'csv', 'ppt', 'pptx'].includes(extension)) return 'text';
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'svg', 'ico'].includes(extension)) return 'image';
+    if (['html', 'css', 'js', 'ts', 'jsx', 'tsx', 'json', 'xml', 'py', 'java', 'c', 'cpp', 'cs', 'php', 'rb', 'go', 'swift', 'kotlin'].includes(extension)) return 'code';
+    if (['txt', 'md', 'doc', 'docx', 'rtf', 'odt', 'xls', 'xlsx', 'csv', 'ppt', 'pptx', 'pages', 'numbers', 'key', 'odf', 'ods', 'odp'].includes(extension)) return 'text';
     
     return 'file';
   }
@@ -166,54 +151,250 @@ export default function DocumentsPage() {
   const getFileNameWithoutExtension = (filename: string) => {
     if (!filename) return 'Archivo';
     
-    // Asegurarse de que filename es un string
     const filenameStr = String(filename);
     
-    // Eliminar cualquier parte de la ruta (para casos como "path/to/file.txt")
     const nameWithoutPath = filenameStr.split('/').pop() || filenameStr;
     
-    // Si no tiene punto, mostrar el nombre completo
-    if (!nameWithoutPath.includes('.')) return nameWithoutPath;
+    let formattedName = nameWithoutPath.replace(/_/g, ' ');
     
-    // Extraer el nombre sin la extensión
-    const parts = nameWithoutPath.split('.');
-    if (parts.length <= 1) return nameWithoutPath;
+    formattedName = formattedName.replace(/\}+$/g, '');
     
-    // Si tiene múltiples puntos, quitar solo la última extensión
-    parts.pop();
-    return parts.join('.');
+
+    formattedName = formattedName.replace(/['"]+/g, '');
+    
+    return formattedName;
   }
 
-  const getDocumentIcon = (type: string) => {
+  const getFileExtension = (filename: string) => {
+    if (!filename) return '';
+    
+    const filenameStr = String(filename);
+    const parts = filenameStr.split('.');
+    if (parts.length <= 1) return '';
+    
+    return parts[parts.length - 1].toLowerCase();
+  }
+
+  const getDocumentIcon = (type: string, extension: string) => {
+
+    if (extension === 'pdf') {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-red-50 to-red-100 dark:from-red-200/40 dark:to-red-300/30 border border-red-200 dark:border-red-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute flex items-center justify-center w-14 h-14 bg-white dark:bg-gray-800 rounded-sm shadow-sm">
+            <div className="absolute inset-0 bg-red-500 dark:bg-red-300 opacity-10 rounded-sm"></div>
+            <span className="text-lg font-bold text-red-600 dark:text-red-300">PDF</span>
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 dark:bg-red-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+        </div>
+      );
+    } 
+ 
+    else if (['jpg', 'jpeg'].includes(extension)) {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-200/40 dark:to-purple-300/30 border border-purple-200 dark:border-purple-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute inset-0 m-3 rounded-md overflow-hidden">
+            <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-500 dark:from-purple-300 dark:to-pink-300 opacity-30"></div>
+            <FileImage className="absolute inset-0 m-auto h-8 w-8 text-purple-600 dark:text-purple-300" />
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 dark:bg-purple-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+          <div className="absolute bottom-1 right-1 text-xs font-medium text-purple-700 dark:text-purple-300">JPG</div>
+        </div>
+      );
+    }
+    else if (['png'].includes(extension)) {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-200/40 dark:to-indigo-300/30 border border-indigo-200 dark:border-indigo-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute inset-0 m-3 rounded-md overflow-hidden">
+            <div className="w-full h-full bg-gradient-to-br from-indigo-400 to-blue-500 dark:from-indigo-300 dark:to-blue-300 opacity-30"></div>
+            <FileImage className="absolute inset-0 m-auto h-8 w-8 text-indigo-600 dark:text-indigo-300" />
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 dark:bg-indigo-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+          <div className="absolute bottom-1 right-1 text-xs font-medium text-indigo-700 dark:text-indigo-300">PNG</div>
+        </div>
+      );
+    }
+    else if (['svg'].includes(extension)) {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-cyan-50 to-cyan-100 dark:from-cyan-200/40 dark:to-cyan-300/30 border border-cyan-200 dark:border-cyan-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute inset-0 m-3 rounded-md overflow-hidden flex items-center justify-center">
+            <div className="w-8 h-8 relative">
+              <div className="absolute inset-0 border-2 border-cyan-500 dark:border-cyan-300 rounded-full"></div>
+              <div className="absolute inset-2 border-2 border-cyan-400 dark:border-cyan-200 rotate-45"></div>
+            </div>
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-cyan-500 dark:bg-cyan-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+          <div className="absolute bottom-1 right-1 text-xs font-medium text-cyan-700 dark:text-cyan-300">SVG</div>
+        </div>
+      );
+    }
+    else if (['gif'].includes(extension)) {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-pink-50 to-pink-100 dark:from-pink-200/40 dark:to-pink-300/30 border border-pink-200 dark:border-pink-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute inset-0 m-3 rounded-md overflow-hidden">
+            <div className="w-full h-full bg-gradient-to-br from-pink-400 to-rose-500 dark:from-pink-300 dark:to-rose-300 opacity-30"></div>
+            <FileImage className="absolute inset-0 m-auto h-8 w-8 text-pink-600 dark:text-pink-300" />
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-pink-500 dark:bg-pink-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+          <div className="absolute bottom-1 right-1 text-xs font-medium text-pink-700 dark:text-pink-300">GIF</div>
+        </div>
+      );
+    }
+    // Código
+    else if (['html'].includes(extension)) {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-200/40 dark:to-orange-300/30 border border-orange-200 dark:border-orange-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute flex items-center justify-center w-14 h-14 bg-white dark:bg-gray-800 rounded-sm shadow-sm">
+            <div className="absolute inset-0 bg-orange-500 dark:bg-orange-300 opacity-10 rounded-sm"></div>
+            <span className="text-sm font-bold text-orange-600 dark:text-orange-300">&lt;/&gt;</span>
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 dark:bg-orange-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+        </div>
+      );
+    }
+    else if (['js', 'jsx'].includes(extension)) {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-200/40 dark:to-yellow-300/30 border border-yellow-200 dark:border-yellow-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute flex items-center justify-center w-12 h-12 bg-white dark:bg-gray-800 rounded-sm shadow-sm border border-yellow-300 dark:border-yellow-300/70">
+            <span className="text-lg font-bold text-yellow-600 dark:text-yellow-300">JS</span>
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 dark:bg-yellow-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+        </div>
+      );
+    }
+    else if (['ts', 'tsx'].includes(extension)) {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-200/40 dark:to-blue-300/30 border border-blue-200 dark:border-blue-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute flex items-center justify-center w-12 h-12 bg-white dark:bg-gray-800 rounded-sm shadow-sm border border-blue-300 dark:border-blue-300/70">
+            <span className="text-lg font-bold text-blue-600 dark:text-blue-300">TS</span>
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 dark:bg-blue-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+        </div>
+      );
+    }
+    else if (['css'].includes(extension)) {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-sky-50 to-sky-100 dark:from-sky-200/40 dark:to-sky-300/30 border border-sky-200 dark:border-sky-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute flex items-center justify-center w-12 h-12 bg-white dark:bg-gray-800 rounded-sm shadow-sm border border-sky-300 dark:border-sky-300/70">
+            <span className="text-lg font-bold text-sky-600 dark:text-sky-300">CSS</span>
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-sky-500 dark:bg-sky-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+        </div>
+      );
+    }
+    else if (['json'].includes(extension)) {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-200/40 dark:to-amber-300/30 border border-amber-200 dark:border-amber-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute flex items-center justify-center w-14 h-14 bg-white dark:bg-gray-800 rounded-sm shadow-sm">
+            <div className="absolute inset-0 bg-amber-500 dark:bg-amber-300 opacity-10 rounded-sm"></div>
+            <div className="text-xs font-mono text-amber-700 dark:text-amber-300">{`{...}`}</div>
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 dark:bg-amber-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+        </div>
+      );
+    }
+    else if (['py'].includes(extension)) {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-blue-50 to-indigo-100 dark:from-blue-200/40 dark:to-indigo-300/30 border border-blue-200 dark:border-blue-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute inset-0 m-3 rounded-md overflow-hidden flex items-center justify-center">
+            <div className="text-2xl font-bold flex items-center justify-center text-blue-700 dark:text-blue-300">
+              <span className="text-yellow-500 dark:text-yellow-300">Py</span>
+            </div>
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 dark:bg-blue-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+        </div>
+      );
+    }
+
+    else if (['doc', 'docx'].includes(extension)) {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-200/40 dark:to-blue-300/30 border border-blue-200 dark:border-blue-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute inset-0 m-4 rounded-sm bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-300/70 overflow-hidden flex items-center justify-center">
+            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-600 dark:bg-blue-300"></div>
+            <span className="text-sm font-bold text-blue-600 dark:text-blue-300 ml-1">W</span>
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 dark:bg-blue-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+        </div>
+      );
+    }
+    else if (['txt'].includes(extension)) {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-gray-50 to-gray-100 dark:from-emerald-200/40 dark:to-emerald-300/30 border border-gray-200 dark:border-emerald-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute inset-0 m-4 rounded-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-emerald-300/70 overflow-hidden flex flex-col items-start justify-start p-1">
+            <div className="w-full h-1 bg-gray-300 dark:bg-emerald-300 rounded-full mb-1"></div>
+            <div className="w-2/3 h-1 bg-gray-300 dark:bg-emerald-300 rounded-full mb-1"></div>
+            <div className="w-4/5 h-1 bg-gray-300 dark:bg-emerald-300 rounded-full"></div>
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-gray-500 dark:bg-emerald-300 rounded-full border-2 border-white dark:border-gray-800"></div>
+        </div>
+      );
+    }
+    else if (['md'].includes(extension)) {
+      return (
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-neutral-50 to-neutral-100 dark:from-neutral-800/50 dark:to-neutral-800/60 border border-neutral-200 dark:border-neutral-700 shadow-sm group-hover:shadow-md transition-all duration-300">
+          <div className="absolute inset-0 m-3 rounded-md overflow-hidden flex items-center justify-center">
+            <div className="text-lg font-bold text-neutral-700 dark:text-neutral-300 flex items-center">
+              <span>MD</span>
+            </div>
+          </div>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-neutral-500 dark:bg-neutral-400 rounded-full border-2 border-white dark:border-gray-800"></div>
+        </div>
+      );
+    }
+    
     switch (type) {
       case 'pdf':
         return (
-          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-red-400/20 to-red-300/10 shadow-sm border border-red-100 dark:border-red-900/20">
-            <FileText className="h-8 w-8 text-red-500 drop-shadow-sm" />
+          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-red-50 to-red-100 dark:from-red-200/40 dark:to-red-300/30 border border-red-200 dark:border-red-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+            <div className="absolute flex items-center justify-center w-14 h-14 bg-white dark:bg-gray-800 rounded-sm shadow-sm">
+              <div className="absolute inset-0 bg-red-500 dark:bg-red-300 opacity-10 rounded-sm"></div>
+              <span className="text-lg font-bold text-red-600 dark:text-red-300">PDF</span>
+            </div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 dark:bg-red-300 rounded-full border-2 border-white dark:border-gray-800"></div>
           </div>
         );
       case 'image':
         return (
-          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-400/20 to-purple-300/10 shadow-sm border border-purple-100 dark:border-purple-900/20">
-            <FileImage className="h-8 w-8 text-purple-500 drop-shadow-sm" />
+          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-200/40 dark:to-purple-300/30 border border-purple-200 dark:border-purple-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+            <div className="absolute inset-0 m-3 rounded-md overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-500 dark:from-purple-300 dark:to-pink-300 opacity-20"></div>
+              <div className="absolute w-3 h-3 rounded-full bg-purple-400 dark:bg-purple-300 left-1 top-1"></div>
+              <div className="absolute right-0 bottom-0 left-3 top-3 rounded-tr-md border-t-2 border-r-2 border-purple-400 dark:border-purple-300"></div>
+            </div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 dark:bg-purple-300 rounded-full border-2 border-white dark:border-gray-800"></div>
           </div>
         );
       case 'code':
         return (
-          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-400/20 to-blue-300/10 shadow-sm border border-blue-100 dark:border-blue-900/20">
-            <FileCode className="h-8 w-8 text-blue-500 drop-shadow-sm" />
+          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-200/40 dark:to-blue-300/30 border border-blue-200 dark:border-blue-800/30 shadow-sm group-hover:shadow-md transition-all duration-300">
+            <div className="absolute inset-0 m-3 rounded-md overflow-hidden flex items-center justify-center">
+              <div className="flex flex-col space-y-1.5 items-start">
+                <div className="w-10 h-1 bg-blue-400 dark:bg-blue-300 rounded-full"></div>
+                <div className="w-6 h-1 bg-blue-300 dark:bg-blue-200 rounded-full ml-3"></div>
+                <div className="w-8 h-1 bg-blue-400 dark:bg-blue-300 rounded-full ml-2"></div>
+              </div>
+            </div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 dark:bg-blue-300 rounded-full border-2 border-white dark:border-gray-800"></div>
           </div>
         );
       case 'text':
         return (
-          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400/20 to-emerald-300/10 shadow-sm border border-emerald-100 dark:border-emerald-900/20">
-            <FileText className="h-8 w-8 text-emerald-500 drop-shadow-sm" />
+          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-200/40 dark:to-emerald-300/30 border border-emerald-200 dark:border-emerald-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+            <div className="absolute inset-0 m-3 rounded-md overflow-hidden flex flex-col items-start justify-start p-2">
+              <div className="w-full h-1 bg-emerald-300 dark:bg-emerald-300 rounded-full mb-1.5"></div>
+              <div className="w-3/4 h-1 bg-emerald-300 dark:bg-emerald-300 rounded-full mb-1.5"></div>
+              <div className="w-2/3 h-1 bg-emerald-300 dark:bg-emerald-300 rounded-full mb-1.5"></div>
+              <div className="w-1/2 h-1 bg-emerald-300 dark:bg-emerald-300 rounded-full"></div>
+            </div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 dark:bg-emerald-300 rounded-full border-2 border-white dark:border-gray-800"></div>
           </div>
         );
       default:
         return (
-          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-300/10 to-indigo-200/10 shadow-md border border-blue-100 dark:border-blue-900/30">
-            <File className="h-8 w-8 text-blue-400 drop-shadow-md" />
+          <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-200/40 dark:to-amber-300/30 border border-amber-200 dark:border-amber-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
+            <div className="absolute flex items-center justify-center w-10 h-14 bg-white dark:bg-gray-800 rounded-sm shadow-sm border border-amber-200 dark:border-amber-300/70">
+              <div className="absolute top-0 right-0 w-4 h-4 origin-bottom-left -rotate-12 bg-amber-100 dark:bg-amber-300/50"></div>
+            </div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 dark:bg-amber-300 rounded-full border-2 border-white dark:border-gray-800"></div>
           </div>
         );
     }
@@ -278,28 +459,24 @@ export default function DocumentsPage() {
   }
 
   const filteredDocuments = documents.filter(doc => {
-    // Filtro de búsqueda
+
     const matchesSearch = !searchTerm.trim() || 
       doc.name.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filtro de tipo
     const matchesType = 
       !typeFilter || doc.type === typeFilter;
     
-    // Filtro de proyecto (categoría)
     const matchesCategory = 
       !categoryFilter || doc.projectId === categoryFilter;
     
     return matchesSearch && matchesType && matchesCategory;
   });
 
-  // Obtener lista de proyectos únicos para el filtro
   const projects = [...new Set(documents.map(doc => ({
     id: doc.projectId || '',
     title: doc.projectTitle || 'Sin proyecto'
   })))].filter(project => project.id !== '');
 
-  // Render cuando está cargando
   if (loading) {
     return (
       <div className="container mx-auto py-8 px-4 min-h-screen flex flex-col items-center justify-center">
@@ -310,20 +487,20 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-10 pt-24 px-4 bg-white dark:bg-white min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-900">Documentos</h1>
-          <p className="text-gray-700 dark:text-gray-900">Accede y gestiona todos los documentos de tus proyectos</p>
+          <p className="text-gray-700 dark:text-gray-700">Accede y gestiona todos los documentos de tus proyectos</p>
         </div>
         
         <div className="flex gap-3 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground dark:text-black" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400 dark:text-gray-400" />
             <Input 
               type="text" 
               placeholder="Buscar documentos..." 
-              className="pl-9 pr-4 text-gray-900 dark:text-black"
+              className="pl-9 pr-4 text-gray-900 dark:text-white bg-white dark:bg-black border-gray-200 dark:border-gray-700"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -331,7 +508,7 @@ export default function DocumentsPage() {
           <Button 
             variant="outline" 
             onClick={() => setShowFilters(!showFilters)}
-            className="w-10 h-10 p-0 flex items-center justify-center text-blue-600 dark:text-blue-500 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            className="w-10 h-10 p-0 flex items-center justify-center bg-white hover:bg-gray-100 text-gray-700 dark:bg-black dark:hover:bg-gray-800 dark:text-white border border-gray-200 dark:border-gray-700"
           >
             <Filter className="h-5 w-5" />
           </Button>
@@ -339,12 +516,12 @@ export default function DocumentsPage() {
       </div>
       
       {showFilters && (
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6 border border-gray-200 dark:border-blue-800/60">
+        <div className="bg-white dark:bg-black p-4 rounded-lg shadow mb-6 border border-gray-200 dark:border-gray-700">
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-1 block">Tipo de documento</label>
+              <label className="text-sm font-medium mb-1 block dark:text-white">Tipo de documento</label>
               <select 
-                className="w-full p-2 rounded-md border border-gray-300 dark:border-blue-800 bg-white dark:bg-gray-800 dark:text-gray-100"
+                className="w-full p-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-black dark:text-white"
                 value={typeFilter || ''}
                 onChange={(e) => setTypeFilter(e.target.value || null)}
               >
@@ -357,9 +534,9 @@ export default function DocumentsPage() {
               </select>
             </div>
             <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-1 block">Proyecto</label>
+              <label className="text-sm font-medium mb-1 block dark:text-white">Proyecto</label>
               <select 
-                className="w-full p-2 rounded-md border border-gray-300 dark:border-blue-800 bg-white dark:bg-gray-800 dark:text-gray-100"
+                className="w-full p-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-black dark:text-white"
                 value={categoryFilter || ''}
                 onChange={(e) => setCategoryFilter(e.target.value || null)}
               >
@@ -378,61 +555,98 @@ export default function DocumentsPage() {
       )}
       
       {filteredDocuments.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {filteredDocuments.map((doc, index) => {
-            // Determinar tipo si no está definido
+            // Determinar el tipo y extensión del archivo
+            const extension = getFileExtension(doc.name);
             const fileType = doc.type || getFileTypeFromName(doc.name);
-            // Obtener nombre sin extensión
+            
+            // Limpiar el nombre para mostrar
             const displayName = getFileNameWithoutExtension(doc.name);
             
+            // Badge personalizado según extensión exacta
+            const badgeText = extension ? extension.toUpperCase() : 
+                              fileType === 'pdf' ? 'PDF' : 
+                              fileType === 'image' ? 'IMAGEN' :
+                              fileType === 'code' ? 'CÓDIGO' :
+                              fileType === 'text' ? 'TEXTO' : 'ARCHIVO';
+            
+            // Limpiar cualquier carácter extraño en el badge
+            const cleanBadgeText = badgeText.replace(/[^A-Za-z0-9ÁÉÍÓÚáéíóúÑñ]/g, '');
+            
             return (
-              <Card key={index} className="group hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-950 hover:border-primary/20">
-                <CardHeader className="pt-6 pb-4">
-                  <div className="flex items-center gap-4">
-                    {getDocumentIcon(fileType)}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start gap-2">
-                        <CardTitle className="text-base font-medium line-clamp-2 group-hover:text-primary transition-colors">
-                          {displayName || 'Archivo sin nombre'}
-                        </CardTitle>
-                        <Badge variant="outline" className={`shrink-0 text-xs ${
-                          fileType === 'pdf' ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400' :
-                          fileType === 'image' ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400' :
-                          fileType === 'code' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400' :
-                          fileType === 'text' ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                          'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-900/30 dark:text-slate-400'
-                        }`}>
-                          {fileType.toUpperCase()}
-                        </Badge>
-                      </div>
-                      <CardDescription className="text-sm text-gray-600 dark:text-gray-400 flex items-center mt-1">
-                        <Folder className="h-3 w-3 mr-1" /> 
-                        {doc.projectTitle || 'Sin proyecto'}
-                      </CardDescription>
+              <Card key={index} className="relative group shadow-md transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden bg-white dark:bg-black h-[280px] flex flex-col">
+                <div className="absolute top-0 left-0 right-0 bottom-0">
+                  {/* Badge de tipo de archivo */}
+                  <div className="absolute right-2 top-2">
+                    <div className={`px-2 py-1 text-xs font-bold rounded-full shadow ${
+                      extension === 'pdf' ? 'bg-red-300 text-red-800 dark:bg-red-300 dark:text-red-900' :
+                      ['jpg', 'jpeg'].includes(extension) ? 'bg-purple-300 text-purple-800 dark:bg-purple-300 dark:text-purple-900' :
+                      extension === 'png' ? 'bg-indigo-300 text-indigo-800 dark:bg-indigo-300 dark:text-indigo-900' :
+                      extension === 'svg' ? 'bg-cyan-300 text-cyan-800 dark:bg-cyan-300 dark:text-cyan-900' :
+                      extension === 'gif' ? 'bg-pink-300 text-pink-800 dark:bg-pink-300 dark:text-pink-900' :
+                      extension === 'html' ? 'bg-orange-300 text-orange-800 dark:bg-orange-300 dark:text-orange-900' :
+                      ['js', 'jsx'].includes(extension) ? 'bg-yellow-300 text-yellow-800 dark:bg-yellow-300 dark:text-yellow-900' :
+                      ['ts', 'tsx'].includes(extension) ? 'bg-blue-300 text-blue-800 dark:bg-blue-300 dark:text-blue-900' :
+                      extension === 'css' ? 'bg-sky-300 text-sky-800 dark:bg-sky-300 dark:text-sky-900' :
+                      extension === 'json' ? 'bg-amber-300 text-amber-800 dark:bg-amber-300 dark:text-amber-900' :
+                      extension === 'py' ? 'bg-violet-300 text-violet-800 dark:bg-violet-300 dark:text-violet-900' :
+                      ['doc', 'docx'].includes(extension) ? 'bg-blue-300 text-blue-800 dark:bg-blue-300 dark:text-blue-900' :
+                      extension === 'txt' ? 'bg-emerald-300 text-emerald-800 dark:bg-emerald-300 dark:text-emerald-900' :
+                      extension === 'md' ? 'bg-neutral-300 text-neutral-800 dark:bg-neutral-300 dark:text-neutral-900' :
+                      fileType === 'pdf' ? 'bg-red-300 text-red-800 dark:bg-red-300 dark:text-red-900' :
+                      fileType === 'image' ? 'bg-purple-300 text-purple-800 dark:bg-purple-300 dark:text-purple-900' :
+                      fileType === 'code' ? 'bg-blue-300 text-blue-800 dark:bg-blue-300 dark:text-blue-900' :
+                      fileType === 'text' ? 'bg-emerald-300 text-emerald-800 dark:bg-emerald-300 dark:text-emerald-900' :
+                      'bg-slate-300 text-slate-800 dark:bg-slate-300 dark:text-slate-900'
+                    }`}>
+                      {cleanBadgeText}
                     </div>
                   </div>
+                </div>
+                <CardHeader className="pb-4 flex flex-col items-center justify-center space-y-3 flex-grow">
+                  {getDocumentIcon(fileType, extension)}
+                  <div className="w-full text-center mt-4">
+                    <CardTitle className="text-lg font-semibold line-clamp-2 group-hover:text-primary transition-colors text-gray-900 dark:text-white">
+                      {displayName?.replace(/}/g, "") || 'Archivo sin nombre'}
+                    </CardTitle>
+                    <CardDescription className="text-sm text-gray-500 dark:text-gray-300 flex items-center mt-2 justify-center">
+                      <Folder className="h-4 w-4 mr-1.5" /> 
+                      {doc.projectTitle?.replace(/}/g, "") || 'Sin proyecto'}
+                      </CardDescription>
+                  </div>
                 </CardHeader>
-                <CardFooter className="pt-2 flex justify-center gap-2 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 p-4">
+                <CardFooter className="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center gap-3 mt-auto bg-gray-50/50 dark:bg-gray-900">
                   {doc.url ? (
                     <>
-                      <Button variant="outline" size="sm" className="w-24 bg-white dark:bg-gray-900 hover:bg-blue-50 dark:hover:bg-blue-900/20" onClick={() => window.open(doc.url, '_blank')}>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-9 px-4 bg-white dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/80 shadow-sm"
+                        onClick={() => window.open(doc.url, '_blank')}
+                      >
                         <Eye className="mr-2 h-4 w-4" />
-                        Ver
+                        <span>Ver</span>
                       </Button>
-                      <Button variant="outline" size="sm" className="w-24 bg-white dark:bg-gray-900 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-blue-100 hover:border-blue-200" onClick={() => downloadFile(doc.url!, doc.name)}>
-                        <Download className="mr-1 h-4 w-4" />
-                        <span className="ml-0">Descargar</span>
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="h-9 px-4 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 shadow-sm border border-blue-200 dark:border-blue-800/30" 
+                        onClick={() => downloadFile(doc.url!, doc.name)}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        <span>Descargar</span>
                       </Button>
                     </>
                   ) : (
-                    <Button variant="outline" size="sm" className="w-24 bg-white dark:bg-gray-900 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-blue-100 hover:border-blue-200" onClick={() => 
+                    <Button variant="default" size="sm" className="h-9 px-4 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 shadow-sm border border-blue-200 dark:border-blue-800/30" onClick={() => 
                       toast({
                         title: "Información",
                         description: "Este archivo no tiene una URL de descarga. Por favor, contacte al administrador.",
                       })
                     }>
-                      <Download className="mr-1 h-4 w-4" />
-                      <span className="ml-0">Descargar</span>
+                      <Download className="mr-2 h-4 w-4" />
+                      <span>Descargar</span>
                     </Button>
                   )}
                 </CardFooter>
@@ -442,9 +656,9 @@ export default function DocumentsPage() {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <File className="h-16 w-16 text-muted-foreground/30 mb-4" />
-          <h3 className="text-lg font-medium mb-1">No se encontraron documentos</h3>
-          <p className="text-muted-foreground">Intenta con otro término de búsqueda o crea un proyecto con archivos</p>
+          <File className="h-16 w-16 text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium mb-1 text-gray-900 dark:text-gray-900">No se encontraron documentos</h3>
+          <p className="text-gray-600 dark:text-gray-600">Intenta con otro término de búsqueda o crea un proyecto con archivos</p>
         </div>
       )}
     </div>

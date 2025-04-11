@@ -21,7 +21,6 @@ import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
-// Interfaces para los tipos de datos
 interface Project {
   id: string;
   name: string;
@@ -54,7 +53,6 @@ export default function DashboardPage() {
     const fetchData = async () => {
       setLoading(true)
       try {
-        // Obtener proyectos y contar documentos
         const { data: projectsData, count: projectsCount, error: projectsError } = await supabase
           .from('projects')
           .select('*', { count: 'exact' })
@@ -64,7 +62,6 @@ export default function DashboardPage() {
         setProjects(projectsData || [])
         setProjectCount(projectsCount || 0)
 
-        // Contar documentos totales
         let totalDocuments = 0
         projectsData?.forEach(project => {
           if (project.files && Array.isArray(project.files)) {
@@ -73,7 +70,6 @@ export default function DashboardPage() {
         })
         setDocumentCount(totalDocuments)
         
-        // Obtener usuarios
         const { data: usersData, count: usersCount, error: usersError } = await supabase
           .from('users')
           .select('*', { count: 'exact' })
@@ -453,7 +449,6 @@ export default function DashboardPage() {
   );
 }
 
-// Función auxiliar para obtener el color del estado
 function getStatusColor(status: string) {
   switch (status) {
     case "pendiente":
@@ -469,7 +464,6 @@ function getStatusColor(status: string) {
   }
 }
 
-// Función auxiliar para mostrar el estado en formato legible
 function getDisplayStatus(status: string) {
   switch (status) {
     case "pendiente":
@@ -485,7 +479,6 @@ function getDisplayStatus(status: string) {
   }
 }
 
-// Función auxiliar para formatear fechas
 function formatDate(dateString: string) {
   if (!dateString) return "Fecha no disponible";
   const date = new Date(dateString);
