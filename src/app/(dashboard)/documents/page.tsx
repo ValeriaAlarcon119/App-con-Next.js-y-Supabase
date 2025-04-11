@@ -62,68 +62,83 @@ export default function DocumentsPage() {
     try {
       setLoading(true)
 
-      const { data: projects, error } = await supabase
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      if (userError) throw userError
+
+      const { data: userRole } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userData.user.id)
+        .single()
+
+      if (!userRole) throw new Error('No se pudo obtener el rol del usuario')
+
+      let query = supabase
         .from('projects')
-        .select('id, title, files')
+        .select(`
+          id,
+          title,
+          files,
+          created_by,
+          assigned_to
+        `)
+
+      if (userRole.role === 'client') {
+        query = query.eq('created_by', userData.user.id)
+      } else if (userRole.role === 'designer') {
+        query = query.eq('assigned_to', userData.user.id)
+      }
+
+      const { data: projects, error } = await query
       
       if (error) {
         throw error
       }
 
-      console.log("Proyectos obtenidos:", projects);
-
+      console.log("Proyectos obtenidos:", projects)
 
       const allFiles: FileObject[] = []
       
-      projects.forEach((project: Project) => {
-        if (project.files && Array.isArray(project.files) && project.files.length > 0) {
-          console.log(`Proyecto: ${project.title}, Archivos:`, project.files);
-          
- 
+      projects?.forEach((project: any) => {
+        if (project.files && Array.isArray(project.files)) {
           project.files.forEach((file: any) => {
-
-            let cleanFileName = '';
-            
             if (typeof file === 'string') {
-
-              cleanFileName = String(file).replace(/[\{\}\"\'\`]+/g, '').trim();
-              const fileType = getFileTypeFromName(cleanFileName);
+              const cleanFileName = String(file).replace(/[\{\}\"\'\`]+/g, '').trim()
               allFiles.push({
                 name: cleanFileName,
                 path: '',
-                type: fileType,
+                type: getFileTypeFromName(cleanFileName),
                 size: 0,
                 projectId: project.id,
                 projectTitle: project.title
-              });
+              })
             } else {
-              cleanFileName = String(file.name || 'Archivo').replace(/[\{\}\"\'\`]+/g, '').trim();
-              const fileObj = {
+              const cleanFileName = String(file.name || 'Archivo').replace(/[\{\}\"\'\`]+/g, '').trim()
+              allFiles.push({
                 name: cleanFileName,
                 path: file.path || '',
                 type: file.type || getFileTypeFromName(cleanFileName),
                 size: file.size || 0,
-                url: file.url || '',
+                url: file.path ? supabase.storage.from('documents').getPublicUrl(file.path).data.publicUrl : undefined,
                 projectId: project.id,
                 projectTitle: project.title
-              };
-              
-              console.log(`Procesando archivo: ${fileObj.name}, Tipo: ${fileObj.type}`);
-              allFiles.push(fileObj);
+              })
             }
-          });
+          })
         }
       })
       
-      console.log('Total de documentos procesados:', allFiles.length);
+      console.log('Total de documentos procesados:', allFiles.length)
       setDocuments(allFiles)
+
     } catch (error) {
       console.error('Error al cargar documentos:', error)
       toast({
         title: "Error",
-        description: "No se pudieron cargar los documentos",
+        description: "No se pudieron cargar los documentos. Por favor, intente nuevamente.",
         variant: "destructive",
       })
+      setDocuments([])
     } finally {
       setLoading(false)
     }
@@ -139,7 +154,7 @@ export default function DocumentsPage() {
     const parts = cleanName.split('.');
     const extension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
     
-
+    
     if (['pdf'].includes(extension)) return 'pdf';
     if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'svg', 'ico'].includes(extension)) return 'image';
     if (['html', 'css', 'js', 'ts', 'jsx', 'tsx', 'json', 'xml', 'py', 'java', 'c', 'cpp', 'cs', 'php', 'rb', 'go', 'swift', 'kotlin'].includes(extension)) return 'code';
@@ -603,7 +618,7 @@ export default function DocumentsPage() {
                       {cleanBadgeText}
                     </div>
                   </div>
-                </div>
+                      </div>
                 <CardHeader className="pb-4 flex flex-col items-center justify-center space-y-3 flex-grow">
                   {getDocumentIcon(fileType, extension)}
                   <div className="w-full text-center mt-4">

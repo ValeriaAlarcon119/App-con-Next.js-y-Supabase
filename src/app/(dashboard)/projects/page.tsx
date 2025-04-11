@@ -244,117 +244,64 @@ export default function ProjectsPage() {
     try {
       setLoading(true)
       
-      try {
-        const { data: projectsData, error: projectsError } = await supabase
+      let query = supabase
           .from('projects')
           .select(`
             *,
             creator:users!created_by(email, role),
             assignee:users!assigned_to(email, role)
           `)
-          .order('created_at', { ascending: false })
-          
-        if (!projectsError && projectsData) {
-          let transformedProjects = projectsData.map(project => ({
-            ...project,
-            created_by_email: project.creator?.email || project.created_by,
-            created_by_role: project.creator?.role || 'Usuario',
-            assigned_to_email: project.assignee?.email || project.assigned_to,
-            assigned_to_role: project.assignee?.role || 'Usuario'
-          }))
-          
-          transformedProjects = assignRandomStatuses(transformedProjects)
-          
-          console.log('Proyectos obtenidos con relaciones:', transformedProjects)
-          setProjects(transformedProjects)
-          setLoading(false)
-          return
-        }
-      } catch (relationError) {
-        console.error('Error al obtener proyectos con relaciones:', relationError)
-      }
-      
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false });
 
-      if (projectsError) {
-        console.error('Error de Supabase:', projectsError)
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los proyectos: " + projectsError.message,
-          variant: "destructive",
-        })
-        setProjects([])
-        return
+      if (isClient) {
+        query = query.eq('created_by', user?.id);
+      }
+      else if (isDesigner) {
+        query = query.eq('assigned_to', user?.id);
       }
 
-      let transformedProjects = await Promise.all(projectsData.map(async (project) => {
-        let created_by_email = project.created_by;
-        let created_by_role = 'Usuario';
-        let assigned_to_email = project.assigned_to;
-        let assigned_to_role = 'Diseñador';
-        
-        if (project.created_by) {
-          try {
-            const { data: creatorData } = await supabase
-              .from('users')
-              .select('email, role')
-              .eq('id', project.created_by)
-              .single();
-            
-            if (creatorData) {
-              created_by_email = creatorData.email;
-              created_by_role = creatorData.role;
-            }
-          } catch (error) {
-            console.log('No se pudo obtener info del creador:', error);
-          }
-        }
-        
-        if (project.assigned_to) {
-          try {
-            const { data: assigneeData } = await supabase
-              .from('users')
-              .select('email, role')
-              .eq('id', project.assigned_to)
-              .single();
-            
-            if (assigneeData) {
-              assigned_to_email = assigneeData.email;
-              assigned_to_role = assigneeData.role;
-            }
-          } catch (error) {
-            console.log('No se pudo obtener info del asignado:', error);
-          }
-        }
+      const { data: projectsData, error: projectsError } = await query;
+          
+      if (!projectsError && projectsData) {
+        let transformedProjects = projectsData.map(project => {
+          const projectFiles = Array.isArray(project.files) ? project.files : [];
+          
+          const filesWithUrls = projectFiles.map((file: { path: string; name: string; type: string; size: number }) => ({
+            ...file,
+            url: file.path ? supabase.storage.from('documents').getPublicUrl(file.path).data.publicUrl : undefined
+          }));
         
         return {
           ...project,
-          created_by_email,
-          created_by_role,
-          assigned_to_email,
-          assigned_to_role
-        };
-      }));
-      
-      transformedProjects = assignRandomStatuses(transformedProjects)
+            created_by_email: project.creator?.email || project.created_by,
+            created_by_role: project.creator?.role || 'Usuario',
+            assigned_to_email: project.assignee?.email || project.assigned_to,
+            assigned_to_role: project.assignee?.role || 'Usuario',
+            files: filesWithUrls
+          };
+        });
+        
+        transformedProjects = assignRandomStatuses(transformedProjects);
+        
+        console.log('Proyectos obtenidos con relaciones:', transformedProjects);
+        setProjects(transformedProjects);
+        setLoading(false);
+        return;
+      }
 
-      console.log('Proyectos obtenidos:', transformedProjects)
-      setProjects(transformedProjects)
+      throw projectsError;
     } catch (error) {
-      console.error('Error fetching projects:', error)
+      console.error('Error fetching projects:', error);
       toast({
         title: "Error",
         description: "No se pudieron cargar los proyectos. Intente nuevamente.",
         variant: "destructive",
-      })
-      setProjects([])
+      });
+      setProjects([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const createProject = async () => {
     try {
@@ -409,10 +356,7 @@ export default function ProjectsPage() {
             if (file.url) return file;
             
             try {
-             
               const safeFileName = sanitizeFileName(file.name);
-              
-             
               const filePath = `projects/${newProjectId}/${safeFileName}`;
               
               console.log('Intentando subir archivo a:', filePath);
@@ -487,7 +431,7 @@ export default function ProjectsPage() {
       console.log("Actualizando lista de proyectos")
    
       await fetchProjects()
- 
+      
       setFormData({
         title: '',
         description: '',
@@ -553,10 +497,10 @@ export default function ProjectsPage() {
             })
           } else {
             if (value.trim()) {
-              setTitleStatus({
-                message: "Título disponible",
-                isError: false
-              })
+            setTitleStatus({
+              message: "Título disponible",
+              isError: false
+            })
             } else {
               setTitleStatus(null)
             }
@@ -670,9 +614,135 @@ export default function ProjectsPage() {
   }
 
   const viewProjectDetails = (project: Project) => {
-    setViewingProject(project)
-    setViewDialogOpen(true)
-  }
+    // Verificar si el usuario tiene permiso para ver los detalles
+    const canViewDetails = isProjectManager || 
+                         (isClient && project.created_by === user?.id) ||
+                         (isDesigner && project.assigned_to === user?.id);
+
+    if (!canViewDetails) {
+      toast({
+        title: "Error",
+        description: "No tienes permisos para ver los detalles de este proyecto.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('Proyecto original:', project);
+
+    // Procesar los archivos para asegurarse de que tengan todas las propiedades necesarias
+    let processedFiles: FileObject[] = [];
+    
+    if (project.files && Array.isArray(project.files)) {
+      // Convertir cada archivo a un objeto FileObject completo
+      processedFiles = project.files.map((file: any) => {
+        try {
+          // Si es un string, convertirlo a objeto
+          if (typeof file === 'string') {
+            const fileName = String(file).trim();
+            const fileType = getFileTypeFromName(fileName);
+            return {
+              name: fileName,
+              path: '',
+              type: fileType,
+              size: 0
+            };
+          }
+          
+          // Asegurarnos de que tenemos un objeto válido con propiedades
+          if (!file || typeof file !== 'object') {
+            return {
+              name: 'Archivo desconocido',
+              path: '',
+              type: 'file',
+              size: 0
+            };
+          }
+          
+          // Extraer el nombre del archivo
+          let fileName = '';
+          if (file.name) {
+            fileName = file.name;
+          } else if (file.path) {
+            // Extraer nombre de archivo de la ruta
+            const pathParts = file.path.split('/');
+            fileName = pathParts[pathParts.length - 1];
+          } else if (file.originalName) {
+            fileName = file.originalName;
+          } else {
+            fileName = 'archivo';
+          }
+          
+          // Determinar el tipo y extensión
+          const fileType = file.type || getFileTypeFromName(fileName);
+          
+          // Crear objeto completo
+          return {
+            name: fileName,
+            path: file.path || '',
+            type: fileType,
+            size: file.size || 0,
+            url: file.path ? supabase.storage.from('documents').getPublicUrl(file.path).data.publicUrl : undefined
+          };
+        } catch (error) {
+          console.error('Error procesando archivo:', error, file);
+          return null;
+        }
+      }).filter(Boolean) as FileObject[]; // Filtrar valores nulos
+    }
+
+    console.log('Archivos procesados:', processedFiles);
+
+    // Obtener archivos desde supabase directamente cuando no hay información
+    if (processedFiles.length > 0 && processedFiles.every(file => !file.name.includes('.'))) {
+      console.log('Los archivos no tienen extensión, intentando obtener desde supabase...');
+      
+      // Intentar obtener archivos desde el bucket de supabase
+      supabase.storage.from('documents')
+        .list(`projects/${project.id}`)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error al listar archivos:', error);
+            return;
+          }
+          
+          if (data && data.length > 0) {
+            console.log('Archivos encontrados en supabase:', data);
+            
+            // Transformar los datos a objetos FileObject
+            const supabaseFiles = data.map(file => {
+              const filePath = `projects/${project.id}/${file.name}`;
+              const fileUrl = supabase.storage.from('documents').getPublicUrl(filePath).data.publicUrl;
+              return {
+                name: file.name,
+                path: filePath,
+                type: getFileTypeFromName(file.name),
+                size: file.metadata?.size || 0,
+                url: fileUrl
+              } as FileObject;
+            });
+            
+            // Actualizar la vista con los archivos de supabase
+            const updatedProject = {
+              ...project,
+              files: supabaseFiles
+            };
+            
+            setViewingProject(updatedProject);
+            console.log('Proyecto actualizado con archivos de supabase:', updatedProject);
+          }
+        });
+    }
+
+    // Actualizar el proyecto con los archivos procesados
+    const updatedProject = {
+      ...project,
+      files: processedFiles
+    };
+
+    setViewingProject(updatedProject);
+    setViewDialogOpen(true);
+  };
 
   const deleteProject = async (projectId: string) => {
     if (!user) return
@@ -856,10 +926,10 @@ export default function ProjectsPage() {
     if (!selectedFiles || selectedFiles.length === 0) return;
     
     const newFiles: FileObject[] = Array.from(selectedFiles).map(file => {
-
       let fileType = 'file';
       if (file.type.includes('image')) fileType = 'image';
       else if (file.type.includes('pdf')) fileType = 'pdf';
+      else if (file.type.includes('word') || file.type.includes('document')) fileType = 'word';
       else if (file.type.includes('html') || 
                file.type.includes('javascript') || 
                file.type.includes('css') || 
@@ -887,12 +957,11 @@ export default function ProjectsPage() {
     const selectedFiles = e.target.files;
     if (!selectedFiles || selectedFiles.length === 0) return;
     
-
     const newFiles: FileObject[] = Array.from(selectedFiles).map(file => {
-  
       let fileType = 'file';
       if (file.type.includes('image')) fileType = 'image';
       else if (file.type.includes('pdf')) fileType = 'pdf';
+      else if (file.type.includes('word') || file.type.includes('document')) fileType = 'word';
       else if (file.type.includes('html') || 
                file.type.includes('javascript') || 
                file.type.includes('css') || 
@@ -1019,13 +1088,11 @@ export default function ProjectsPage() {
         
         try {
           if (file.file) {
-   
             const safeFileName = sanitizeFileName(file.name);
-            
             const filePath = `projects/${pendingEditChanges.id}/${safeFileName}`;
             
             console.log('Intentando subir archivo a:', filePath);
- 
+            
             const { data, error: uploadError } = await supabase.storage
               .from('documents')
               .upload(filePath, file.file instanceof Blob ? file.file : new Blob([]), {
@@ -1121,7 +1188,7 @@ export default function ProjectsPage() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
         {files.map((file, index) => (
-          <Card key={index} className="overflow-hidden">
+          <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
             <div className="bg-gray-100 dark:bg-gray-800 p-4 flex justify-center items-center">
               {getFileIcon(file.type)}
             </div>
@@ -1137,16 +1204,18 @@ export default function ProjectsPage() {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 px-2 text-blue-600"
+                    className="h-8 px-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     onClick={() => window.open(file.url, '_blank')}
+                    title="Ver archivo"
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 px-2 text-green-600"
+                    className="h-8 px-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
                     onClick={() => downloadFile(file.url!, file.name)}
+                    title="Descargar archivo"
                   >
                     <Download className="h-4 w-4" />
                   </Button>
@@ -1165,6 +1234,8 @@ export default function ProjectsPage() {
         return <FileText className="h-6 w-6 text-red-500" />;
       case 'image':
         return <FileImage className="h-6 w-6 text-purple-500" />;
+      case 'word':
+        return <FileText className="h-6 w-6 text-blue-500" />;
       case 'code':
         return <FileCode className="h-6 w-6 text-blue-500" />;
       case 'text':
@@ -1257,6 +1328,44 @@ export default function ProjectsPage() {
     return <User className="h-3 w-3" />;
   }
 
+  const getFileTypeFromName = (filename: string) => {
+    if (!filename) return 'file';
+    
+    const filenameStr = String(filename);
+    const cleanName = filenameStr.toLowerCase().trim();
+    const parts = cleanName.split('.');
+    const extension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
+    
+    if (['pdf'].includes(extension)) return 'pdf';
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'svg', 'ico'].includes(extension)) return 'image';
+    if (['html', 'css', 'js', 'ts', 'jsx', 'tsx', 'json', 'xml', 'py', 'java', 'c', 'cpp', 'cs', 'php', 'rb', 'go', 'swift', 'kotlin'].includes(extension)) return 'code';
+    if (['txt', 'md', 'doc', 'docx', 'rtf', 'odt', 'xls', 'xlsx', 'csv', 'ppt', 'pptx', 'pages', 'numbers', 'key', 'odf', 'ods', 'odp'].includes(extension)) return 'text';
+    
+    return 'file';
+  }
+
+  const getFileNameWithoutExtension = (filename: string) => {
+    if (!filename) return 'Archivo';
+    
+    const filenameStr = String(filename);
+    const nameWithoutPath = filenameStr.split('/').pop() || filenameStr;
+    let formattedName = nameWithoutPath.replace(/_/g, ' ');
+    formattedName = formattedName.replace(/\}+$/g, '');
+    formattedName = formattedName.replace(/['"]+/g, '');
+    
+    return formattedName;
+  }
+
+  const getFileExtension = (filename: string) => {
+    if (!filename) return '';
+    
+    const filenameStr = String(filename);
+    const parts = filenameStr.split('.');
+    if (parts.length <= 1) return '';
+    
+    return parts[parts.length - 1].toLowerCase();
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
@@ -1286,156 +1395,156 @@ export default function ProjectsPage() {
             </span>
           </div>
 
-          <Button
-            className="bg-black text-white dark:bg-white dark:text-black hover:opacity-90 transition-all"
+              <Button
+                className="bg-black text-white dark:bg-white dark:text-black hover:opacity-90 transition-all"
             onClick={() => setDialogOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Agregar
-          </Button>
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar
+              </Button>
         </div>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Briefcase className="h-5 w-5 text-primary" />
-              Crear nuevo proyecto
-            </DialogTitle>
-            <DialogDescription>
-              Completa los detalles del proyecto y asígnalo a un diseñador.
-            </DialogDescription>
-          </DialogHeader>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-primary" />
+                  Crear nuevo proyecto
+                </DialogTitle>
+                <DialogDescription>
+                  Completa los detalles del proyecto y asígnalo a un diseñador.
+                </DialogDescription>
+              </DialogHeader>
 
-          <div className="space-y-6 py-4">
-            {isCreatingProject && (
-              <div className="mb-4">
-                <Progress value={createProgress} className="h-2" />
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="title-empty">Título del proyecto <span className="text-destructive">*</span></Label>
-              <Input
-                id="title-empty"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                placeholder="Ej. Rediseño de marca"
-                disabled={isCreatingProject}
-                className={`rounded-md ${titleStatus?.isError ? 'border-destructive focus-visible:ring-destructive' : titleStatus && !titleStatus.isError ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
-              />
-              {isTitleCheckPending && (
-                <div className="text-xs text-muted-foreground flex items-center mt-1">
-                  <div className="animate-spin w-3 h-3 border border-muted-foreground rounded-full border-t-transparent mr-1"></div>
-                  Verificando disponibilidad...
-                </div>
-              )}
-              {titleStatus && (
-                <p className={`text-xs ${titleStatus.isError ? 'text-destructive' : 'text-green-500'} mt-1`}>
-                  {titleStatus.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description-empty">Descripción</Label>
-              <Textarea
-                id="description-empty"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Detalla los objetivos y requisitos del proyecto"
-                disabled={isCreatingProject}
-                className="rounded-md min-h-[120px]"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="assigned_to-empty">Asignar a diseñador <span className="text-destructive">*</span></Label>
-              <Select
-                disabled={isCreatingProject}
-                onValueChange={handleSelectChange}
-                value={formData.assigned_to}
-              >
-                <SelectTrigger className="rounded-md">
-                  <SelectValue placeholder="Seleccionar diseñador" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Sin asignar</SelectItem>
-                  {designers.length > 0 ? (
-                    designers.map(designer => (
-                      <SelectItem key={designer.id} value={designer.id}>
-                        {designer.email} (Diseñador)
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="no-designers" disabled>
-                      No hay diseñadores disponibles
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Archivos del proyecto</Label>
-              <FileInput
-                onChange={handleFileSelect}
-                disabled={isCreatingProject}
-                multiple
-              />
-              {formData.files.length > 0 && (
-                <div className="mt-2 space-y-2">
-                  <p className="text-sm font-medium">Archivos seleccionados:</p>
-                  <div className="bg-muted/50 rounded-md p-2 space-y-1">
-                    {formData.files.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between bg-background rounded px-3 py-1.5 text-sm">
-                        <div className="flex items-center">
-                          {getFileIcon(file.type)}
-                          <span className="ml-2">{file.name}</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-destructive"
-                          onClick={() => handleRemoveFile(index)}
-                          disabled={isCreatingProject}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+              <div className="space-y-6 py-4">
+                {isCreatingProject && (
+                  <div className="mb-4">
+                    <Progress value={createProgress} className="h-2" />
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
+                )}
 
-          <DialogFooter className="gap-2 flex justify-center sm:justify-center">
-            <DialogClose asChild>
-              <Button variant="outline" disabled={isCreatingProject}>
-                Cancelar
-              </Button>
-            </DialogClose>
-            <Button
-              onClick={createProject}
-              disabled={isCreatingProject || titleStatus?.isError === true}
-              className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
-            >
-              {isCreatingProject ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Creando...
-                </>
-              ) : (
-                'Crear proyecto'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                <div className="space-y-2">
+                  <Label htmlFor="title-empty">Título del proyecto <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="title-empty"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    placeholder="Ej. Rediseño de marca"
+                    disabled={isCreatingProject}
+                    className={`rounded-md ${titleStatus?.isError ? 'border-destructive focus-visible:ring-destructive' : titleStatus && !titleStatus.isError ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
+                  />
+                  {isTitleCheckPending && (
+                    <div className="text-xs text-muted-foreground flex items-center mt-1">
+                      <div className="animate-spin w-3 h-3 border border-muted-foreground rounded-full border-t-transparent mr-1"></div>
+                      Verificando disponibilidad...
+                    </div>
+                  )}
+                  {titleStatus && (
+                    <p className={`text-xs ${titleStatus.isError ? 'text-destructive' : 'text-green-500'} mt-1`}>
+                      {titleStatus.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description-empty">Descripción</Label>
+                  <Textarea
+                    id="description-empty"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Detalla los objetivos y requisitos del proyecto"
+                    disabled={isCreatingProject}
+                    className="rounded-md min-h-[120px]"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="assigned_to-empty">Asignar a diseñador <span className="text-destructive">*</span></Label>
+                  <Select
+                    disabled={isCreatingProject}
+                    onValueChange={handleSelectChange}
+                    value={formData.assigned_to}
+                  >
+                    <SelectTrigger className="rounded-md">
+                      <SelectValue placeholder="Seleccionar diseñador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Sin asignar</SelectItem>
+                      {designers.length > 0 ? (
+                        designers.map(designer => (
+                          <SelectItem key={designer.id} value={designer.id}>
+                            {designer.email} (Diseñador)
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-designers" disabled>
+                          No hay diseñadores disponibles
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Archivos del proyecto</Label>
+                  <FileInput
+                    onChange={handleFileSelect}
+                    disabled={isCreatingProject}
+                    multiple
+                  />
+                  {formData.files.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      <p className="text-sm font-medium">Archivos seleccionados:</p>
+                      <div className="bg-muted/50 rounded-md p-2 space-y-1">
+                        {formData.files.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between bg-background rounded px-3 py-1.5 text-sm">
+                            <div className="flex items-center">
+                              {getFileIcon(file.type)}
+                              <span className="ml-2">{file.name}</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-destructive"
+                              onClick={() => handleRemoveFile(index)}
+                              disabled={isCreatingProject}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2 flex justify-center sm:justify-center">
+                <DialogClose asChild>
+                  <Button variant="outline" disabled={isCreatingProject}>
+                    Cancelar
+                  </Button>
+                </DialogClose>
+                <Button
+                  onClick={createProject}
+                  disabled={isCreatingProject || titleStatus?.isError === true}
+                  className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                >
+                  {isCreatingProject ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Creando...
+                    </>
+                  ) : (
+                    'Crear proyecto'
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
       <Tabs defaultValue="grid" className="w-full">
         <div className="flex flex-col gap-4">
@@ -1682,11 +1791,11 @@ export default function ProjectsPage() {
                     className="mt-4 bg-gradient-to-r from-primary to-accent hover:opacity-90"
                     onClick={() => setDialogOpen(true)}
                   >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Crear primer proyecto
-                  </Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Crear primer proyecto
+                      </Button>
                 )}
-              </div>
+                        </div>
             )}
           </div>
         </TabsContent>
@@ -1767,6 +1876,12 @@ export default function ProjectsPage() {
                   <Briefcase className="h-6 w-6 text-primary" />
                   {viewingProject.title}
                 </DialogTitle>
+                <div className="flex items-center gap-2 mt-2">
+                    {getStatusBadge(viewingProject.status)}
+                  <span className="text-sm text-muted-foreground">
+                    Última actualización: {formatDate(viewingProject.updated_at)}
+                  </span>
+                </div>
               </DialogHeader>
               
               <div className="py-4">
@@ -1777,6 +1892,109 @@ export default function ProjectsPage() {
                       {viewingProject.description || "Sin descripción"}
                     </p>
                   </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
+                      <h3 className="font-medium mb-2">Creado por</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                          <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                        <div>
+                          <p className="text-sm font-medium">{viewingProject.created_by_email || 'No asignado'}</p>
+                          <p className="text-xs text-muted-foreground">{viewingProject.created_by_role || 'Usuario'}</p>
+                    </div>
+                </div>
+              </div>
+              
+                    <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
+                      <h3 className="font-medium mb-2">Asignado a</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                          <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                          </div>
+                        <div>
+                          <p className="text-sm font-medium">{viewingProject.assigned_to_email || 'No asignado'}</p>
+                          <p className="text-xs text-muted-foreground">{viewingProject.assigned_to_role || 'Diseñador'}</p>
+                        </div>
+                    </div>
+                  </div>
+              </div>
+              
+                  <div>
+                    <h3 className="font-medium mb-2">Archivos del proyecto</h3>
+                    {viewingProject.files && viewingProject.files.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                        {viewingProject.files.map((file, index) => {
+                          // Este archivo está recuperando los datos de supabase sin los nombres originales
+                          // Intentamos extraer el nombre real del archivo desde la ruta si está disponible
+                          let fileName = file.name || 'Archivo';
+                          
+                          // Si tenemos una ruta, extraer el nombre de archivo
+                          if (file.path && !fileName.includes('.')) {
+                            const pathParts = file.path.split('/');
+                            if (pathParts.length > 0) {
+                              fileName = decodeURIComponent(pathParts[pathParts.length - 1]);
+                            }
+                          }
+                          
+                          const extension = getFileExtension(fileName);
+                          const fileType = extension ? getFileTypeFromName(fileName) : (file.type || 'file');
+                          const displayName = getFileNameWithoutExtension(fileName);
+                          
+                          console.log(`Archivo ${index} (corregido):`, { 
+                            fileName, 
+                            displayName,
+                            extension, 
+                            fileType,
+                            path: file.path
+                          });
+                          
+                          return (
+                            <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
+                              <div className="bg-gray-100 dark:bg-gray-800 p-4 flex justify-center items-center">
+                                {getFileIcon(fileType)}
+                              </div>
+                              <CardHeader className="py-3">
+                                <CardTitle className="text-sm font-medium truncate">{displayName}</CardTitle>
+                                <CardDescription className="text-xs">
+                                  {extension ? extension.toUpperCase() : (file.size ? formatFileSize(file.size) : 'Desconocido')}
+                                </CardDescription>
+                              </CardHeader>
+                              <CardFooter className="py-2 bg-gray-50 dark:bg-gray-900 flex justify-end gap-2">
+                                {file.url && (
+                                  <>
+                                    <Button
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="h-8 px-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                      onClick={() => window.open(file.url, '_blank')}
+                                      title="Ver archivo"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="h-8 px-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                      onClick={() => downloadFile(file.url!, fileName)}
+                                      title="Descargar archivo"
+                                    >
+                                      <Download className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
+                              </CardFooter>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground bg-white/50 dark:bg-gray-800/50 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
+                        No hay archivos adjuntos
+                      </div>
+                    )}
+                </div>
                 </div>
               </div>
             </>
@@ -1812,31 +2030,31 @@ export default function ProjectsPage() {
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5 text-primary" />
               Editar proyecto
-            </DialogTitle>
-            <DialogDescription>
+              </DialogTitle>
+              <DialogDescription>
               Modifica los detalles del proyecto y asígnalo a un diseñador.
-            </DialogDescription>
-          </DialogHeader>
+              </DialogDescription>
+            </DialogHeader>
 
-          <div className="space-y-6 py-4">
+            <div className="space-y-6 py-4">
             {isEditingProject && (
-              <div className="mb-4">
+                <div className="mb-4">
                 <Progress value={editProgress} className="h-2" />
-              </div>
-            )}
+                </div>
+              )}
 
-            <div className="space-y-2">
+              <div className="space-y-2">
               <Label htmlFor="edit-title">Título del proyecto <span className="text-destructive">*</span></Label>
-              <Input
+                <Input
                 id="edit-title"
-                name="title"
+                  name="title"
                 value={editFormData.title}
                 onChange={handleEditInputChange}
-                placeholder="Ej. Rediseño de marca"
+                  placeholder="Ej. Rediseño de marca"
                 disabled={isEditingProject}
                 className={`rounded-md ${editTitleStatus?.isError ? 'border-destructive focus-visible:ring-destructive' : editTitleStatus && !editTitleStatus.isError ? 'border-green-500 focus-visible:ring-green-500' : ''}`}
               />
@@ -1851,105 +2069,120 @@ export default function ProjectsPage() {
                   {editTitleStatus.message}
                 </p>
               )}
-            </div>
+              </div>
 
-            <div className="space-y-2">
+              <div className="space-y-2">
               <Label htmlFor="edit-description">Descripción</Label>
-              <Textarea
+                <Textarea
                 id="edit-description"
-                name="description"
+                  name="description"
                 value={editFormData.description}
                 onChange={handleEditInputChange}
-                placeholder="Detalla los objetivos y requisitos del proyecto"
+                  placeholder="Detalla los objetivos y requisitos del proyecto"
                 disabled={isEditingProject}
-                className="rounded-md min-h-[120px]"
-              />
-            </div>
+                  className="rounded-md min-h-[120px]"
+                />
+              </div>
 
-            <div className="space-y-2">
+              <div className="space-y-2">
               <Label htmlFor="edit-assigned_to">Asignar a diseñador <span className="text-destructive">*</span></Label>
-              <Select
+                <Select
                 disabled={isEditingProject}
                 onValueChange={(value) => handleEditSelectChange('assigned_to', value)}
                 value={editFormData.assigned_to}
-              >
-                <SelectTrigger className="rounded-md">
-                  <SelectValue placeholder="Seleccionar diseñador" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Sin asignar</SelectItem>
-                  {designers.length > 0 ? (
-                    designers.map(designer => (
-                      <SelectItem key={designer.id} value={designer.id}>
-                        {designer.email} (Diseñador)
+                >
+                  <SelectTrigger className="rounded-md">
+                    <SelectValue placeholder="Seleccionar diseñador" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Sin asignar</SelectItem>
+                    {designers.length > 0 ? (
+                      designers.map(designer => (
+                        <SelectItem key={designer.id} value={designer.id}>
+                          {designer.email} (Diseñador)
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-designers" disabled>
+                        No hay diseñadores disponibles
                       </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="no-designers" disabled>
-                      No hay diseñadores disponibles
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label>Archivos del proyecto</Label>
-              <FileInput
-                onChange={handleEditFileSelect}
-                disabled={isEditingProject}
-                multiple
-              />
-              {editFormData.files.length > 0 && (
-                <div className="mt-2 space-y-2">
-                  <p className="text-sm font-medium">Archivos:</p>
-                  <div className="bg-muted/50 rounded-md p-2 space-y-1">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-files">Archivos</Label>
+                <div className="mt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {editFormData.files.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between bg-background rounded px-3 py-1.5 text-sm">
-                        <div className="flex items-center">
+                      <div key={index} className="relative group">
+                        <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                           {getFileIcon(file.type)}
-                          <span className="ml-2">{file.name}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {file.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {file.size ? `${(file.size / 1024).toFixed(2)} KB` : ''}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                              setEditFormData(prev => ({
+                                ...prev,
+                                files: prev.files.filter((_, i) => i !== index)
+                              }))
+                            }}
+                          >
+                            <X className="h-4 w-4 text-red-500" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-destructive"
-                          onClick={() => handleRemoveEditFile(index)}
-                          disabled={isEditingProject}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
                       </div>
                     ))}
                   </div>
+                  <div className="mt-4">
+                    <Input
+                      id="edit-files"
+                      type="file"
+                      multiple
+                      onChange={handleEditFileSelect}
+                      className="cursor-pointer"
+                    />
+                  </div>
                 </div>
-              )}
+              </div>
+              </div>
             </div>
-          </div>
 
           <DialogFooter className="gap-2 flex justify-center sm:justify-end">
-            <DialogClose asChild>
+              <DialogClose asChild>
               <Button variant="outline" disabled={isEditingProject}>
-                Cancelar
-              </Button>
-            </DialogClose>
-            <Button
+                  Cancelar
+                </Button>
+              </DialogClose>
+              <Button
               onClick={initiateProjectUpdate}
               disabled={isEditingProject || editTitleStatus?.isError === true}
-              className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
-            >
+                className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
+              >
               {isEditingProject ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                   Actualizando...
-                </>
-              ) : (
+                  </>
+                ) : (
                 'Actualizar proyecto'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
     </div>
   )
 }
