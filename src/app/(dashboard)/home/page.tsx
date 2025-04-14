@@ -16,7 +16,7 @@ export default function HomePage() {
   return (
     <div className="relative w-full overflow-x-hidden font-sans bg-white">
       <div className="w-full">
-        {/* Hero Section */}
+
         <div className="w-full min-h-screen bg-gradient-to-b from-[#e8ffdb] via-[#b8f7ff] to-[#7ee8ff]">
           <div className="flex flex-col min-h-screen w-full max-w-6xl mx-auto px-4">
             <div className="absolute left-1/2 transform -translate-x-1/2 top-[15vh] z-10">
@@ -64,7 +64,6 @@ export default function HomePage() {
           </div>
           </div>
           
-        {/* Sección Logos Empresas */}
         <div className="py-16 bg-[#7ee8ff] overflow-hidden">
           <div className="max-w-6xl mx-auto px-4">
             <h3 className="text-center text-black text-sm font-medium uppercase tracking-[0.2em] mb-16">
@@ -124,7 +123,6 @@ export default function HomePage() {
           }
         `}</style>
 
-        {/* JavaScript para el efecto de cursor tracking */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -179,7 +177,6 @@ export default function HomePage() {
           }}
         />
 
-        {/* Sección Equipo Creativo */}
         <section className="bg-[#7ee8ff] py-20">
           <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
             <div>
@@ -204,7 +201,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Sección Te encantará nuestra aplicación */}
         <section className="bg-[#7ee8ff] py-20">
           <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-start">
             <div>
@@ -224,7 +220,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Sección Video */}
         <section className="bg-[#7ee8ff] py-20">
           <div className="max-w-7xl mx-auto px-4">
             <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-xl">
@@ -240,8 +235,6 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-        {/* Proceso de trabajo */}
         <section className="bg-[#7ee8ff] py-20">
           <div className="max-w-7xl mx-auto px-4">
             <div className="grid md:grid-cols-3 gap-12">
@@ -302,11 +295,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Beneficios */}
         <section className="bg-[#7ee8ff] py-20">
           <div className="max-w-7xl mx-auto px-4">
             <div className="grid md:grid-cols-5 gap-8">
-              {/* Grid de 4 tarjetas a la izquierda */}
+   
               <div className="md:col-span-3 grid grid-cols-2 gap-8">
                 <div className="bg-white p-8 rounded-2xl">
                   <h3 className="text-3xl font-black text-black mb-4">
@@ -345,7 +337,6 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Tarjeta alargada a la derecha */}
               <div className="md:col-span-2 bg-[#e8ffdb] p-8 rounded-2xl flex flex-col justify-between">
                 <div>
                   <h3 className="text-4xl font-black text-black mb-6">
@@ -365,7 +356,6 @@ export default function HomePage() {
           </div>
         </section>
         
-        {/* Servicios */}
         <section className="bg-[#7ee8ff] py-20">
           <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
             <div className="relative">
@@ -402,11 +392,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Tarjetas de Servicios */}
         <section className="bg-[#7ee8ff] py-20">
           <div className="max-w-7xl mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 mb-8">
-              {/* Primera fila - 2 tarjetas */}
+         
               <div className="bg-white p-8 rounded-2xl flex items-start gap-6">
                 <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border border-black">
                   <Palette className="w-8 h-8 text-black" />
@@ -427,7 +416,6 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Segunda fila - 2 tarjetas */}
               <div className="bg-white p-8 rounded-2xl flex items-start gap-6">
                 <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border border-black">
                   <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -452,7 +440,7 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Tercera fila - 3 tarjetas */}
+       
               <div className="bg-white p-8 rounded-2xl flex items-start gap-6">
                 <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border border-black">
                   <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -708,7 +696,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Comienza hoy mismo */}
         <section className="bg-[#7ee8ff] py-20 px-8">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-3xl border-2 border-black p-16 text-center">
@@ -735,7 +722,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Testimonios */}
         <section className="bg-[#7ee8ff] py-20 px-8">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-[48px] font-black text-black mb-16 text-center">
@@ -749,7 +735,7 @@ export default function HomePage() {
             </h2>
 
             <div className="grid md:grid-cols-2 gap-8">
-              {/* Primera tarjeta */}
+  
               <div className="bg-white p-8 rounded-2xl border-2 border-black">
                 <p className="text-xl text-black mb-8">
                   Lo que más me gusta de trabajar con Grayola es que se puede diseñar cualquier cosa, iterar rápido y lanzar en tiempo récord.
@@ -768,7 +754,6 @@ export default function HomePage() {
         </div>
       </div>
       
-              {/* Segunda tarjeta */}
               <div className="bg-white p-8 rounded-2xl border-2 border-black">
                 <p className="text-xl text-black mb-4">
                   No queríamos comprometernos con aumentar nuestra nómina de diseñadores inhouse, teniendo en cuenta que el flujo de clientes podía subir y bajar.
@@ -793,7 +778,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Preguntas Frecuentes */}
         <section className="bg-black py-20 px-4" id="preguntas">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-black text-white mb-4">Preguntas frecuentes</h2>
@@ -899,7 +883,6 @@ export default function HomePage() {
           </div>
         </section>
         
-        {/* Footer */}
         <footer className="bg-black text-white py-16 px-4">
           <div className="container max-w-7xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-16">

@@ -1793,7 +1793,7 @@ export default function ProjectsPage() {
                 Ver
               </Button>
               
-              {(isAdmin || isProjectManager) && (
+              {isProjectManager && (
                 <Button
                   variant="ghost"
                   size="sm"
