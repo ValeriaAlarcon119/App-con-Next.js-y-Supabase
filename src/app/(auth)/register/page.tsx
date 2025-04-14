@@ -87,10 +87,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-background to-background/80">
-      <div className="w-full max-w-md space-y-6 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-white to-[#b6f8ff]/20 dark:from-black dark:to-grayola-darkblue font-sans">
+      <div className="w-full max-w-md space-y-8 px-4">
         <div className="flex flex-col items-center justify-center text-center">
-          <div className="relative h-20 w-40 mb-4">
+          <div className="relative h-20 w-40 mb-2">
             <Image
               src="/logo.png"
               alt="Grayola Logo"
@@ -99,15 +99,18 @@ export default function RegisterPage() {
               priority
             />
           </div>
-          <p className="text-xl font-medium text-muted-foreground">
-            Crea una cuenta para comenzar
+          <h1 className="text-2xl font-bold mt-4 text-black dark:text-white">
+            Crear una cuenta
+          </h1>
+          <p className="text-base text-gray-600 dark:text-gray-400 mt-2 mb-6">
+            Regístrate para empezar a usar Grayola
           </p>
         </div>
 
-        <div className="bg-card border rounded-xl shadow-lg p-8">
+        <div className="grayola-card p-8">
           <form onSubmit={handleRegister} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-base">Correo electrónico</Label>
+            <div className="space-y-2 flex flex-col">
+              <Label htmlFor="email" className="text-sm font-medium">Correo electrónico</Label>
               <Input
                 id="email"
                 type="email"
@@ -115,12 +118,13 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-11 text-base"
+                className="h-12 text-base rounded-lg focus:ring-grayola-lime"
+                autoComplete="email"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-base">Contraseña</Label>
+            <div className="space-y-2 flex flex-col">
+              <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -128,24 +132,26 @@ export default function RegisterPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="h-11 text-base pr-10"
+                  className="h-12 text-base rounded-lg pr-10 focus:ring-grayola-lime"
+                  autoComplete="new-password"
                 />
-                <button 
+                <Button
                   type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  variant="ghost"
+                  className="absolute right-0 top-0 h-12 w-12 px-3"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOffIcon className="h-5 w-5" />
+                    <EyeOffIcon className="h-5 w-5 text-gray-500" />
                   ) : (
-                    <EyeIcon className="h-5 w-5" />
+                    <EyeIcon className="h-5 w-5 text-gray-500" />
                   )}
-                </button>
+                </Button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-base">Confirmar contraseña</Label>
+            <div className="space-y-2 flex flex-col">
+              <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirmar contraseña</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -153,19 +159,21 @@ export default function RegisterPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className={`h-11 text-base pr-10 ${passwordError ? 'border-red-500 focus:ring-red-500' : ''}`}
+                  className={`h-12 text-base rounded-lg pr-10 ${passwordError ? 'border-red-500 focus:ring-red-500' : ''}`}
+                  autoComplete="new-password"
                 />
-                <button 
+                <Button
                   type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  variant="ghost"
+                  className="absolute right-0 top-0 h-12 w-12 px-3"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? (
-                    <EyeOffIcon className="h-5 w-5" />
+                    <EyeOffIcon className="h-5 w-5 text-gray-500" />
                   ) : (
-                    <EyeIcon className="h-5 w-5" />
+                    <EyeIcon className="h-5 w-5 text-gray-500" />
                   )}
-                </button>
+                </Button>
               </div>
               {passwordError && (
                 <p className="text-sm text-red-500">{passwordError}</p>
@@ -188,12 +196,12 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 text-base font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary"
+              className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black w-full"
               disabled={loading}
             >
               {loading ? (
                 <div className="flex items-center justify-center">
-                  <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-white"></div>
+                  <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-black"></div>
                   <span className="ml-2">Creando cuenta...</span>
                 </div>
               ) : (
@@ -203,14 +211,14 @@ export default function RegisterPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <span className="text-muted-foreground">
+            <span className="text-gray-600 dark:text-gray-400">
               ¿Ya tienes una cuenta?{' '}
             </span>
             <Link
               href="/login"
-              className="text-primary hover:underline font-medium"
+              className="text-black dark:text-white hover:text-grayola-lime dark:hover:text-grayola-lime font-medium transition-colors"
             >
-              Inicia sesión
+              Iniciar sesión
             </Link>
           </div>
         </div>

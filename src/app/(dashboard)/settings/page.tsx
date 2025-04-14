@@ -131,11 +131,20 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-screen-xl">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-900">Ajustes</h1>
-          <p className="text-muted-foreground">Personaliza tu experiencia y administra tu cuenta</p>
+    <div className="container mx-auto px-4 py-6 space-y-6 font-sans">
+      <div className="relative overflow-hidden bg-[#7ee8ff] p-4 rounded-xl shadow-sm border border-black">
+        <div className="relative flex flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left md:items-center">
+          <div className="mx-auto md:mx-0">
+            <h1 className="text-3xl font-black text-black">
+              Configuración
+            </h1>
+            
+            <span className="inline-block bg-[#e8ffdb] text-black py-0.5 px-2 rounded-full text-xs mt-1 font-medium border border-black">
+              {user?.role === 'client' && "Cliente"}
+              {user?.role === 'designer' && "Diseñador"}
+              {user?.role === 'project_manager' && "Project Manager"}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -251,7 +260,11 @@ export default function SettingsPage() {
               </CardContent>
               <CardFooter className="flex justify-between border-t pt-6 px-6">
                 <Button variant="outline" className="dark:bg-white dark:text-black dark:hover:bg-gray-200" onClick={() => router.push('/dashboard')}>Cancelar</Button>
-                <Button onClick={handleSaveProfile} disabled={isLoading}>
+                <Button 
+                  onClick={handleSaveProfile} 
+                  disabled={isLoading}
+                  className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
+                >
                   {isLoading ? (
                     <>
                       <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -314,7 +327,11 @@ export default function SettingsPage() {
               </CardContent>
               <CardFooter className="flex justify-between border-t pt-6 px-6">
                 <Button variant="outline" className="dark:bg-white dark:text-black dark:hover:bg-gray-200" onClick={() => router.push('/dashboard')}>Cancelar</Button>
-                <Button onClick={handleSaveProfile} disabled={isLoading}>
+                <Button 
+                  onClick={handleSaveProfile} 
+                  disabled={isLoading}
+                  className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
+                >
                   {isLoading ? (
                     <>
                       <RefreshCw className="mr-2 h-4 w-4 animate-spin" />

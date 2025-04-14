@@ -1,0 +1,9 @@
+<svg width="150" height="120" viewBox="0 0 150 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Formas verdes - base -->
+  <path d="M100 70L58 100L85 50L130 40L100 70Z" fill="#B3E146"/>
+  <path d="M85 50L58 100L40 60L60 30L85 50Z" fill="#4ADE80"/>
+  
+  <!-- Pájaro negro -->
+  <path d="M90 50C85 50 80 53 76 58C72 53 66 50 60 50C49 50 40 59 40 70C40 81 49 90 60 90H90C101 90 110 81 110 70C110 59 101 50 90 50Z" fill="black"/>
+  <circle cx="75" cy="65" r="5" fill="white" />
+</svg> 

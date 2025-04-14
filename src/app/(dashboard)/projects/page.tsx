@@ -6,7 +6,7 @@ import {
   Plus, Search, Filter, FileText, User, Calendar, Clock, 
   CheckCircle, Edit, Trash2, Eye, AlertCircle, MoreHorizontal,
   RefreshCw, ListFilter, ChevronDown, X, Tag, Briefcase, PenLine, PlusCircle, Edit2, Upload, FileUp, Paperclip, 
-  File, Loader2, FileImage, FileCode, Download, Building2, Paintbrush, ShieldCheck
+  File, Loader2, FileImage, FileCode, Download, Building2, Paintbrush, ShieldCheck, FolderOpen, Pencil, Files, Save
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -45,6 +45,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { Progress } from '@/components/ui/progress'
 import { format as dateFormat } from 'date-fns'
 import { es as dateLocale } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
 
 interface UserData {
   id: string
@@ -75,6 +76,7 @@ interface Project {
   created_by_role?: string
   assigned_to_email?: string
   assigned_to_role?: string
+  tags?: string[]
 }
 
 const FileInput = ({ onChange, disabled, multiple = false }: { 
@@ -1694,6 +1696,121 @@ export default function ProjectsPage() {
     return parts[parts.length - 1].toLowerCase();
   }
 
+  const getStatusText = (status?: string) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return 'Pendiente';
+      case 'in_progress':
+        return 'En Progreso';
+      case 'completed':
+        return 'Completado';
+      default:
+        return 'Desconocido';
+    }
+  };
+
+  // Utilizar la función viewProjectDetails existente en renderProjectCards
+  const renderProjectCards = () => {
+    if (filteredProjects.length === 0) {
+      return (
+        <div className="text-center py-20 text-muted-foreground">
+          <FolderOpen className="h-16 w-16 mx-auto text-muted-foreground opacity-25 mb-4" />
+          <h3 className="text-xl font-medium mb-2">No se encontraron proyectos</h3>
+          <p className="text-muted-foreground">No hay proyectos que coincidan con los criterios de búsqueda.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredProjects.map((project) => (
+          <div key={project.id} className="project-card overflow-hidden group">
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div 
+                  className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center",
+                    {
+                      'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400': project.status === 'pending',
+                      'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400': project.status === 'completed',
+                      'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400': project.status === 'in_progress',
+                    }
+                  )}
+                >
+                  {project.status === 'pending' && <Clock className="h-5 w-5" />}
+                  {project.status === 'in_progress' && <Loader2 className="h-5 w-5" />}
+                  {project.status === 'completed' && <CheckCircle className="h-5 w-5" />}
+                </div>
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    "font-medium text-xs",
+                    {
+                      'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800': project.status === 'pending',
+                      'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800': project.status === 'completed',
+                      'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800': project.status === 'in_progress',
+                    }
+                  )}
+                >
+                  {getStatusText(project.status)}
+                </Badge>
+              </div>
+              <h3 className="text-xl font-semibold mb-2 line-clamp-2 group-hover:text-grayola-teal transition-colors">{project.title}</h3>
+              <p className="text-muted-foreground mb-4 text-sm line-clamp-3">{project.description}</p>
+              
+              <div className="flex flex-wrap gap-2 mb-4">
+                {project.tags?.map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="bg-secondary/30 hover:bg-secondary/50">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+              
+              <div className="border-t border-border pt-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    {formatDate(project.created_at)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Files className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    {project.files?.length || 0} archivos
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-muted/30 dark:bg-muted/10 px-6 py-3 flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => viewProjectDetails(project)}
+                className="rounded-full text-grayola-teal hover:text-grayola-teal hover:bg-grayola-teal/10"
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                Ver
+              </Button>
+              
+              {(isAdmin || isProjectManager) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEditProject(project)}
+                  className="rounded-full text-grayola-teal hover:text-grayola-teal hover:bg-grayola-teal/10"
+                >
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Editar
+                </Button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
@@ -1704,37 +1821,33 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-100 via-slate-100 to-indigo-100 dark:from-gray-900 dark:via-black dark:to-gray-900 p-4 rounded-xl shadow-sm border border-gray-300 dark:border-gray-800">
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse dark:bg-blue-900"></div>
-        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse dark:bg-indigo-900"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 backdrop-blur-sm dark:from-blue-900/20 dark:to-indigo-900/20"></div>
-        
+    <div className="container mx-auto px-4 py-6 space-y-6 font-sans">
+      <div className="relative overflow-hidden bg-[#7ee8ff] p-4 rounded-xl shadow-sm border border-black">
         <div className="relative flex flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left md:items-center">
           <div className="mx-auto md:mx-0">
-            <h1 className="text-3xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 drop-shadow-sm tracking-tight dark:from-white dark:to-gray-300">
+            <h1 className="text-3xl font-black text-black">
               Gestión de Proyectos
             </h1>
             
-            <span className="inline-block bg-blue-200 text-blue-900 py-0.5 px-2 rounded-full text-xs mt-1 dark:bg-blue-900/40 dark:text-white font-medium">
+            <span className="inline-block bg-[#e8ffdb] text-black py-0.5 px-2 rounded-full text-xs mt-1 font-medium border border-black">
               {isProjectManager && "Acceso completo"}
               {isClient && "Puedes crear proyectos"}
               {isDesigner && "Solo visualización"}
             </span>
           </div>
 
-              <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:opacity-90 transition-all"
+          <Button
+            className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
             onClick={() => setDialogOpen(true)}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Agregar
-              </Button>
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Crear proyecto
+          </Button>
         </div>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto font-sans">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Briefcase className="h-5 w-5 text-primary" />
@@ -1850,22 +1963,25 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
-              <DialogFooter className="gap-2 flex justify-center sm:justify-center">
-                <DialogClose asChild>
-                  <Button variant="outline" disabled={isCreatingProject}>
-                    Cancelar
-                  </Button>
-                </DialogClose>
+              <DialogFooter className="mt-4 flex justify-center gap-4">
                 <Button
+                  variant="outline"
+                  onClick={() => setDialogOpen(false)}
+                  disabled={isCreatingProject}
+                  className="border-2 border-black rounded-full"
+                >
+                  Cancelar
+                </Button>
+                <Button 
                   onClick={createProject}
-                  disabled={isCreatingProject || titleStatus?.isError === true}
-                  className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                  disabled={isCreatingProject}
+                  className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
                 >
                   {isCreatingProject ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Creando...
-                    </>
+                    <div className="flex items-center justify-center">
+                      <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-black"></div>
+                      <span className="ml-2">Creando proyecto...</span>
+                    </div>
                   ) : (
                     'Crear proyecto'
                   )}
@@ -2196,7 +2312,7 @@ export default function ProjectsPage() {
       </Tabs>
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-gray-200 dark:border-gray-700">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-gray-200 dark:border-gray-700 font-sans">
           {viewingProject && (
             <>
               <DialogHeader>
@@ -2340,12 +2456,14 @@ export default function ProjectsPage() {
               variant="outline"
               onClick={() => setConfirmDialogOpen(false)}
               disabled={isEditingProject}
+              className="border-2 border-black rounded-full"
             >
               No, cancelar
             </Button>
             <Button 
               onClick={updateProject}
               disabled={isEditingProject}
+              className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
             >
               Sí, confirmar
             </Button>
@@ -2354,7 +2472,7 @@ export default function ProjectsPage() {
       </Dialog>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto font-sans">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5 text-primary" />
@@ -2489,27 +2607,30 @@ export default function ProjectsPage() {
               </div>
             </div>
 
-          <DialogFooter className="gap-2 flex justify-center sm:justify-end">
-              <DialogClose asChild>
-              <Button variant="outline" disabled={isEditingProject}>
-                  Cancelar
-                </Button>
-              </DialogClose>
-              <Button
+          <DialogFooter className="mt-4 flex justify-center gap-4">
+            <Button
+              variant="outline"
+              onClick={() => setEditDialogOpen(false)}
+              disabled={isEditingProject}
+              className="border-2 border-black rounded-full"
+            >
+              Cancelar
+            </Button>
+            <Button 
               onClick={initiateProjectUpdate}
               disabled={isEditingProject || editTitleStatus?.isError === true}
-                className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
-              >
+              className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
+            >
               {isEditingProject ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Actualizando...
-                  </>
-                ) : (
+                <div className="flex items-center justify-center">
+                  <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-black"></div>
+                  <span className="ml-2">Actualizando proyecto...</span>
+                </div>
+              ) : (
                 'Actualizar proyecto'
-                )}
-              </Button>
-            </DialogFooter>
+              )}
+            </Button>
+          </DialogFooter>
           </DialogContent>
         </Dialog>
     </div>

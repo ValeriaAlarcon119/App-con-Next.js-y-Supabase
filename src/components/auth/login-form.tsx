@@ -8,11 +8,13 @@ import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/use-auth'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { EyeIcon, EyeOffIcon } from 'lucide-react'
 
 export function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
   const { signIn } = useAuth()
 
@@ -35,7 +37,7 @@ export function LoginForm() {
     <div className="grid gap-6">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-sm font-medium">Email</Label>
           <Input
             id="email"
             type="email"
@@ -43,31 +45,59 @@ export function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
             disabled={isLoading}
-            className="my-0 mb-2 block h-10 w-full rounded-md border border-slate-300 py-2 px-3 text-sm placeholder:text-slate-400 hover:border-slate-400 focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:ring-offset-1"
+            className="h-12 text-base rounded-lg focus:ring-grayola-lime"
+            placeholder="tu@ejemplo.com"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Contraseña</Label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={isLoading}
-            autoComplete="current-password"
-            className="my-0 mb-2 block h-10 w-full rounded-md border border-slate-300 py-2 px-3 text-sm placeholder:text-slate-400 hover:border-slate-400 focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:ring-offset-1"
-          />
+          <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={isLoading}
+              autoComplete="current-password"
+              className="h-12 text-base rounded-lg pr-10 focus:ring-grayola-lime"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              className="absolute right-0 top-0 h-12 w-12 px-3"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <EyeOffIcon className="h-5 w-5 text-gray-500" />
+              ) : (
+                <EyeIcon className="h-5 w-5 text-gray-500" />
+              )}
+            </Button>
+          </div>
         </div>
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+        <Button 
+          type="submit" 
+          className="grayola-button w-full h-12 text-base font-medium"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <div className="flex items-center justify-center">
+              <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-black"></div>
+              <span className="ml-2">Iniciando sesión...</span>
+            </div>
+          ) : (
+            'Iniciar sesión'
+          )}
         </Button>
       </form>
       <div className="text-center text-sm">
-        ¿No tienes una cuenta?{" "}
+        <span className="text-gray-600 dark:text-gray-400">
+          ¿No tienes una cuenta?{" "}
+        </span>
         <Link
           href="/register"
-          className="underline hover:text-neutral-800"
+          className="text-black dark:text-white hover:text-grayola-lime dark:hover:text-grayola-lime font-medium transition-colors"
         >
           Regístrate
         </Link>

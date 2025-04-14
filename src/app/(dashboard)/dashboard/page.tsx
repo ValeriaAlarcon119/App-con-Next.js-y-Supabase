@@ -48,6 +48,7 @@ export default function DashboardPage() {
   const [projectCount, setProjectCount] = useState(0)
   const [userCount, setUserCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -78,6 +79,15 @@ export default function DashboardPage() {
         if (usersError) throw usersError
         setUsers(usersData || [])
         setUserCount(usersCount || 0)
+
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', supabase.auth.getUser().data.user.id)
+        
+        if (userData && userData.length > 0) {
+          setUser(userData[0])
+        }
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
@@ -89,14 +99,21 @@ export default function DashboardPage() {
   }, [])
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary/70 to-primary bg-clip-text text-transparent">
-          Panel de Control
-        </h2>
-        <p className="text-muted-foreground">
-          Bienvenido a tu dashboard, aquí podrás ver un resumen de tus proyectos y actividades.
-        </p>
+    <div className="container mx-auto px-4 py-6 space-y-6 font-sans">
+      <div className="relative overflow-hidden bg-[#7ee8ff] p-4 rounded-xl shadow-sm border border-black">
+        <div className="relative flex flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left md:items-center">
+          <div className="mx-auto md:mx-0">
+            <h1 className="text-3xl font-black text-black">
+              Dashboard
+            </h1>
+            
+            <span className="inline-block bg-[#e8ffdb] text-black py-0.5 px-2 rounded-full text-xs mt-1 font-medium border border-black">
+              {user?.role === 'client' && "Cliente"}
+              {user?.role === 'designer' && "Diseñador"}
+              {user?.role === 'project_manager' && "Project Manager"}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

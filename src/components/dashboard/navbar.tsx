@@ -295,7 +295,7 @@ export function Navbar() {
   }
 
   return (
-    <div className="border-b shadow-sm dark:shadow-gray-800/10 dark:bg-black">
+    <div className="border-b shadow-sm dark:shadow-gray-800/10 dark:bg-black font-sans">
       <div className="flex h-16 items-center px-4 md:px-6">
         <Link href="/dashboard" className="flex items-center mr-6">
           <Image
@@ -314,20 +314,22 @@ export function Navbar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "px-4 py-2 rounded-md inline-flex items-center gap-2 transition-colors font-medium group",
+                    "px-4 py-2.5 rounded-full inline-flex items-center gap-2 transition-colors font-medium group",
                     pathname === item.href
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-[#7fff00]/20 text-black dark:text-white hover:bg-[#7fff00]/30"
                       : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/90"
                   )}
                 >
                   <span className={cn(
                     pathname === item.href
-                      ? "text-primary"
-                      : "text-gray-700 dark:text-gray-200 group-hover:text-blue-600"
+                      ? "text-black dark:text-white"
+                      : "text-gray-700 dark:text-gray-200 group-hover:text-[#7fff00]"
                   )}>
                     {item.icon}
                   </span>
-                  <span className="group-hover:text-blue-600">{item.name}</span>
+                  <span className={pathname === item.href ? "text-black dark:text-white" : "group-hover:text-[#7fff00]"}>
+                    {item.name}
+                  </span>
                 </Link>
               </li>
             ))}
@@ -341,7 +343,7 @@ export function Navbar() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="rounded-full h-10 w-10 hover:bg-gray-100/90 dark:hover:bg-gray-800/90 text-gray-700 dark:text-gray-200 hover:text-blue-600 relative"
+                className="rounded-full h-10 w-10 hover:bg-gray-100/90 dark:hover:bg-gray-800/90 text-gray-700 dark:text-gray-200 hover:text-grayola-teal relative"
                 aria-label="Mostrar notificaciones"
               >
                 <Bell className="h-5 w-5" />
@@ -353,14 +355,14 @@ export function Navbar() {
               </Button>
               
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-grayola-darkblue rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                   <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                     <h3 className="font-medium">Notificaciones</h3>
                     {notifications.filter(n => !n.read).length > 0 && (
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="text-xs h-7"
+                        className="text-xs h-7 hover:text-grayola-teal"
                         onClick={async () => {
                           // Marcar todas las notificaciones como leídas
                           setNotifications(prev => 
@@ -392,7 +394,7 @@ export function Navbar() {
                         {notifications.map((notification) => (
                           <div 
                             key={notification.id} 
-                            className={`p-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 ${notification.read ? 'opacity-70' : 'bg-blue-50/40 dark:bg-blue-900/20'}`}
+                            className={`p-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 ${notification.read ? 'opacity-70' : 'bg-grayola-teal/10 dark:bg-grayola-teal/5'}`}
                             onClick={async () => {
                               // Si no está leída, marcarla como leída
                               if (!notification.read) {
@@ -415,8 +417,8 @@ export function Navbar() {
                             }}
                           >
                             <div className="flex items-start gap-2">
-                              <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center">
-                                <Briefcase className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+                              <div className="h-8 w-8 rounded-full bg-grayola-teal/20 dark:bg-grayola-teal/10 flex items-center justify-center">
+                                <Briefcase className="h-4 w-4 text-grayola-teal dark:text-grayola-turquoise" />
                               </div>
                               <div className="flex-1">
                                 <p className="text-sm">{notification.message}</p>
@@ -428,7 +430,7 @@ export function Navbar() {
                                 </p>
                               </div>
                               {!notification.read && (
-                                <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                                <div className="h-2 w-2 rounded-full bg-grayola-teal"></div>
                               )}
                             </div>
                           </div>
@@ -445,7 +447,7 @@ export function Navbar() {
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="rounded-full h-10 w-10 hover:bg-gray-100/90 dark:hover:bg-gray-800/90 text-gray-700 dark:text-gray-200 hover:text-blue-600"
+            className="rounded-full h-10 w-10 hover:bg-gray-100/90 dark:hover:bg-gray-800/90 text-gray-700 dark:text-gray-200 hover:text-grayola-teal"
             aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
           >
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -460,7 +462,7 @@ export function Navbar() {
                 >
                   <Avatar className="h-8 w-8 border shadow-sm">
                     <AvatarImage src="/avatar.png" alt="Avatar" />
-                    <AvatarFallback className="text-xs">
+                    <AvatarFallback className="text-xs bg-grayola-lime/10 text-black dark:text-white">
                       {user.user_metadata?.name
                         ? user.user_metadata.name
                             .split(" ")
@@ -481,7 +483,7 @@ export function Navbar() {
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-56">
+              <DropdownMenuContent align="center" className="w-56 rounded-xl">
                 <DropdownMenuLabel className="group flex flex-col items-center space-y-1 text-center">
                   <p className="text-sm font-medium leading-none">
                     {user?.user_metadata?.name || 'Usuario'}
@@ -575,7 +577,7 @@ export function Navbar() {
                               className={cn(
                                 "pl-6 pr-2 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
                                 pathname === item.href
-                                  ? "bg-primary/10 text-primary font-medium"
+                                  ? "bg-grayola-lime/20 text-black dark:text-white font-medium"
                                   : "text-gray-700 dark:text-gray-200"
                               )}
                             >

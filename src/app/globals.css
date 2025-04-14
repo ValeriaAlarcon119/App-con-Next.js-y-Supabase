@@ -46,48 +46,48 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 165 100% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 214 80% 56%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
+    --primary: 100 85% 67%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 178 75% 55%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
-    --accent: 199 89% 48%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 178 75% 55%;
+    --accent-foreground: 222 47% 11%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 214 80% 56%;
+    --ring: 100 85% 67%;
     --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222 47% 11%;
+    --background: 222 47% 5%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 11%;
+    --card: 222 47% 7%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
+    --popover: 222 47% 7%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
+    --primary: 100 85% 67%;
     --primary-foreground: 222 47% 11%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 178 75% 55%;
+    --secondary-foreground: 222 47% 11%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: 199 89% 48%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 178 75% 55%;
+    --accent-foreground: 222 47% 11%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
     --border: 217 33% 17%;
     --input: 217 33% 17%;
-    --ring: 224 76% 48%;
+    --ring: 100 85% 67%;
   }
 }
 
@@ -164,5 +164,122 @@
   
   .page-title {
     @apply text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  /* Clases específicas para Grayola */
+  .grayola-gradient {
+    @apply bg-gradient-to-r from-grayola-lime to-grayola-turquoise;
+  }
+  
+  .grayola-button {
+    @apply rounded-full bg-grayola-lime text-black font-semibold px-6 py-3 transition-all hover:shadow-lg hover:shadow-grayola-lime/20 hover:opacity-90;
+  }
+
+  /* Versión del botón con sombra, como en la imagen */
+  .grayola-button-shadow {
+    @apply rounded-full bg-grayola-lime text-black font-semibold px-6 py-3 transition-all shadow-md shadow-black/10 hover:shadow-lg hover:shadow-grayola-lime/30 hover:opacity-95 border-b-2 border-grayola-teal/30;
+  }
+  
+  /* Botón idéntico al de la imagen - agendar prueba */
+  .agendar-prueba-button {
+    @apply rounded-full bg-grayola-lime text-black font-semibold px-6 py-3 transition-all shadow-md shadow-black/20 border-b-2 border-black hover:shadow-lg hover:shadow-grayola-lime/30 hover:bg-grayola-lime/95 relative;
+  }
+  
+  .grayola-card {
+    @apply bg-white dark:bg-grayola-darkblue rounded-xl shadow-lg border border-gray-100 dark:border-gray-800 transition-all duration-300 hover:shadow-xl hover:border-grayola-teal/30;
+  }
+
+  /* Nueva tarjeta de proyecto con efecto hover verde azulado */
+  .project-card {
+    @apply bg-white dark:bg-grayola-darkblue rounded-xl shadow-md border border-gray-100 dark:border-gray-800 transition-all duration-300 hover:shadow-lg hover:border-grayola-teal hover:border-opacity-50;
+  }
+  
+  /* Hover de texto para usar en elementos de navegación */
+  .hover-teal {
+    @apply transition-colors hover:text-grayola-teal dark:hover:text-grayola-turquoise;
+  }
+  
+  /* Iconos con el color teal */
+  .teal-icon {
+    @apply text-grayola-teal dark:text-grayola-turquoise;
+  }
+
+  /* Gradientes para el hero */
+  .bg-hero-gradient {
+    background: linear-gradient(90deg, rgba(255,255,200,1) 0%, rgba(200,255,255,1) 50%, rgba(100,220,255,1) 100%);
+  }
+  
+  .bg-hero-gradient-dark {
+    background: linear-gradient(90deg, rgba(50,50,10,0.8) 0%, rgba(10,50,50,0.8) 50%, rgba(0,50,80,0.8) 100%);
+  }
+
+  /* Gradiente para el overlay */
+  .bg-gradient-overlay {
+    background: linear-gradient(rgba(255,255,255,0.1), rgba(255,255,255,0.2));
+  }
+  
+  /* Animaciones para las nubes y el avión */
+  @keyframes float {
+    0% {
+      transform: translateY(0px) translateX(0px);
+    }
+    50% {
+      transform: translateY(-10px) translateX(5px);
+    }
+    100% {
+      transform: translateY(0px) translateX(0px);
+    }
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-float-delay-1 {
+    animation: float 7s ease-in-out 0.5s infinite;
+  }
+  
+  .animate-float-delay-2 {
+    animation: float 8s ease-in-out 1s infinite;
+  }
+  
+  .animate-float-delay-3 {
+    animation: float 6s ease-in-out 1.5s infinite;
+  }
+  
+  .animate-float-delay-4 {
+    animation: float 7s ease-in-out 2s infinite;
+  }
+
+  /* Efecto de seguimiento del cursor para nubes */
+  .parallax-effect {
+    transition: transform 0.2s ease-out;
+  }
+
+  /* Animaciones para el carrusel de logos */
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  
+  @keyframes marquee-reverse {
+    0% {
+      transform: translateX(-50%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+  
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+  
+  .animate-marquee-reverse {
+    animation: marquee-reverse 30s linear infinite;
   }
 }

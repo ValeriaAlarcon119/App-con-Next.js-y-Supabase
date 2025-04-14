@@ -16,6 +16,9 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['var(--font-montserrat)', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -49,6 +52,14 @@ module.exports = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        // Colores específicos de Grayola
+        grayola: {
+          lime: "#b4f264",
+          turquoise: "#36e2c2",
+          teal: "#12a594",     // Color verde azulado oscuro para hover
+          darkblue: "#010d16",
+          lightblue: "#b6f8ff",
         },
       },
       borderRadius: {

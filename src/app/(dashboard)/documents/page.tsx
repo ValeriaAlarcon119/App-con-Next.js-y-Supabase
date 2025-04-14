@@ -52,7 +52,7 @@ export default function DocumentsPage() {
   const [documents, setDocuments] = useState<FileObject[]>([])
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
-
+  const [userRole, setUserRole] = useState<string>('')
 
   useEffect(() => {
     fetchDocuments()
@@ -65,15 +65,16 @@ export default function DocumentsPage() {
       const { data: userData, error: userError } = await supabase.auth.getUser()
       if (userError) throw userError
 
-      const { data: userRole } = await supabase
+      const { data: userRoleData } = await supabase
         .from('users')
         .select('role')
         .eq('id', userData.user.id)
         .single()
 
-      if (!userRole) throw new Error('No se pudo obtener el rol del usuario')
+      if (!userRoleData) throw new Error('No se pudo obtener el rol del usuario')
       
-      console.log("Rol del usuario:", userRole.role)
+      setUserRole(userRoleData.role)
+      console.log("Rol del usuario:", userRoleData.role)
 
       let query = supabase
         .from('projects')
@@ -85,7 +86,7 @@ export default function DocumentsPage() {
           assigned_to
         `)
 
-      const role = userRole.role ? userRole.role.toLowerCase() : '';
+      const role = userRoleData.role ? userRoleData.role.toLowerCase() : '';
       if (role === 'client' || role === 'cliente') {
         query = query.eq('created_by', userData.user.id)
       } else if (role === 'designer' || role === 'diseñador') {
@@ -557,30 +558,27 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 pt-12 px-4 bg-white dark:bg-white min-h-screen">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-900">Documentos</h1>
-          <p className="text-gray-700 dark:text-gray-700">Accede y gestiona todos los documentos de tus proyectos</p>
-        </div>
-        
-        <div className="flex gap-3 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400 dark:text-gray-400" />
-            <Input 
-              type="text" 
-              placeholder="Buscar documentos..." 
-              className="pl-9 pr-4 text-gray-900 dark:text-white bg-white dark:bg-black border-gray-200 dark:border-gray-700"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+    <div className="container mx-auto px-4 py-6 space-y-6 font-sans">
+      <div className="relative overflow-hidden bg-[#7ee8ff] p-4 rounded-xl shadow-sm border border-black">
+        <div className="relative flex flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left md:items-center">
+          <div className="mx-auto md:mx-0">
+            <h1 className="text-3xl font-black text-black">
+              Documentos
+            </h1>
+            
+            <span className="inline-block bg-[#e8ffdb] text-black py-0.5 px-2 rounded-full text-xs mt-1 font-medium border border-black">
+              {userRole === 'client' && "Cliente"}
+              {userRole === 'designer' && "Diseñador"}
+              {userRole === 'project_manager' && "Project Manager"}
+            </span>
           </div>
-          <Button 
-            variant="outline" 
+
+          <Button
+            className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
             onClick={() => setShowFilters(!showFilters)}
-            className="w-10 h-10 p-0 flex items-center justify-center bg-white hover:bg-gray-100 text-gray-700 dark:bg-black dark:hover:bg-gray-800 dark:text-white border border-gray-200 dark:border-gray-700"
           >
-            <Filter className="h-5 w-5" />
+            <Filter className="h-4 w-4 mr-2" />
+            Filtros
           </Button>
         </div>
       </div>

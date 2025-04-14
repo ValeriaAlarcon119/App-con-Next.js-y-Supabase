@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 interface AuthContextType {
   user: any | null
   signIn: (email: string, password: string) => Promise<any>
+  signUp: (email: string, password: string) => Promise<any>
   signOut: () => Promise<void>
   isLoading: boolean
 }
@@ -117,6 +118,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }
 
+  const signUp = async (email: string, password: string) => {
+    setIsLoading(true)
+    
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+      
+      if (error) throw error
+      
+      // Al registrarse, creamos también un registro en la tabla users
+      if (data.user) {
+        // Por defecto asignamos el rol de cliente
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert([{ 
+            id: data.user.id, 
+            email: email,
+            role: 'client'
+          }])
+        
+        if (profileError) {
+          console.error("Error al crear perfil de usuario:", profileError)
+        }
+      }
+      
+      return { data, error: null }
+    } catch (error) {
+      return { data: null, error }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut()
@@ -127,7 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, isLoading }}>
+    <AuthContext.Provider value={{ user, signIn, signUp, signOut, isLoading }}>
       {children}
     </AuthContext.Provider>
   )

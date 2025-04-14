@@ -63,8 +63,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-white">
-      <div className="w-full max-w-md space-y-6 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-white to-[#b6f8ff]/20 dark:from-black dark:to-grayola-darkblue font-sans">
+      <div className="w-full max-w-md space-y-8 px-4">
         <div className="flex flex-col items-center justify-center text-center">
           <div className="relative h-20 w-40 mb-2">
             <Image
@@ -75,15 +75,18 @@ export default function LoginPage() {
               priority
             />
           </div>
-          <p className="text-base text-gray-800 dark:text-gray-800 font-medium">
-            Inicia sesión para continuar
+          <h1 className="text-2xl font-bold mt-4 text-black dark:text-white">
+            Iniciar sesión
+          </h1>
+          <p className="text-base text-gray-600 dark:text-gray-400 mt-2 mb-6">
+            Inicia sesión para continuar a tu cuenta
           </p>
         </div>
 
-        <div className="bg-white dark:bg-black border rounded-xl shadow-lg p-8">
+        <div className="grayola-card p-8">
           <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2 flex flex-col items-center">
-              <Label htmlFor="email" className="text-base w-full">Correo electrónico</Label>
+            <div className="space-y-2 flex flex-col">
+              <Label htmlFor="email" className="text-sm font-medium">Correo electrónico</Label>
               <Input
                 id="email"
                 type="email"
@@ -91,27 +94,27 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-11 text-base w-full"
+                className="h-12 text-base rounded-lg focus:ring-grayola-lime"
                 autoComplete="email"
               />
             </div>
 
-            <div className="space-y-2 flex flex-col items-center">
-              <Label htmlFor="password" className="text-base w-full">Contraseña</Label>
-              <div className="relative w-full">
+            <div className="space-y-2 flex flex-col">
+              <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
+              <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="h-11 text-base w-full pr-10"
+                  className="h-12 text-base rounded-lg pr-10 focus:ring-grayola-lime"
                   autoComplete="current-password"
                 />
                 <Button
                   type="button"
                   variant="ghost"
-                  className="absolute right-0 top-0 h-11 w-11 px-0"
+                  className="absolute right-0 top-0 h-12 w-12 px-3"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
@@ -125,12 +128,12 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 text-base font-medium bg-black hover:bg-gray-900 text-white dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white"
+              className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black w-full"
               disabled={loading}
             >
               {loading ? (
                 <div className="flex items-center justify-center">
-                  <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-white"></div>
+                  <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-black"></div>
                   <span className="ml-2">Iniciando sesión...</span>
                 </div>
               ) : (
@@ -140,12 +143,12 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <span className="text-muted-foreground">
+            <span className="text-gray-600 dark:text-gray-400">
               ¿No tienes una cuenta?{' '}
             </span>
             <Link
               href="/register"
-              className="text-primary hover:underline font-medium"
+              className="text-black dark:text-white hover:text-grayola-lime dark:hover:text-grayola-lime font-medium transition-colors"
             >
               Regístrate
             </Link>
