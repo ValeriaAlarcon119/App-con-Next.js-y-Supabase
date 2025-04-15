@@ -34,7 +34,6 @@ import { ModeToggle } from "@/components/ui/mode-toggle"
 import { useToast } from "@/components/ui/use-toast"
 import { v4 as uuidv4 } from 'uuid'
 
-// Definir el tipo de notificación
 interface Notification {
   id: string;
   message: string;
@@ -81,7 +80,6 @@ export function Navbar() {
     }
   }, [user])
 
-  // Cerrar el menú de usuario al hacer clic fuera
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
       if (
@@ -106,7 +104,6 @@ export function Navbar() {
     }
   }, [showNotifications])
 
-  // Suscripción a eventos de nuevos proyectos
   useEffect(() => {
     if (!user) return
 
@@ -119,7 +116,6 @@ export function Navbar() {
           .order('created_at', { ascending: false })
 
         if (error) throw error
-        // Transformar nombres de columnas de snake_case a camelCase para uso en el frontend
         const transformedData = data?.map(item => ({
           id: item.id,
           message: item.message,
@@ -137,7 +133,6 @@ export function Navbar() {
 
     fetchNotifications()
 
-    // Suscripción a eventos de nuevos proyectos
     const projectSubscription = supabase
       .channel('public:projects')
       .on(
@@ -150,11 +145,9 @@ export function Navbar() {
         async (payload) => {
           console.log('Nuevo proyecto detectado:', payload.new);
           
-          // Crear notificación para todos los proyectos nuevos
           const projectData = payload.new;
 
           try {
-            // Determinar las propiedades del proyecto según el formato de la payload
             const createdBy = projectData.created_by || projectData.createdBy;
             const projectTitle = projectData.title || 'Nuevo proyecto';
             const projectId = projectData.id;
@@ -164,7 +157,6 @@ export function Navbar() {
               return;
             }
 
-            // Obtener nombre del creador
             const { data: creatorData } = await supabase
               .from('users')
               .select('email')
@@ -176,7 +168,6 @@ export function Navbar() {
             
             console.log('Creando notificación para:', {creatorName, projectTitle, userId: user.id});
             
-            // Crear nueva notificación
             const newNotification: Notification = {
               id: uuidv4(),
               message: `${creatorName} ha creado un nuevo proyecto: ${projectTitle}`,
@@ -187,17 +178,14 @@ export function Navbar() {
               creatorName
             };
 
-            // Mostrar toast de nueva notificación
             toast({
               title: "Nueva notificación",
               description: newNotification.message,
               variant: "default",
             });
 
-            // Actualizar estado de notificaciones localmente primero
             setNotifications(prev => [newNotification, ...prev]);
             
-            // Guardar notificación en Supabase
             const { error, data } = await supabase
               .from('notifications')
               .insert([{
@@ -232,7 +220,6 @@ export function Navbar() {
     }
   }, [user, toast])
 
-  // Función para traducir roles de inglés a español
   const translateRole = (role: string): string => {
     if (!role || typeof role !== 'string') {
       return 'Usuario';
@@ -241,19 +228,19 @@ export function Navbar() {
     const roleMap: Record<string, string> = {
       'designer': 'Diseñador',
       'client': 'Cliente',
-      'project_manager': 'Project Manager',
-      'project manager': 'Project Manager',
+      'project_manager': 'Gerente de Proyecto',
+      'project manager': 'Gerente de Proyecto',
       'admin': 'Administrador',
-      'administrator': 'Administrador'
+      'administrator': 'Administrador',
+      'Project Manager': 'Gerente de Proyecto',
+      'Designer': 'Diseñador',
+      'Client': 'Cliente'
     }
     
-    // Normaliza el rol a minúsculas para hacer una búsqueda insensible a mayúsculas/minúsculas
     const normalizedRole = role.toLowerCase()
-    
-    // Busca la traducción en el mapa o capitaliza el rol original
     return roleMap[normalizedRole] || 
            roleMap[normalizedRole.replace('_', ' ')] || 
-           role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()
+           'Usuario'
   }
 
   const handleSignOut = async () => {
@@ -261,10 +248,8 @@ export function Navbar() {
     router.push('/login')
   }
 
-  // Si está cargando, muestra "Cargando...", de lo contrario muestra el rol
   const displayRole = isLoading ? 'Cargando...' : userRole
 
-  // Determina el color del badge basado en el rol
   const getRoleBadgeClass = () => {
     const role = userRole.toLowerCase()
     if (role === 'cliente') return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
@@ -280,11 +265,10 @@ export function Navbar() {
     { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
   ]
 
-  // Función para mostrar el rol de forma legible
   function getRoleDisplay(role?: string) {
     switch (role) {
       case 'project_manager':
-        return 'Project Manager';
+        return 'Gerente de Proyecto';
       case 'designer':
         return 'Diseñador';
       case 'client':
@@ -314,20 +298,20 @@ export function Navbar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "px-4 py-2.5 rounded-full inline-flex items-center gap-2 transition-colors font-medium group",
+                    "px-4 py-2.5 rounded-full inline-flex items-center gap-2 transition-colors font-medium group no-underline",
                     pathname === item.href
-                      ? "bg-[#7fff00]/20 text-black dark:text-white hover:bg-[#7fff00]/30"
-                      : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/90"
+                      ? "bg-[#7fff00]/20 text-black dark:text-white"
+                      : "text-black dark:text-white hover:bg-[#7fff00]/20"
                   )}
                 >
                   <span className={cn(
                     pathname === item.href
                       ? "text-black dark:text-white"
-                      : "text-gray-700 dark:text-gray-200 group-hover:text-[#7fff00]"
+                      : "text-black dark:text-white"
                   )}>
                     {item.icon}
                   </span>
-                  <span className={pathname === item.href ? "text-black dark:text-white" : "group-hover:text-[#7fff00]"}>
+                  <span className={pathname === item.href ? "text-black dark:text-white" : "text-black dark:text-white"}>
                     {item.name}
                   </span>
                 </Link>
@@ -335,20 +319,20 @@ export function Navbar() {
             ))}
           </ul>
         </nav>
-        <div className="ml-auto flex items-center gap-4">
-          {/* Botón de notificaciones */}
+        <div className="ml-auto flex items-center gap-2">
+
           {user && (
             <div className="relative" ref={notificationsRef}>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="rounded-full h-10 w-10 hover:bg-gray-100/90 dark:hover:bg-gray-800/90 text-gray-700 dark:text-gray-200 hover:text-grayola-teal relative"
+                className="rounded-full h-8 w-8 bg-[#7fff00] hover:bg-[#7fff00] dark:bg-[#7fff00] dark:hover:bg-[#7fff00] text-black dark:text-black border border-black flex items-center justify-center"
                 aria-label="Mostrar notificaciones"
               >
-                <Bell className="h-5 w-5" />
+                <Bell className="h-4 w-4" />
                 {notifications.filter(n => !n.read).length > 0 && (
-                  <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-red-500 flex items-center justify-center text-[10px] text-white font-bold">
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 flex items-center justify-center text-[10px] text-white font-bold border border-black">
                     {notifications.filter(n => !n.read).length}
                   </span>
                 )}
@@ -364,12 +348,11 @@ export function Navbar() {
                         size="sm" 
                         className="text-xs h-7 hover:text-grayola-teal"
                         onClick={async () => {
-                          // Marcar todas las notificaciones como leídas
+                     
                           setNotifications(prev => 
                             prev.map(n => ({ ...n, read: true }))
                           );
-                          
-                          // Actualizar en Supabase
+                      
                           if (user) {
                             await supabase
                               .from('notifications')
@@ -396,20 +379,18 @@ export function Navbar() {
                             key={notification.id} 
                             className={`p-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 ${notification.read ? 'opacity-70' : 'bg-grayola-teal/10 dark:bg-grayola-teal/5'}`}
                             onClick={async () => {
-                              // Si no está leída, marcarla como leída
+                           
                               if (!notification.read) {
                                 setNotifications(prev => 
                                   prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
                                 );
-                                
-                                // Actualizar en Supabase
+                         
                                 await supabase
                                   .from('notifications')
                                   .update({ read: true })
                                   .eq('id', notification.id);
                               }
                               
-                              // Aquí puedes navegar al proyecto si hay un ID de proyecto
                               if (notification.projectTitle) {
                                 router.push(`/projects`);
                                 setShowNotifications(false);
@@ -447,10 +428,10 @@ export function Navbar() {
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="rounded-full h-10 w-10 hover:bg-gray-100/90 dark:hover:bg-gray-800/90 text-gray-700 dark:text-gray-200 hover:text-grayola-teal"
+            className="rounded-full h-8 w-8 bg-[#7fff00] hover:bg-[#7fff00] dark:bg-[#7fff00] dark:hover:bg-[#7fff00] text-black dark:text-black border border-black flex items-center justify-center"
             aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
           >
-            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
 
           {user && (
@@ -460,9 +441,9 @@ export function Navbar() {
                   variant="ghost"
                   className="rounded-full h-10 px-3 hover:bg-gray-100/90 dark:hover:bg-gray-800/90 flex gap-3 group"
                 >
-                  <Avatar className="h-8 w-8 border shadow-sm">
+                  <Avatar className="h-8 w-8 border border-black">
                     <AvatarImage src="/avatar.png" alt="Avatar" />
-                    <AvatarFallback className="text-xs bg-grayola-lime/10 text-black dark:text-white">
+                    <AvatarFallback className="text-sm bg-[#7fff00] text-black uppercase">
                       {user.user_metadata?.name
                         ? user.user_metadata.name
                             .split(" ")
@@ -478,17 +459,17 @@ export function Navbar() {
                         : user.email?.split("@")[0]}
                     </span>
                     <Badge variant="secondary" className="px-1.5 text-[10px] h-4 shadow-sm">
-                      {displayRole}
+                      {translateRole(displayRole)}
                     </Badge>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-56 rounded-xl">
-                <DropdownMenuLabel className="group flex flex-col items-center space-y-1 text-center">
-                  <p className="text-sm font-medium leading-none">
+              <DropdownMenuContent align="center" className="w-56 rounded-xl font-sans">
+                <DropdownMenuLabel className="group flex flex-col items-center space-y-1 text-center font-sans">
+                  <p className="text-sm font-medium leading-none font-sans">
                     {user?.user_metadata?.name || 'Usuario'}
                   </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 font-sans">
                     {user?.email || 'usuario@ejemplo.com'}
                   </p>
                   <div className="mt-1">
@@ -496,11 +477,11 @@ export function Navbar() {
                       <Badge
                         variant="secondary"
                         className={cn(
-                          "px-1.5 text-[10px] h-4 shadow-sm",
-                          getRoleBadgeClass() // Asegura que el rol tenga un color distintivo
+                          "px-1.5 text-[10px] h-4 shadow-sm font-sans",
+                          getRoleBadgeClass()
                         )}
                       >
-                        {displayRole}
+                        {getRoleDisplay(userRole)}
                       </Badge>
                     )}
                   </div>

@@ -126,7 +126,6 @@ const getFileTypeFromName = (fileName: string | undefined | null): string => {
   
   const extension = String(fileName).split('.').pop()?.toLowerCase() || '';
   
-  // Determinar el tipo de archivo basado en la extensión
   if (['pdf'].includes(extension)) return 'pdf';
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'svg', 'ico'].includes(extension)) return 'image';
   if (['html', 'css', 'js', 'jsx', 'ts', 'tsx', 'json', 'xml', 'py', 'java', 'c', 'cpp', 'cs', 'php', 'rb', 'go', 'swift', 'kotlin'].includes(extension)) return 'code';
@@ -351,7 +350,6 @@ export default function ProjectsPage() {
       console.log("Archivos a subir:", formData.files);
       setCreateProgress(20);
       
-      // Primero creamos el proyecto sin archivos
       const { data: projectData, error } = await supabase
         .from('projects')
         .insert([
@@ -379,29 +377,25 @@ export default function ProjectsPage() {
       const newProjectId = projectData?.[0]?.id;
       console.log("Proyecto creado con ID:", newProjectId);
       
-      // Si hay archivos para subir
       if (formData.files.length > 0 && newProjectId) {
         setUploadingFiles(true);
         setCreateProgress(50);
         
-        // Array para almacenar archivos subidos exitosamente
         const successfullyUploadedFiles: FileObject[] = [];
-        
-        // Subir archivos uno por uno en lugar de usar Promise.all para evitar bloqueos
+    
         for (let i = 0; i < formData.files.length; i++) {
           const file = formData.files[i];
           const progress = Math.round(((i + 1) / formData.files.length) * 100);
             setFileProgress(progress);
-          setCreateProgress(50 + Math.floor((i / formData.files.length) * 40)); // Progreso de 50 a 90
+          setCreateProgress(50 + Math.floor((i / formData.files.length) * 40)); 
           
-          // Si ya tiene URL, lo agregamos directamente
           if (file.url) {
             successfullyUploadedFiles.push(file);
             continue;
           }
           
           try {
-            // Sanitizamos el nombre del archivo para evitar problemas
+       
               const safeFileName = sanitizeFileName(file.name);
               const filePath = `projects/${newProjectId}/${safeFileName}`;
               
@@ -421,7 +415,7 @@ export default function ProjectsPage() {
                 description: `Error al subir el archivo ${file.name}. El proyecto se creará sin este archivo.`,
                   variant: "destructive",
                 });
-              continue; // Continuamos con el siguiente archivo
+              continue; 
               }
               
               const fileUrl = supabase.storage.from('documents').getPublicUrl(filePath).data.publicUrl;
@@ -432,8 +426,7 @@ export default function ProjectsPage() {
                 type: file.type,
                 url: fileUrl
               });
-              
-            // Agregamos el archivo exitoso a nuestra lista
+
             successfullyUploadedFiles.push({
               name: file.name, 
                 path: filePath,
@@ -443,14 +436,14 @@ export default function ProjectsPage() {
             });
             } catch (err) {
               console.error('Error processing file:', err);
-            // Continuamos con el siguiente archivo en caso de error
+     
             }
         }
         
         setCreateProgress(90);
         console.log('Archivos subidos exitosamente:', successfullyUploadedFiles);
         
-        // Actualizamos el proyecto con los archivos subidos exitosamente
+   
         if (successfullyUploadedFiles.length > 0) {
           const { error: updateError } = await supabase
             .from('projects')
@@ -661,10 +654,11 @@ export default function ProjectsPage() {
   }
 
   const viewProjectDetails = (project: Project) => {
-    // Verificar si el usuario tiene permiso para ver los detalles
+    console.log("Ver detalles del proyecto:", project);
+    
     const canViewDetails = isProjectManager || 
-                         (isClient && project.created_by === user?.id) ||
-                         (isDesigner && project.assigned_to === user?.id);
+                          (isClient && project.created_by === user?.id) ||
+                          (isDesigner && project.assigned_to === user?.id);
 
     if (!canViewDetails) {
       toast({
@@ -674,110 +668,43 @@ export default function ProjectsPage() {
       });
       return;
     }
-
-    console.log('Proyecto original:', project);
-
-    // Procesar los archivos para asegurarse de que tengan todas las propiedades necesarias
-    let processedFiles: FileObject[] = [];
     
-    if (project.files && Array.isArray(project.files)) {
-      // Convertir cada archivo a un objeto FileObject completo
-      processedFiles = project.files.map((file: any) => {
+    const processedFiles = project.files?.map((file: any) => {
+
+      if (typeof file === 'string') {
         try {
-          // Si es un string, convertirlo a objeto
-          if (typeof file === 'string') {
-            const fileName = String(file).trim();
-            const fileType = getFileTypeFromName(fileName);
-            return {
-              name: fileName,
-              path: '',
-              type: fileType,
-              size: 0
-            };
-          }
-          
-          if (!file || typeof file !== 'object') {
-            return {
-              name: 'Archivo desconocido',
-              path: '',
-              type: 'file',
-              size: 0
-            };
-          }
-          
-          let fileName = '';
-          if (file.name) {
-            fileName = file.name;
-          } else if (file.path) {
-            const pathParts = file.path.split('/');
-            fileName = pathParts[pathParts.length - 1];
-          } else if (file.originalName) {
-            fileName = file.originalName;
-          } else {
-            fileName = 'archivo';
-          }
-          
-          const fileType = file.type || getFileTypeFromName(fileName);
-          
+          console.log("Procesando archivo string en viewProjectDetails:", file);
+          const parsedFile = JSON.parse(file);
+          console.log("Archivo JSON parseado en viewProjectDetails:", parsedFile);
+          return parsedFile;
+        } catch (e) {
+          console.error("Error al parsear archivo JSON en viewProjectDetails:", e);
           return {
-            name: fileName,
-            path: file.path || '',
-            type: fileType,
-            size: file.size || 0,
-            url: file.path ? supabase.storage.from('documents').getPublicUrl(file.path).data.publicUrl : undefined
+            name: file,
+            path: file,
+            type: 'file',
+            size: 0,
+            url: file.startsWith('http') ? file : null
           };
-        } catch (error) {
-          console.error('Error procesando archivo:', error, file);
-          return null;
         }
-      }).filter(Boolean) as FileObject[]; 
-    }
-
-    console.log('Archivos procesados:', processedFiles);
-
-    if (processedFiles.length > 0 && processedFiles.every(file => !file.name.includes('.'))) {
-      console.log('Los archivos no tienen extensión, intentando obtener desde supabase...');
+      }
       
-      supabase.storage.from('documents')
-        .list(`projects/${project.id}`)
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error al listar archivos:', error);
-            return;
-          }
-          
-          if (data && data.length > 0) {
-            console.log('Archivos encontrados en supabase:', data);
-            
-            const supabaseFiles = data.map(file => {
-              const filePath = `projects/${project.id}/${file.name}`;
-              const fileUrl = supabase.storage.from('documents').getPublicUrl(filePath).data.publicUrl;
-              return {
-                name: file.name,
-                path: filePath,
-                type: getFileTypeFromName(file.name),
-                size: file.metadata?.size || 0,
-                url: fileUrl
-              } as FileObject;
-            });
-            
-            const updatedProject = {
-              ...project,
-              files: supabaseFiles
-            };
-            
-            setViewingProject(updatedProject);
-            console.log('Proyecto actualizado con archivos de supabase:', updatedProject);
-          }
-        });
-    }
-
-    const updatedProject = {
+      return {
+        name: file.name || 'Archivo',
+        path: file.path || '',
+        type: file.type || 'file',
+        size: file.size || 0,
+        url: file.url || null
+      };
+    }) || [];
+    
+    console.log("Archivos procesados para viewProjectDetails:", processedFiles);
+    
+    setViewingProject({
       ...project,
       files: processedFiles
-    };
-
-    setViewingProject(updatedProject);
+    });
+    
     setViewDialogOpen(true);
   };
 
@@ -873,29 +800,35 @@ export default function ProjectsPage() {
                 <Trash2 className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] font-sans">
               <DialogHeader>
-                <DialogTitle>Eliminar proyecto</DialogTitle>
+                <DialogTitle>Confirmar eliminación</DialogTitle>
                 <DialogDescription>
-                  ¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer.
+                  ¿Está seguro que desea eliminar este proyecto? Esta acción no se puede deshacer.
                 </DialogDescription>
               </DialogHeader>
-              <DialogFooter className="gap-2 sm:justify-end">
+              <DialogFooter className="mt-4 flex justify-center gap-4">
                 <DialogClose asChild>
-                  <Button variant="outline">Cancelar</Button>
+                  <Button
+                    variant="outline"
+                    disabled={isDeleting}
+                    className="border-2 border-black rounded-full"
+                  >
+                    No, cancelar
+                  </Button>
                 </DialogClose>
                 <Button 
-                  variant="destructive"
                   onClick={() => deleteProject(project.id)}
                   disabled={isDeleting}
+                  className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
                 >
                   {isDeleting ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Eliminando...
-                    </>
+                    <div className="flex items-center justify-center">
+                      <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-black"></div>
+                      <span className="ml-2">Eliminando...</span>
+                    </div>
                   ) : (
-                    'Eliminar'
+                    'Sí, eliminar'
                   )}
                 </Button>
               </DialogFooter>
@@ -962,9 +895,8 @@ export default function ProjectsPage() {
     const selectedFiles = e.target.files;
     if (!selectedFiles || selectedFiles.length === 0) return;
     
-    // Procesar los archivos seleccionados
     const newFiles: FileObject[] = Array.from(selectedFiles).map(file => {
-      // Determinar el tipo de archivo según su MIME type
+     
       let fileType = 'file';
       if (file.type.includes('image')) fileType = 'image';
       else if (file.type.includes('pdf')) fileType = 'pdf';
@@ -975,7 +907,6 @@ export default function ProjectsPage() {
                file.type.includes('json')) fileType = 'code';
       else if (file.type.includes('text')) fileType = 'text';
       
-      // Si no podemos determinar por MIME type, intentamos con la extensión
       if (fileType === 'file') {
         const extension = file.name.split('.').pop()?.toLowerCase();
         if (extension) {
@@ -987,7 +918,6 @@ export default function ProjectsPage() {
         }
       }
       
-      // Crear el objeto de archivo para la interfaz
       return {
         name: file.name,
         path: '',
@@ -999,13 +929,11 @@ export default function ProjectsPage() {
     
     console.log('Archivos seleccionados:', newFiles);
     
-    // Actualizar el estado con los nuevos archivos
     setFormData(prev => ({
       ...prev,
       files: [...prev.files, ...newFiles]
     }));
     
-    // Limpiar el input de archivos
     e.target.value = '';
   };
 
@@ -1014,11 +942,9 @@ export default function ProjectsPage() {
       if (!e.target.files || e.target.files.length === 0) return;
 
       const newFiles = Array.from(e.target.files).map(file => {
-        // Obtener el nombre del archivo y su extensión
         const fileName = file.name;
         const extension = fileName.split('.').pop()?.toLowerCase() || '';
         
-      // Determinar el tipo de archivo
       let fileType = 'file';
       if (file.type.includes('image')) fileType = 'image';
       else if (file.type.includes('pdf')) fileType = 'pdf';
@@ -1029,7 +955,6 @@ export default function ProjectsPage() {
                file.type.includes('json')) fileType = 'code';
       else if (file.type.includes('text')) fileType = 'text';
         
-        // Si no podemos determinar por MIME type, intentamos con la extensión
         if (fileType === 'file') {
           if (extension === 'pdf') fileType = 'pdf';
           else if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(extension)) fileType = 'image';
@@ -1052,7 +977,6 @@ export default function ProjectsPage() {
       files: [...prev.files, ...newFiles]
     }));
     
-      // Limpiar el input
     e.target.value = '';
       setNewEditFile('');
     } catch (error) {
@@ -1072,14 +996,11 @@ export default function ProjectsPage() {
       
       console.log('⭐ Archivos originales del proyecto:', project.files);
       
-      // Usar exactamente la misma lógica que funciona en viewProjectDetails
       let processedFiles: FileObject[] = [];
       
       if (project.files && Array.isArray(project.files)) {
-        // Convertir cada archivo a un objeto FileObject completo
         processedFiles = project.files.map((file: any) => {
           try {
-            // Si es un string, convertirlo a objeto
             if (typeof file === 'string') {
               const fileName = String(file).trim();
               const fileType = getFileTypeFromName(fileName);
@@ -1131,7 +1052,6 @@ export default function ProjectsPage() {
 
       console.log('⭐ Procesando archivos para el modal de edición:', processedFiles);
 
-      // Si los archivos no tienen extensión, intentar obtener desde supabase
       if (processedFiles.length > 0 && processedFiles.every(file => !file.name.includes('.'))) {
         console.log('⭐ Los archivos no tienen extensión, intentando obtener desde supabase...');
         
@@ -1163,7 +1083,6 @@ export default function ProjectsPage() {
         }
       }
 
-      // Imprimir cada archivo procesado para verificar
       processedFiles.forEach((file, index) => {
         const extension = getFileExtension(file.name);
         const displayName = getFileNameWithoutExtension(file.name);
@@ -1277,7 +1196,6 @@ export default function ProjectsPage() {
     try {
       setIsEditingProject(true);
       
-      // 1. Obtener los archivos actuales del proyecto
       const { data: currentProject, error: fetchError } = await supabase
         .from('projects')
         .select('files')
@@ -1296,7 +1214,6 @@ export default function ProjectsPage() {
       
       console.log('⭐ Archivos actuales del proyecto en la base de datos:', currentProject.files);
       
-      // 2. Separar archivos existentes (con URL) de los nuevos archivos en el formulario
       const existingFiles = editFormData.files.filter(file => file.url);
       const newFiles = editFormData.files.filter(file => !file.url && file.file);
       
@@ -1305,7 +1222,6 @@ export default function ProjectsPage() {
       
       const uploadedNewFiles: FileObject[] = [];
       
-      // 3. Subir solo los archivos nuevos
       setFileProgress(0);
       for (let i = 0; i < newFiles.length; i++) {
         const file = newFiles[i];
@@ -1360,8 +1276,6 @@ export default function ProjectsPage() {
         }
       }
       
-      // 4. ESTE ES EL CAMBIO CLAVE: Usar los archivos existentes del formulario (NO los de la BD)
-      // para preservar los que el usuario ha decidido mantener, junto con los nuevos archivos subidos.
       const combinedFiles = [...existingFiles, ...uploadedNewFiles];
       
       console.log('⭐ Actualizando proyecto con archivos:', combinedFiles);
@@ -1383,14 +1297,11 @@ export default function ProjectsPage() {
         throw updateError;
       }
       
-      // Recargamos los proyectos actualizados
       await fetchProjects();
       
-      // Actualizar el proyecto en vista detalle si está visible
       if (viewingProject && viewingProject.id === pendingEditChanges.id) {
         console.log('⭐ Actualizando vista de detalles con la información más reciente');
         
-        // Obtener los datos actualizados del proyecto
         const { data: updatedProjectData, error: getError } = await supabase
           .from('projects')
           .select(`
@@ -1406,13 +1317,12 @@ export default function ProjectsPage() {
         } else if (updatedProjectData) {
           console.log('⭐ Proyecto actualizado para vista detalle:', updatedProjectData);
           
-          // Procesar los archivos para mantener consistencia
           let processedFiles: FileObject[] = [];
           
           if (updatedProjectData.files && Array.isArray(updatedProjectData.files)) {
             processedFiles = updatedProjectData.files.map((file: any) => {
               try {
-                // Si es un string, convertirlo a objeto
+         
                 if (typeof file === 'string') {
                   const fileName = String(file).trim();
                   const fileType = getFileTypeFromName(fileName);
@@ -1462,7 +1372,6 @@ export default function ProjectsPage() {
             }).filter(Boolean) as FileObject[];
           }
           
-          // Actualizar el proyecto en vista detalle con los datos más recientes
           const updatedProject = {
             ...updatedProjectData,
             created_by_email: updatedProjectData.creator?.email,
@@ -1507,6 +1416,8 @@ export default function ProjectsPage() {
   };
 
   const renderFileCards = (files: FileObject[]) => {
+    console.log("Renderizando tarjetas de archivos:", files);
+    
     if (!files || files.length === 0) {
       return (
         <div className="text-center py-6 text-muted-foreground">
@@ -1514,46 +1425,88 @@ export default function ProjectsPage() {
         </div>
       );
     }
-
+    
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-        {files.map((file, index) => (
-          <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
-            <div className="bg-gray-100 dark:bg-gray-800 p-4 flex justify-center items-center">
-              {getFileIcon(file.type)}
-            </div>
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm font-medium truncate">{file.name}</CardTitle>
-              <CardDescription className="text-xs">
-                {file.size ? formatFileSize(file.size) : 'Desconocido'}
-              </CardDescription>
-            </CardHeader>
-            <CardFooter className="py-2 bg-gray-50 dark:bg-gray-900 flex justify-end gap-2">
-              {file.url && (
-                <>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
-                    onClick={() => window.open(file.url, '_blank')}
-                    title="Ver archivo"
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+        {files.map((file, index) => {
+          console.log(`Archivo ${index}:`, file);
+          console.log(`URL del archivo ${index}:`, file.url);
+          
+          const fileType = file.type || getFileTypeFromName(file.name || '');
+          const fileExt = getFileExtension(file.name || '');
+          const fileName = getFileNameWithoutExtension(file.name || 'Archivo');
+          
+          return (
+            <Card key={index} className="bg-white border-2 border-black rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all">
+              <CardContent className="p-4 flex flex-col items-center justify-center">
+                <div className="mb-3">
+                  {getFileIcon(fileType)}
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold mb-1 text-black">
+                    {fileName}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-2">
+                    {formatFileSize(file.size || 0)}
+                  </p>
+                </div>
+              </CardContent>
+              <CardFooter className="p-4 bg-gray-50 border-t border-gray-200 flex justify-center gap-6">
+                {file.url ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="h-12 w-12 rounded-full flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white border-2 border-black"
+                      onClick={() => {
+                        console.log("Clic en ver archivo:", file.url);
+                        window.open(file.url, '_blank');
+                      }}
+                      title="Ver archivo"
+                    >
+                      <Eye className="h-6 w-6" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-12 w-12 rounded-full flex items-center justify-center bg-green-500 hover:bg-green-600 text-white border-2 border-black"
+                      onClick={() => {
+                        console.log("Clic en descargar archivo:", file.url);
+                        console.log("Nombre del archivo:", file.name);
+                        if (file.url) {
+                          downloadFile(file.url, file.name || 'archivo');
+                        } else {
+                          toast({
+                            title: "Error",
+                            description: "Este archivo no tiene una URL de descarga",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      title="Descargar archivo"
+                    >
+                      <Download className="h-6 w-6" />
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="h-12 w-12 rounded-full flex items-center justify-center bg-gray-400 hover:bg-gray-500 text-white"
+                    onClick={() => {
+                      console.log("Archivo sin URL:", file);
+                      toast({
+                        title: "Error",
+                        description: "Este archivo no tiene una URL de descarga",
+                        variant: "destructive",
+                      });
+                    }}
+                    title="Archivo no disponible"
                   >
-                    <Eye className="h-4 w-4" />
+                    <Download className="h-6 w-6" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
-                    onClick={() => downloadFile(file.url!, file.name)}
-                    title="Descargar archivo"
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </CardFooter>
-          </Card>
-        ))}
+                )}
+              </CardFooter>
+            </Card>
+          );
+        })}
       </div>
     );
   };
@@ -1585,7 +1538,34 @@ export default function ProjectsPage() {
 
   const downloadFile = async (url: string, fileName: string) => {
     try {
+      if (!url) {
+        toast({
+          title: "Error",
+          description: "No se puede descargar el archivo: URL no disponible",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (typeof url === 'string' && url.startsWith('{') && url.includes('"url":')) {
+        try {
+          const fileObject = JSON.parse(url);
+          url = fileObject.url || url;
+          console.log("URL extraída de JSON:", url);
+        } catch (e) {
+          console.error('Error parsing JSON URL:', e);
+       
+        }
+      }
+      
+      console.log("Intentando descargar archivo desde:", url);
+      
       const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Error en la respuesta del servidor: ${response.status} ${response.statusText}`);
+      }
+      
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -1594,11 +1574,18 @@ export default function ProjectsPage() {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      
+      setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 100);
+      
+      toast({
+        title: "Éxito",
+        description: "Archivo descargado correctamente",
+      });
     } catch (error) {
       console.error('Error downloading file:', error);
       toast({
         title: "Error",
-        description: "No se pudo descargar el archivo",
+        description: "No se pudo descargar el archivo: " + (error instanceof Error ? error.message : "Error desconocido"),
         variant: "destructive",
       });
     }
@@ -1709,7 +1696,6 @@ export default function ProjectsPage() {
     }
   };
 
-  // Utilizar la función viewProjectDetails existente en renderProjectCards
   const renderProjectCards = () => {
     if (filteredProjects.length === 0) {
       return (
@@ -1724,7 +1710,7 @@ export default function ProjectsPage() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProjects.map((project) => (
-          <div key={project.id} className="project-card overflow-hidden group">
+          <div key={project.id} className="project-card overflow-hidden group bg-white dark:bg-gray-900">
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div 
@@ -1822,11 +1808,11 @@ export default function ProjectsPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6 font-sans">
-      <div className="relative overflow-hidden bg-[#7ee8ff] p-4 rounded-xl shadow-sm border border-black">
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#7ee8ff] to-[#94e0ff] p-4 rounded-xl shadow-sm border-2 border-black">
         <div className="relative flex flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left md:items-center">
           <div className="mx-auto md:mx-0">
             <h1 className="text-3xl font-black text-black">
-              Gestión de Proyectos
+              Proyectos
             </h1>
             
             <span className="inline-block bg-[#e8ffdb] text-black py-0.5 px-2 rounded-full text-xs mt-1 font-medium border border-black">
@@ -1836,13 +1822,15 @@ export default function ProjectsPage() {
             </span>
           </div>
 
-          <Button
-            className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
-            onClick={() => setDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Crear proyecto
-          </Button>
+          {(isClient || isProjectManager) && (
+            <Button
+              className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
+              onClick={() => setDialogOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1983,7 +1971,7 @@ export default function ProjectsPage() {
                       <span className="ml-2">Creando proyecto...</span>
                     </div>
                   ) : (
-                    'Crear proyecto'
+                    'Agregar'
                   )}
                 </Button>
               </DialogFooter>
@@ -2159,9 +2147,9 @@ export default function ProjectsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {filteredProjects.length > 0 ? (
               filteredProjects.map((project) => (
-                <Card 
+                <div 
                   key={project.id} 
-                  className="card-hover border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] max-w-xs flex flex-col"
+                  className="card-hover border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] max-w-xs flex flex-col dark:bg-gray-900"
                 >
                   <div className="h-1 bg-gradient-to-r from-gray-800 to-black"></div>
                   <CardHeader className="p-4 pb-2">
@@ -2210,16 +2198,12 @@ export default function ProjectsPage() {
                       <span className="text-[10px] text-gray-500 dark:text-white">
                         {project.files?.length || 0}
                       </span>
-                      <Clock className="h-3 w-3 text-gray-500 dark:text-white ml-1" />
-                      <span className="text-[10px] text-gray-500 dark:text-white">
-                        {formatDate(project.updated_at)}
-                      </span>
                     </div>
                     <div className="flex gap-1">
                       {renderActionButtons(project)}
                     </div>
                   </CardFooter>
-                </Card>
+                </div>
               ))
             ) : (
               <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
@@ -2239,7 +2223,7 @@ export default function ProjectsPage() {
                         Crear primer proyecto
                       </Button>
                 )}
-                        </div>
+              </div>
             )}
           </div>
         </TabsContent>
@@ -2368,68 +2352,7 @@ export default function ProjectsPage() {
                   <div>
                     <h3 className="font-medium mb-2">Archivos del proyecto</h3>
                     {viewingProject.files && viewingProject.files.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                        {viewingProject.files.map((file, index) => {
-                      
-                          let fileName = file.name || 'Archivo';
-                          if (file.path && !fileName.includes('.')) {
-                            const pathParts = file.path.split('/');
-                            if (pathParts.length > 0) {
-                              fileName = decodeURIComponent(pathParts[pathParts.length - 1]);
-                            }
-                          }
-                          
-                          const extension = getFileExtension(fileName);
-                          const fileType = extension ? getFileTypeFromName(fileName) : (file.type || 'file');
-                          const displayName = getFileNameWithoutExtension(fileName);
-                          
-                          console.log(`Archivo ${index} (corregido):`, { 
-                            fileName, 
-                            displayName,
-                            extension, 
-                            fileType,
-                            path: file.path
-                          });
-                          
-                          return (
-                            <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
-                              <div className="bg-gray-100 dark:bg-gray-800 p-4 flex justify-center items-center">
-                                {getFileIcon(fileType)}
-                              </div>
-                              <CardHeader className="py-3">
-                                <CardTitle className="text-sm font-medium truncate">{displayName}</CardTitle>
-                                <CardDescription className="text-xs">
-                                  {extension ? extension.toUpperCase() : (file.size ? formatFileSize(file.size) : 'Desconocido')}
-                                </CardDescription>
-                              </CardHeader>
-                              <CardFooter className="py-2 bg-gray-50 dark:bg-gray-900 flex justify-end gap-2">
-                                {file.url && (
-                                  <>
-                  <Button
-                                      variant="ghost" 
-                                      size="sm" 
-                                      className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
-                                      onClick={() => window.open(file.url, '_blank')}
-                                      title="Ver archivo"
-                                    >
-                                      <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                                      variant="ghost" 
-                                      size="sm" 
-                                      className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
-                                      onClick={() => downloadFile(file.url!, fileName)}
-                                      title="Descargar archivo"
-                                    >
-                                      <Download className="h-4 w-4" />
-                                    </Button>
-                                  </>
-                                )}
-                              </CardFooter>
-                            </Card>
-                          );
-                        })}
-                      </div>
+                      renderFileCards(viewingProject.files)
                     ) : (
                       <div className="text-center py-6 text-muted-foreground bg-white/50 dark:bg-gray-800/50 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
                         No hay archivos adjuntos
@@ -2444,7 +2367,7 @@ export default function ProjectsPage() {
       </Dialog>
 
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] font-sans">
           <DialogHeader>
             <DialogTitle>Confirmar actualización</DialogTitle>
             <DialogDescription>

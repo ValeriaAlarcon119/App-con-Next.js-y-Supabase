@@ -95,7 +95,6 @@ export default function SettingsPage() {
   const handleSaveProfile = () => {
     setIsLoading(true)
     
-    // Simulación de guardado
     setTimeout(() => {
       toast({
         title: "Perfil actualizado",
@@ -132,7 +131,7 @@ export default function SettingsPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6 font-sans">
-      <div className="relative overflow-hidden bg-[#7ee8ff] p-4 rounded-xl shadow-sm border border-black">
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#7ee8ff] to-[#94e0ff] p-4 rounded-xl shadow-sm border-2 border-black">
         <div className="relative flex flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left md:items-center">
           <div className="mx-auto md:mx-0">
             <h1 className="text-3xl font-black text-black">

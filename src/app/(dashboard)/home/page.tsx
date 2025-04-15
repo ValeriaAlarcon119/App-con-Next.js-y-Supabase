@@ -14,12 +14,12 @@ export default function HomePage() {
   const router = useRouter()
 
   return (
-    <div className="relative w-full overflow-x-hidden font-sans bg-white">
+    <div className="relative w-full overflow-x-hidden font-sans bg-gradient-to-r from-[#c9efb3] via-[#7ee8ff] to-[#94e0ff]">
       <div className="w-full">
 
-        <div className="w-full min-h-screen bg-gradient-to-b from-[#e8ffdb] via-[#b8f7ff] to-[#7ee8ff]">
+        <div className="w-full min-h-screen bg-transparent">
           <div className="flex flex-col min-h-screen w-full max-w-6xl mx-auto px-4">
-            <div className="absolute left-1/2 transform -translate-x-1/2 top-[15vh] z-10">
+            <div className="absolute left-1/2 transform -translate-x-1/2 top-[12vh] z-10">
               <Image 
                 src="/images/grayola-bird-logo.svg"
                 alt="Grayola Bird"
@@ -64,7 +64,7 @@ export default function HomePage() {
           </div>
           </div>
           
-        <div className="py-16 bg-[#7ee8ff] overflow-hidden">
+        <div className="py-16 bg-transparent overflow-hidden">
           <div className="max-w-6xl mx-auto px-4">
             <h3 className="text-center text-black text-sm font-medium uppercase tracking-[0.2em] mb-16">
               EMPRESAS DE TODO EL MUNDO ESCALAN SUS OPERACIONES DE DISEÑO CON GRAYOLA
@@ -114,12 +114,81 @@ export default function HomePage() {
             to { transform: translateX(10%); }
           }
 
+          @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+          }
+
+          @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+
+          @keyframes float-slow {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(10px, -10px); }
+            50% { transform: translate(20px, 0); }
+            75% { transform: translate(10px, 10px); }
+          }
+
+          @keyframes grow {
+            0% { width: 0; }
+            100% { width: 75%; }
+          }
+
+          @keyframes scale-sequence-1 {
+            0%, 15%, 100% { transform: scale(1); }
+            5%, 10% { transform: scale(1.15); }
+          }
+
+          @keyframes scale-sequence-2 {
+            0%, 30%, 100% { transform: scale(1); }
+            20%, 25% { transform: scale(1.15); }
+          }
+
+          @keyframes scale-sequence-3 {
+            0%, 45%, 100% { transform: scale(1); }
+            35%, 40% { transform: scale(1.15); }
+          }
+
           .animate-marquee-left {
-            animation: marquee-left 2s linear infinite alternate;
+            animation: marquee-left 3s linear infinite alternate;
           }
 
           .animate-marquee-right {
-            animation: marquee-right 2s linear infinite alternate;
+            animation: marquee-right 3s linear infinite alternate;
+          }
+
+          .animate-bounce-slow {
+            animation: bounce-slow 3s ease-in-out infinite;
+          }
+
+          .animate-spin-slow {
+            animation: spin-slow 8s linear infinite;
+          }
+
+          .animate-float-slow {
+            animation: float-slow 8s ease-in-out infinite;
+          }
+
+          .animate-grow {
+            animation: grow 2s ease-out forwards;
+          }
+
+          .animate-pulse-slow {
+            animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          }
+
+          .animate-scale-1 {
+            animation: scale-sequence-1 8s ease-in-out infinite;
+          }
+
+          .animate-scale-2 {
+            animation: scale-sequence-2 8s ease-in-out infinite;
+          }
+
+          .animate-scale-3 {
+            animation: scale-sequence-3 8s ease-in-out infinite;
           }
         `}</style>
 
@@ -177,12 +246,36 @@ export default function HomePage() {
           }}
         />
 
-        <section className="bg-[#7ee8ff] py-20">
+        <section className="bg-transparent py-12">
           <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-[42px] font-black leading-tight text-black">
-                Un <span className="inline-flex items-center gap-2 bg-[#e8ffdb] px-3 py-1 rounded-full border border-black">
-                  <div className="w-7 h-7 rounded-full overflow-hidden bg-black flex items-center justify-center">
+              <p className="text-xl text-black leading-relaxed relative">
+                <span className="absolute -left-6 top-0 text-6xl font-black text-[#7fff00] opacity-30" style={{ transform: 'translateY(-30%) rotate(-15deg)' }}>"</span>
+                Grayola se adapta y respalda a empresas y agencias de todos los tamaños, escalando sus operaciones de diseño a gran escala.
+                <span className="absolute -right-6 bottom-0 text-6xl font-black text-[#7fff00] opacity-30" style={{ transform: 'translateY(30%) rotate(-15deg)' }}>"</span>
+              </p>
+              
+              <div className="mt-8 grid grid-cols-3 gap-4">
+                <div className="bg-[#e0d4ff]/70 backdrop-blur-sm p-4 rounded-xl border-2 border-black flex items-center justify-center transform transition-all hover:scale-105 duration-300 animate-scale-1">
+                  <span className="text-3xl font-black text-[#6b4dc9]">142+</span>
+                </div>
+                <div className="bg-[#e0d4ff]/70 backdrop-blur-sm p-4 rounded-xl border-2 border-black flex items-center justify-center transform transition-all hover:scale-105 duration-300 animate-scale-2">
+                  <span className="text-3xl font-black text-[#6b4dc9]">4000+</span>
+                </div>
+                <div className="bg-[#e0d4ff]/70 backdrop-blur-sm p-4 rounded-xl border-2 border-black flex items-center justify-center transform transition-all hover:scale-105 duration-300 animate-scale-3">
+                  <span className="text-3xl font-black text-[#6b4dc9]">24/7</span>
+                </div>
+                <div className="col-span-3 bg-[#e0d4ff]/70 backdrop-blur-sm p-4 rounded-xl border-2 border-black text-center transform transition-all hover:scale-105 duration-300">
+                  <span className="text-xl font-black text-[#6b4dc9]">Diseños de alta calidad a gran escala</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#e8ffdb] to-[#7ee8ff] opacity-20 rounded-xl blur-xl animate-pulse-slow"></div>
+              <h2 className="text-[42px] font-black leading-tight text-black relative z-10 bg-white/70 backdrop-blur-sm p-8 rounded-xl border-2 border-black">
+                Un <span className="inline-flex items-center gap-2 bg-[#e8ffdb] px-3 py-1 rounded-full border border-black transform transition-all hover:scale-105 duration-300 hover:shadow-lg">
+                  <div className="w-7 h-7 rounded-full overflow-hidden bg-black flex items-center justify-center animate-spin-slow">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4">
                       <path d="M12 2C9.79086 2 8 3.79086 8 6C8 8.20914 9.79086 10 12 10C14.2091 10 16 8.20914 16 6C16 3.79086 14.2091 2 12 2Z" fill="white"/>
                       <path d="M12 12C7.58172 12 4 15.5817 4 20V22H20V20C20 15.5817 16.4183 12 12 12Z" fill="white"/>
@@ -191,36 +284,147 @@ export default function HomePage() {
                   <span className="text-[42px]">equipo creativo</span>
                 </span> listo para diseñar a cualquier escala
               </h2>
-            </div>
-            
-            <div>
-              <p className="text-xl text-black leading-relaxed">
-                Grayola se adapta y respalda a empresas y agencias de todos los tamaños, escalando sus operaciones de diseño a gran escala.
-              </p>
-            </div>
-          </div>
-        </section>
 
-        <section className="bg-[#7ee8ff] py-20">
-          <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-start">
-            <div>
-              <h2 className="text-[64px] font-black leading-tight text-black">
-                Te encantará<br/>nuestra aplicación
-              </h2>
-            </div>
-            <div className="space-y-8">
-              <p className="text-xl text-black leading-relaxed">
-                Nuestra plataforma de gestión creativa te brinda la posibilidad de enviar proyectos, dar feedback, y recibir todos tus proyectos, incluyendo sus editables, todo en un mismo lugar.
-              </p>
-              <div className="bg-[#e8ffdb] rounded-2xl p-6 text-center inline-block border border-black">
-                <p className="text-4xl font-black text-black mb-1">+3900</p>
-                <p className="text-lg text-black">pedidos<br/>completados</p>
+              <div className="absolute -bottom-10 -right-10 w-40 h-40">
+                <div className="relative w-full h-full">
+                  <div className="absolute top-0 left-0 w-8 h-8 bg-[#7fff00] rounded-full animate-float-slow"></div>
+                  <div className="absolute top-10 left-20 w-6 h-6 bg-[#7ee8ff] rounded-full animate-float-slow delay-300"></div>
+                  <div className="absolute top-20 left-5 w-10 h-10 bg-[#e8ffdb] rounded-full animate-float-slow delay-700"></div>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="bg-[#7ee8ff] py-20">
+        <section className="bg-transparent py-12">
+          <div className="max-w-7xl mx-auto px-4">
+            <h2 className="text-4xl font-black text-center mb-16 relative">
+              <span className="relative inline-block px-6 py-2 bg-gradient-to-r from-[#c9efb3] via-[#7ee8ff] to-[#94e0ff] rounded-xl border-2 border-black">
+                ¿Cómo funciona?
+              </span>
+            </h2>
+            <div className="grid md:grid-cols-3 gap-12">
+              <div className="flex flex-col items-center relative group">
+                <div className="mb-6 relative flex justify-center w-full">
+                  <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border-2 border-black relative overflow-hidden group-hover:border-[#7fff00] transition-colors duration-300">
+                    <div className="absolute -inset-1 border-2 border-[#7fff00] opacity-30 animate-pulse rounded-xl"></div>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M3 7V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7Z" stroke="black" strokeWidth="2"/>
+                      <path d="M7 14L10 11M10 11L13 14M10 11V19M17 11H14" stroke="black" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <div className="absolute top-0 right-1/3 -mr-2 -mt-2 w-6 h-6 bg-[#7fff00] rounded-full flex items-center justify-center border-2 border-black">
+                    <span className="text-xs font-bold">1</span>
+                  </div>
+                </div>
+                <div className="bg-white/70 backdrop-blur-sm p-6 rounded-xl border-2 border-black group-hover:border-[#7fff00] transition-colors duration-300 w-full h-full">
+                  <h3 className="text-2xl font-black text-black mb-4 text-center">
+                    Crea<br/>un pedido
+                  </h3>
+                  <p className="text-lg text-black">
+                    Completa un breve formulario con todos los detalles que tengas en mente para tu diseño. ¡No te tomará más de 2 minutos!
+                  </p>
+                  <div className="w-full h-1 bg-black/10 rounded-full mt-6 overflow-hidden">
+                    <div className="h-full w-0 bg-[#7fff00] group-hover:w-full transition-all duration-1000"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-center relative group">
+                <div className="mb-6 relative flex justify-center w-full">
+                  <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border-2 border-black relative overflow-hidden group-hover:border-[#7fff00] transition-colors duration-300">
+                    <div className="absolute -inset-1 border-2 border-[#7fff00] opacity-30 animate-pulse rounded-xl"></div>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="8" r="4" stroke="black" strokeWidth="2"/>
+                      <path d="M5 19C5 16.2386 8.13401 14 12 14C15.866 14 19 16.2386 19 19" stroke="black" strokeWidth="2" strokeLinecap="round"/>
+                      <circle cx="17" cy="6" r="2" fill="#e8ffdb" stroke="black" strokeWidth="2"/>
+                      <circle cx="7" cy="6" r="2" fill="#e8ffdb" stroke="black" strokeWidth="2"/>
+                    </svg>
+                  </div>
+                  <div className="absolute top-0 right-1/3 -mr-2 -mt-2 w-6 h-6 bg-[#7fff00] rounded-full flex items-center justify-center border-2 border-black">
+                    <span className="text-xs font-bold">2</span>
+                  </div>
+                </div>
+                <div className="bg-white/70 backdrop-blur-sm p-6 rounded-xl border-2 border-black group-hover:border-[#7fff00] transition-colors duration-300 w-full h-full">
+                  <h3 className="text-2xl font-black text-black mb-4 text-center">
+                    Lo asignamos<br/>a nuestro equipo
+                  </h3>
+                  <p className="text-lg text-black">
+                    Nuestro equipo seleccionará al mejor grupo de especialistas para tu proyecto, con un director creativo y diseñadores dedicados.
+                  </p>
+                  <div className="w-full h-1 bg-black/10 rounded-full mt-6 overflow-hidden">
+                    <div className="h-full w-0 bg-[#7fff00] group-hover:w-full transition-all duration-1000"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-center relative group">
+                <div className="mb-6 relative flex justify-center w-full">
+                  <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border-2 border-black relative overflow-hidden group-hover:border-[#7fff00] transition-colors duration-300">
+                    <div className="absolute -inset-1 border-2 border-[#7fff00] opacity-30 animate-pulse rounded-xl"></div>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M5 16L10 13L15 16L19 13" stroke="black" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M5 12L10 9L15 12L19 9" stroke="black" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M5 8L10 5L15 8L19 5" stroke="black" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <div className="absolute top-0 right-1/3 -mr-2 -mt-2 w-6 h-6 bg-[#7fff00] rounded-full flex items-center justify-center border-2 border-black">
+                    <span className="text-xs font-bold">3</span>
+                  </div>
+                </div>
+                <div className="bg-white/70 backdrop-blur-sm p-6 rounded-xl border-2 border-black group-hover:border-[#7fff00] transition-colors duration-300 w-full h-full">
+                  <h3 className="text-2xl font-black text-black mb-4 text-center">
+                    Entregamos<br/>tus diseños
+                  </h3>
+                  <p className="text-lg text-black">
+                    Recibe las primeras iteraciones de tus pedidos en tiempo récord y con tu feedback haremos ajustes lo más rápido posible.
+                  </p>
+                  <div className="w-full h-1 bg-black/10 rounded-full mt-6 overflow-hidden">
+                    <div className="h-full w-0 bg-[#7fff00] group-hover:w-full transition-all duration-1000"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <section className="bg-transparent py-12">
+          <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
+            <div className="relative overflow-hidden rounded-2xl border-2 border-black p-8 bg-white/70 backdrop-blur-sm transform transition-all hover:scale-105 duration-500 shadow-xl">
+              <div className="absolute -right-16 -top-16 w-32 h-32 bg-[#7fff00] rounded-full opacity-30 animate-pulse"></div>
+              <div className="absolute -left-16 -bottom-16 w-32 h-32 bg-[#7ee8ff] rounded-full opacity-30 animate-pulse delay-700"></div>
+              <h2 className="text-[64px] font-black leading-tight text-black relative z-10">
+                Te encantará<br/>
+                <span className="relative inline-block">
+                  nuestra aplicación
+                  <span className="absolute bottom-0 left-0 w-full h-3 bg-[#7fff00]" style={{ transform: 'translateY(8px) rotate(-1deg)'}}></span>
+                </span>
+              </h2>
+            </div>
+            <div className="space-y-8 relative">
+              <p className="text-xl text-black leading-relaxed bg-white/50 backdrop-blur-sm p-6 rounded-xl border border-black">
+                Nuestra plataforma de gestión creativa te brinda la posibilidad de enviar proyectos, dar feedback, y recibir todos tus proyectos, incluyendo sus editables, todo en un mismo lugar.
+              </p>
+              <div className="relative group flex justify-center">
+                <div className="absolute inset-0 bg-[#7fff00] blur-xl opacity-30 group-hover:opacity-70 transition-all duration-700 rounded-2xl"></div>
+                <div className="bg-[#e8ffdb] rounded-2xl p-8 text-center inline-block border-2 border-black relative transform transition-all group-hover:translate-y-[-5px] duration-300">
+                  <div className="absolute -top-2 -right-2 w-10 h-10 bg-[#7ee8ff] rounded-full flex items-center justify-center border-2 border-black shadow-md">
+                    <span className="text-xs font-bold text-black">wow!</span>
+                  </div>
+                  <p className="text-4xl font-black text-black mb-1 relative">
+                    <span className="inline-block animate-bounce-slow">+</span>3900
+                  </p>
+                  <p className="text-lg text-black">pedidos<br/>completados</p>
+                  <div className="w-full h-1 bg-black/10 rounded-full mt-3 overflow-hidden">
+                    <div className="h-full w-3/4 bg-[#7fff00] animate-grow"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-transparent py-12">
           <div className="max-w-7xl mx-auto px-4">
             <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-xl">
               <iframe
@@ -235,254 +439,156 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-        <section className="bg-[#7ee8ff] py-20">
+
+
+        <section className="bg-transparent py-20">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="grid md:grid-cols-3 gap-12">
-              <div className="flex flex-col items-start">
-                <div className="mb-6">
-                  <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border border-black">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M3 7V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7Z" stroke="black" strokeWidth="2"/>
-                      <path d="M7 14L10 11M10 11L13 14M10 11V19M17 11H14" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                  </div>
+            <div className="grid md:grid-cols-12 gap-8 items-center">
+              <div className="md:col-span-4 relative">
+                <div className="relative">
+                  <Image 
+                    src="/images/grayola-bird-logo.svg"
+                    alt="Grayola Bird"
+                    width={300}
+                    height={300}
+                    className="w-auto h-auto"
+                  />
                 </div>
-                <h3 className="text-4xl font-black text-black mb-4">
-                  Crea<br/>un pedido
-                </h3>
-                <p className="text-lg text-black">
-                  Completa un breve formulario con todos los detalles que tengas en mente para tu diseño. ¡No te tomará más de 2 minutos!
+              </div>
+              <div className="md:col-span-8 flex flex-col space-y-6">
+                <h2 className="text-[48px] font-black text-black leading-tight">
+                  Todos los servicios creativos que necesitas en un solo lugar.
+                </h2>
+                <p className="text-xl text-black">
+                  Explora más de 100 servicios de diseño disponibles con nuestra suscripción
                 </p>
-              </div>
-              
-              <div className="flex flex-col items-start">
-                <div className="mb-6">
-                  <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border border-black">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="12" cy="8" r="4" stroke="black" strokeWidth="2"/>
-                      <path d="M5 19C5 16.2386 8.13401 14 12 14C15.866 14 19 16.2386 19 19" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                      <circle cx="17" cy="6" r="2" fill="#e8ffdb" stroke="black" strokeWidth="2"/>
-                      <circle cx="7" cy="6" r="2" fill="#e8ffdb" stroke="black" strokeWidth="2"/>
-                    </svg>
-                  </div>
-                </div>
-                <h3 className="text-4xl font-black text-black mb-4">
-                  Lo asignamos<br/>a nuestro equipo
-                </h3>
-                <p className="text-lg text-black">
-                  Nuestro equipo seleccionará al mejor grupo de especialistas para tu proyecto, con un director creativo y diseñadores dedicados.
-                </p>
-              </div>
-              
-              <div className="flex flex-col items-start">
-                <div className="mb-6">
-                  <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border border-black">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M5 16L10 13L15 16L19 13" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                      <path d="M5 12L10 9L15 12L19 9" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                      <path d="M5 8L10 5L15 8L19 5" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                  </div>
-                </div>
-                <h3 className="text-4xl font-black text-black mb-4">
-                  Entregamos<br/>tus diseños
-                </h3>
-                <p className="text-lg text-black">
-                  Recibe las primeras iteraciones de tus pedidos en tiempo récord y con tu feedback haremos ajustes lo más rápido posible.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-[#7ee8ff] py-20">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="grid md:grid-cols-5 gap-8">
-   
-              <div className="md:col-span-3 grid grid-cols-2 gap-8">
-                <div className="bg-white p-8 rounded-2xl">
-                  <h3 className="text-3xl font-black text-black mb-4">
-                    Diseño de<br/>ultra alta calidad
-                  </h3>
-                  <p className="text-black text-lg">
-                    Contratamos a los mejores diseñadores de latinoamérica para trabajar en tus proyectos.
-                  </p>
-                </div>
-
-                <div className="bg-white p-8 rounded-2xl">
-                  <h3 className="text-3xl font-black text-black mb-4">
-                    Revisiones<br/>Ilimitadas
-                  </h3>
-                  <p className="text-black text-lg">
-                    ¿Cambios en el proyecto? ¡No hay problema! Seguiremos trabajando hasta que estés 100% satisfecho.
-                  </p>
-                </div>
-
-                <div className="bg-white p-8 rounded-2xl">
-                  <h3 className="text-3xl font-black text-black mb-4">
-                    Entregas<br/>ultrarrápidas
-                  </h3>
-                  <p className="text-black text-lg">
-                    Entregamos tus diseños en tiempo récord y con tu feedback iteramos lo más rápido posible.
-                  </p>
-                </div>
-
-                <div className="bg-white p-8 rounded-2xl">
-                  <h3 className="text-3xl font-black text-black mb-4">
-                    Todo en una<br/>misma aplicación
-                  </h3>
-                  <p className="text-black text-lg">
-                    Haz tus pedidos, da feedback y recibe tus diseños en una misma aplicación intuitiva y súper agil.
-                  </p>
-                </div>
-              </div>
-
-              <div className="md:col-span-2 bg-[#e8ffdb] p-8 rounded-2xl flex flex-col justify-between">
-                <div>
-                  <h3 className="text-4xl font-black text-black mb-6">
-                    ¡Desbloquea tu operación de diseño ahora!
-                  </h3>
-                  <p className="text-xl text-black mb-8">
-                    Descubre cómo Grayola puede integrarse perfectamente en tus procesos, potenciando tu creatividad y aliviando tu carga de trabajo.
-                  </p>
-                </div>
-                <div>
-                  <button className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-lg font-bold rounded-full border-2 border-black">
-                    Ver planes
+                <div className="flex flex-col sm:flex-row gap-4 mt-4">
+                  <button className="w-full sm:w-auto bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3.5 text-lg font-bold border-2 border-b-4 border-black rounded-full">
+                    Agendar prueba
+                  </button>
+                  <button className="w-full sm:w-auto bg-transparent hover:bg-black/5 text-black px-6 py-3.5 text-lg font-bold border-2 border-black rounded-full">
+                    Ver todos los servicios
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-        
-        <section className="bg-[#7ee8ff] py-20">
-          <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
-            <div className="relative">
-              <div className="w-[300px] h-[300px] relative">
-                <div className="absolute inset-0">
-                  <svg className="w-full h-full" viewBox="0 0 300 300">
-                    <path d="M150,10 Q290,150 150,290 Q10,150 150,10" fill="none" stroke="#7fff00" strokeWidth="2"/>
-                  </svg>
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-white p-6 rounded-xl border-2 border-black">
-                    <Share2 className="w-24 h-24 text-black" />
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+              <div className="bg-white/70 backdrop-blur-sm p-8 rounded-2xl border-2 border-black hover:border-[#7fff00] transition-all duration-300 hover:shadow-lg relative overflow-hidden">
+                <div className="mb-6">
+                  <div className="w-14 h-14 bg-[#e8ffdb] rounded-xl flex items-center justify-center border-2 border-black">
+                    <Palette className="h-7 w-7 text-black" />
                   </div>
                 </div>
+                <h3 className="text-2xl font-black text-black mb-4">
+                  Diseño de marca
+                </h3>
+                <p className="text-lg text-black">
+                  Manuales de marca, logotipos, key visuals y activos de marca.
+                </p>
+                <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-[#7fff00]/10 rounded-full"></div>
               </div>
-            </div>
-            
-            <div>
-              <h2 className="text-[48px] font-black leading-tight text-black mb-6">
-                Todos los servicios creativos que necesitas en un solo lugar.
-              </h2>
-              <p className="text-2xl text-black mb-8">
-                Explora más de 100 servicios de diseño disponibles con nuestra suscripción
-              </p>
-              <div className="flex gap-4">
+              
+              <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl border-2 border-black hover:border-[#7fff00] transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+                <div className="mb-6">
+                  <div className="w-14 h-14 bg-[#c9efb3] rounded-full flex items-center justify-center border-2 border-black">
+                    <Share2 className="h-7 w-7 text-black" />
+                  </div>
+                </div>
+                <h3 className="text-2xl font-black text-black mb-4">
+                  Social Media
+                </h3>
+                <p className="text-lg text-black">
+                  Anuncios para redes sociales y ads para Meta o Google.
+                </p>
+              </div>
+              
+              <div className="bg-white/75 backdrop-blur-sm p-8 rounded-2xl border-2 border-black hover:border-[#7fff00] transition-all duration-300 hover:shadow-lg relative">
+                <div className="absolute top-3 right-3 w-20 h-20 bg-[#7ee8ff]/20 rounded-full"></div>
+                <div className="mb-6 relative z-10">
+                  <div className="w-14 h-14 bg-[#7ee8ff] rounded-xl flex items-center justify-center border-2 border-black">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 8V16L12 20L20 16V8L12 4L4 8Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M12 4V20" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M4 8L20 16" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M20 8L4 16" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-black text-black mb-4 relative z-10">
+                  Edición de video
+                </h3>
+                <p className="text-lg text-black relative z-10">
+                  Tutoriales, demos de productos, podcast o videos informativos.
+                </p>
+              </div>
+              
+              <div className="bg-white/70 backdrop-blur-sm p-8 rounded-2xl border-2 border-black hover:border-[#7fff00] transition-all duration-300 hover:shadow-lg hover:rotate-1">
+                <div className="mb-6">
+                  <div className="w-14 h-14 bg-[#e8ffdb] rounded-lg flex items-center justify-center border-2 border-black transform rotate-3">
+                    <Laptop className="h-7 w-7 text-black" />
+                  </div>
+                </div>
+                <h3 className="text-2xl font-black text-black mb-4">
+                  Presentaciones
+                </h3>
+                <p className="text-lg text-black">
+                  Infografías, decks, ebooks y presentaciones comerciales.
+                </p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-sm p-8 rounded-2xl border-2 border-black hover:border-[#7fff00] transition-all duration-300 hover:shadow-lg">
+                <div className="mb-6 flex justify-between items-center">
+                  <div className="w-14 h-14 bg-[#94e0ff] rounded-full flex items-center justify-center border-2 border-black">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 3L4 6V12C4 15.3137 7.13401 18 12 18C16.866 18 20 15.3137 20 12V6L12 3Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M12 18V21" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M4 12V16.5C4 17.8807 7.58172 19 12 19C16.4183 19 20 17.8807 20 16.5V12" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <div className="w-8 h-8 bg-[#7fff00]/30 rounded-full"></div>
+                </div>
+                <h3 className="text-2xl font-black text-black mb-4">
+                  Animación 2D/3D
+                </h3>
+                <p className="text-lg text-black">
+                  Motion graphics, demos de producto y animación 2D/3D.
+                </p>
+              </div>
+              
+              <div className="bg-white/70 backdrop-blur-sm p-8 rounded-2xl border-2 border-black hover:border-[#7fff00] transition-all duration-300 hover:shadow-lg relative">
+                <div className="absolute -top-4 -left-4 w-16 h-16 bg-[#7fff00]/20 rounded-full"></div>
+                <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-[#7ee8ff]/15 rounded-full"></div>
+                <div className="mb-6">
+                  <div className="w-14 h-14 bg-[#c9efb3] rounded-xl flex items-center justify-center border-2 border-black">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M5 3L19 12L5 21V3Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-black text-black mb-4">
+                  Ilustración
+                </h3>
+                <p className="text-lg text-black">
+                  Assets digitales, iconos, personajes y material ilustrado.
+                </p>
+              </div>
+              
+              <div className="bg-[#f0ffe0] p-8 rounded-2xl border-2 border-black col-span-1 md:col-span-3 flex flex-col md:flex-row items-center justify-between">
+                <div className="flex items-center gap-4 mb-4 md:mb-0">
+                  <div className="text-6xl font-black text-black">+100</div>
+                  <div className="text-xl font-bold text-black">Servicios de diseño adicionales</div>
+                </div>
                 <button className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-lg font-bold rounded-full border-2 border-b-4 border-black">
-                  Agendar prueba
-                </button>
-                <button className="bg-transparent hover:bg-black/5 text-black px-6 py-3 text-lg font-bold rounded-full border-2 border-b-4 border-black">
                   Ver todos los servicios
                 </button>
               </div>
             </div>
           </div>
         </section>
-
-        <section className="bg-[#7ee8ff] py-20">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 mb-8">
-         
-              <div className="bg-white p-8 rounded-2xl flex items-start gap-6">
-                <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border border-black">
-                  <Palette className="w-8 h-8 text-black" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-black mb-2">Diseño de marca</h3>
-                  <p className="text-lg text-black">Manuales de marca, logotipos, key visuals y activos de marca.</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl flex items-start gap-6">
-                <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border border-black">
-                  <Instagram className="w-8 h-8 text-black" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-black mb-2">Social Media</h3>
-                  <p className="text-lg text-black">Anuncios para redes sociales y ads para Meta o Google.</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl flex items-start gap-6">
-                <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border border-black">
-                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M4 8V16M8 12L20 12M20 12L16 8M20 12L16 16" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-black mb-2">Edición de video</h3>
-                  <p className="text-lg text-black">Tutoriales, demos de productos, podcast o videos informativos.</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl flex items-start gap-6">
-                <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border border-black">
-                  <Laptop className="w-8 h-8 text-black" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-black mb-2">Presentaciones</h3>
-                  <p className="text-lg text-black">Infografías, decks, ebooks y presentaciones comerciales</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-       
-              <div className="bg-white p-8 rounded-2xl flex items-start gap-6">
-                <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border border-black">
-                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M4 4L12 12M12 12L20 4M12 12V20" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-black mb-2">Animación 2D/3D</h3>
-                  <p className="text-lg text-black">Motion graphics, demos de producto y animación 2D/3D</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl flex items-start gap-6">
-                <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border border-black">
-                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M4 4H20M4 12H20M4 20H20" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-black mb-2">Ilustración</h3>
-                  <p className="text-lg text-black">Assets digitales, iconos, personajes y material ilustrado.</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl flex items-start gap-6">
-                <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border border-black">
-                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="8" stroke="black" strokeWidth="2"/>
-                    <path d="M12 8V16M8 12H16" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-black mb-2">+100</h3>
-                  <p className="text-lg text-black">Servicios de diseño adicionales</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
         
         {/* Planes */}
-        <section className="bg-[#7ee8ff] py-20 px-8" id="planes">
+        <section className="bg-transparent py-20 px-8" id="planes">
           <div className="max-w-7xl mx-auto">
             <div className="relative mb-16">
               <div className="absolute left-1/2 transform -translate-x-1/2 -top-24">
@@ -696,7 +802,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="bg-[#7ee8ff] py-20 px-8">
+        <section className="bg-transparent py-20 px-8">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-3xl border-2 border-black p-16 text-center">
               <h2 className="text-[48px] font-black text-black mb-4">
@@ -722,7 +828,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="bg-[#7ee8ff] py-20 px-8">
+        <section className="bg-transparent py-20 px-8">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-[48px] font-black text-black mb-16 text-center">
               <div className="flex flex-col items-center gap-2">

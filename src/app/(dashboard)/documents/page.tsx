@@ -26,6 +26,7 @@ import {
 
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface FileObject {
   name: string
@@ -53,6 +54,9 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const [userRole, setUserRole] = useState<string>('')
+
+  const [selectedDoc, setSelectedDoc] = useState<FileObject | null>(null)
+  const [isViewerOpen, setIsViewerOpen] = useState(false)
 
   useEffect(() => {
     fetchDocuments()
@@ -92,7 +96,7 @@ export default function DocumentsPage() {
       } else if (role === 'designer' || role === 'diseñador') {
         query = query.eq('assigned_to', userData.user.id)
       }
-      // No aplicamos ningún filtro para project managers
+
 
       const { data: projects, error } = await query
       
@@ -114,18 +118,65 @@ export default function DocumentsPage() {
         
           project.files.forEach((file: any) => {
           try {
-            // Procesar los archivos que son strings
+         
             if (typeof file === 'string') {
-              const cleanFileName = String(file).replace(/[\{\}\"\'\`]+/g, '').trim()
+              console.log(`Procesando archivo string: ${file}`);
+              
+              try {
+                if (file.trim().startsWith('{') && file.trim().endsWith('}')) {
+                  const jsonObj = JSON.parse(file);
+                  console.log("Archivo JSON parseado:", jsonObj);
+                  
+                  if (jsonObj.url && typeof jsonObj.url === 'string' && jsonObj.url.startsWith('http')) {
+                    console.log("Usando URL directa del JSON:", jsonObj.url);
+                    
+                    allFiles.push({
+                      name: jsonObj.name || 'Archivo',
+                      path: jsonObj.path || '',
+                      type: jsonObj.type || 'file',
+                      size: jsonObj.size || 0,
+                      projectId: project.id,
+                      projectTitle: project.title,
+                      url: jsonObj.url 
+                    });
+                    
+                    return; 
+                  }
+                }
+              } catch (jsonError) {
+                console.log("No se pudo parsear como JSON, tratando como string normal");
+              }
+              
+              const cleanFileName = String(file).replace(/[\{\}\"\'\`]+/g, '').trim();
               const extension = cleanFileName.split('.').pop()?.toLowerCase() || '';
               
-              // Determinar el tipo de archivo basado en la extensión
+       
               let fileType = 'file';
               if (extension === 'pdf') fileType = 'pdf';
               else if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(extension)) fileType = 'image';
               else if (['doc', 'docx'].includes(extension)) fileType = 'word';
               else if (['html', 'css', 'js', 'jsx', 'ts', 'tsx'].includes(extension)) fileType = 'code';
               else if (['txt', 'md'].includes(extension)) fileType = 'text';
+              
+              let fileUrl = file;
+              
+              if (!file.startsWith('http')) {
+                try {
+                  const publicUrlData = supabase.storage.from('documents').getPublicUrl(file);
+                  if (publicUrlData && publicUrlData.data && publicUrlData.data.publicUrl) {
+                    fileUrl = publicUrlData.data.publicUrl;
+                    console.log(`URL construida para archivo string: ${fileUrl}`);
+                  } else {
+                    console.log(`No se pudo construir URL para archivo string: ${file}`);
+                  }
+                } catch (urlError) {
+                  console.error(`Error al construir URL para archivo string: ${file}`, urlError);
+                }
+              } else {
+                console.log(`El archivo string ya parece ser una URL: ${fileUrl}`);
+              }
+              
+              console.log(`Archivo string procesado: ${cleanFileName}, URL: ${fileUrl}`);
               
               allFiles.push({
                 name: cleanFileName,
@@ -134,15 +185,14 @@ export default function DocumentsPage() {
                 size: 0,
                 projectId: project.id,
                 projectTitle: project.title,
-                url: file
-              })
+                url: fileUrl
+              });
             }
-            // Procesar los archivos que son objetos
+
             else if (file && typeof file === 'object') {
-              // Obtener nombre de archivo limpio
+
               let cleanFileName = String(file.name || 'Archivo').replace(/[\{\}\"\'\`]+/g, '').trim()
               
-              // Si no hay nombre con extensión pero hay una ruta, extraer el nombre de la ruta
               if ((!cleanFileName || !cleanFileName.includes('.') || cleanFileName === 'Archivo') && file.path) {
                 const pathParts = file.path.split('/');
                 if (pathParts.length > 0) {
@@ -153,7 +203,6 @@ export default function DocumentsPage() {
                 }
               }
               
-              // Determinar el tipo de archivo basado en la extensión
               const extension = cleanFileName.split('.').pop()?.toLowerCase() || '';
               let fileType = file.type || 'file';
               
@@ -165,8 +214,36 @@ export default function DocumentsPage() {
                 else if (['txt', 'md'].includes(extension)) fileType = 'text';
               }
               
-              // Construir la URL del archivo si tiene path
-              const fileUrl = file.path ? supabase.storage.from('documents').getPublicUrl(file.path).data.publicUrl : file.url;
+              let fileUrl = file.url;
+              
+              if (file.path && !fileUrl) {
+                try {
+                  const publicUrlData = supabase.storage.from('documents').getPublicUrl(file.path);
+                  if (publicUrlData && publicUrlData.data && publicUrlData.data.publicUrl) {
+                    fileUrl = publicUrlData.data.publicUrl;
+                    console.log(`URL construida para ${file.path}:`, fileUrl);
+                  } else {
+                    console.log(`No se pudo construir URL para ${file.path}`);
+
+                    if (file.path.startsWith('http')) {
+                      fileUrl = file.path;
+                      console.log(`Usando path como URL:`, fileUrl);
+                    }
+                  }
+                } catch (urlError) {
+                  console.error(`Error al construir URL para ${file.path}:`, urlError);
+           
+                  if (file.path.startsWith('http')) {
+                    fileUrl = file.path;
+                  }
+                }
+              }
+              
+              if (!fileUrl && file.path && file.path.startsWith('http')) {
+                fileUrl = file.path;
+              }
+              
+              console.log(`Archivo procesado: ${cleanFileName}, URL: ${fileUrl}`);
               
               allFiles.push({
                 name: cleanFileName,
@@ -310,7 +387,7 @@ export default function DocumentsPage() {
         </div>
       );
     }
-    // Código
+
     else if (['html'].includes(extension)) {
       return (
         <div className="relative flex items-center justify-center w-20 h-20 rounded-md bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-200/40 dark:to-orange-300/30 border border-orange-200 dark:border-orange-300/50 shadow-sm group-hover:shadow-md transition-all duration-300">
@@ -490,39 +567,58 @@ export default function DocumentsPage() {
   }
 
   const downloadFile = async (url: string, fileName: string) => {
+    if (!url) {
+      toast({
+        title: "Error",
+        description: "No hay URL disponible para este archivo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    window.open(url, '_blank');
+  };
+
+  const handleViewDocument = (doc: FileObject) => {
+    if (!doc.url) {
+      toast({
+        title: "Error",
+        description: "No hay vista previa disponible para este archivo",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedDoc(doc);
+    setIsViewerOpen(true);
+  };
+  
+  const handleDownload = async (doc: FileObject) => {
     try {
-      if (!url) {
+      if (!doc.url) {
         toast({
           title: "Error",
-          description: "No se puede descargar el archivo: URL no disponible",
+          description: "No hay URL disponible para este archivo",
           variant: "destructive",
         });
         return;
       }
       
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      window.open(doc.url, '_blank');
       
       toast({
         title: "Éxito",
-        description: "Archivo descargado correctamente",
+        description: `Descargando ${doc.name}...`,
       });
     } catch (error) {
-      console.error('Error downloading file:', error);
       toast({
         title: "Error",
-        description: "No se pudo descargar el archivo",
+        description: "Error al descargar el archivo",
         variant: "destructive",
       });
     }
   };
+
+ 
 
   const clearFilters = () => {
     setCategoryFilter(null)
@@ -543,23 +639,30 @@ export default function DocumentsPage() {
     return matchesSearch && matchesType && matchesCategory;
   });
 
-  const projects = [...new Set(documents.map(doc => ({
-    id: doc.projectId || '',
-    title: doc.projectTitle || 'Sin proyecto'
-  })))].filter(project => project.id !== '');
+  const projectsMap = new Map();
+  
+  documents.forEach(doc => {
+    if (doc.projectId && !projectsMap.has(doc.projectId)) {
+      projectsMap.set(doc.projectId, {
+        id: doc.projectId,
+        title: doc.projectTitle || 'Sin proyecto'
+      });
+    }
+  });
+  const projects = Array.from(projectsMap.values()).filter(project => project.id !== '');
 
   if (loading) {
     return (
       <div className="container mx-auto py-8 px-4 min-h-screen flex flex-col items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <p className="mt-4 text-muted-foreground">Cargando documentos...</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7fff00]"></div>
+        <p className="mt-4 text-black">Cargando documentos...</p>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6 font-sans">
-      <div className="relative overflow-hidden bg-[#7ee8ff] p-4 rounded-xl shadow-sm border border-black">
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#7ee8ff] to-[#94e0ff] p-4 rounded-xl shadow-sm border-2 border-black">
         <div className="relative flex flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left md:items-center">
           <div className="mx-auto md:mx-0">
             <h1 className="text-3xl font-black text-black">
@@ -569,7 +672,7 @@ export default function DocumentsPage() {
             <span className="inline-block bg-[#e8ffdb] text-black py-0.5 px-2 rounded-full text-xs mt-1 font-medium border border-black">
               {userRole === 'client' && "Cliente"}
               {userRole === 'designer' && "Diseñador"}
-              {userRole === 'project_manager' && "Project Manager"}
+              {userRole === 'project_manager' && "Gerente de Proyecto"}
             </span>
           </div>
 
@@ -584,12 +687,12 @@ export default function DocumentsPage() {
       </div>
       
       {showFilters && (
-        <div className="bg-white dark:bg-black p-4 rounded-lg shadow mb-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white p-4 rounded-xl shadow-md mb-6 border-2 border-black">
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-1 block dark:text-white">Tipo de documento</label>
+              <label className="text-sm font-medium mb-1 block text-black">Tipo de documento</label>
               <select 
-                className="w-full p-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-black dark:text-white"
+                className="w-full p-2 rounded-md border-2 border-black bg-white text-black"
                 value={typeFilter || ''}
                 onChange={(e) => setTypeFilter(e.target.value || null)}
               >
@@ -602,9 +705,9 @@ export default function DocumentsPage() {
               </select>
             </div>
             <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-1 block dark:text-white">Proyecto</label>
+              <label className="text-sm font-medium mb-1 block text-black">Proyecto</label>
               <select 
-                className="w-full p-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-black dark:text-white"
+                className="w-full p-2 rounded-md border-2 border-black bg-white text-black"
                 value={categoryFilter || ''}
                 onChange={(e) => setCategoryFilter(e.target.value || null)}
               >
@@ -614,7 +717,10 @@ export default function DocumentsPage() {
                 ))}
               </select>
             </div>
-            <Button variant="ghost" onClick={clearFilters} className="h-10 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+            <Button 
+              onClick={clearFilters} 
+              className="h-10 bg-[#e8ffdb] hover:bg-[#d7ffb3] text-black border-2 border-black rounded-md"
+            >
               <X className="mr-2 h-4 w-4" />
               Limpiar filtros
             </Button>
@@ -625,110 +731,134 @@ export default function DocumentsPage() {
       {filteredDocuments.length > 0 ? (
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {filteredDocuments.map((doc, index) => {
-            // Determinar el tipo y extensión del archivo
             const extension = getFileExtension(doc.name);
             const fileType = doc.type || getFileTypeFromName(doc.name);
             
-            // Limpiar el nombre para mostrar
             const displayName = getFileNameWithoutExtension(doc.name);
             
-            // Badge personalizado según extensión exacta
             const badgeText = extension ? extension.toUpperCase() : 
                               fileType === 'pdf' ? 'PDF' : 
                               fileType === 'image' ? 'IMAGEN' :
                               fileType === 'code' ? 'CÓDIGO' :
                               fileType === 'text' ? 'TEXTO' : 'ARCHIVO';
             
-            // Limpiar cualquier carácter extraño en el badge
             const cleanBadgeText = badgeText.replace(/[^A-Za-z0-9ÁÉÍÓÚáéíóúÑñ]/g, '');
             
             return (
-              <Card key={index} className="relative group shadow-md transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden bg-white dark:bg-black h-[280px] flex flex-col">
+              <Card key={index} className="relative group shadow-md transition-all duration-300 border-2 border-black rounded-xl overflow-hidden bg-white dark:bg-gray-900 h-[320px] flex flex-col hover:shadow-lg">
                 <div className="absolute top-0 left-0 right-0 bottom-0">
-                  {/* Badge de tipo de archivo */}
+ 
                   <div className="absolute right-2 top-2">
-                    <div className={`px-2 py-1 text-xs font-bold rounded-full shadow ${
-                      extension === 'pdf' ? 'bg-red-300 text-red-800 dark:bg-red-300 dark:text-red-900' :
-                      ['jpg', 'jpeg'].includes(extension) ? 'bg-purple-300 text-purple-800 dark:bg-purple-300 dark:text-purple-900' :
-                      extension === 'png' ? 'bg-indigo-300 text-indigo-800 dark:bg-indigo-300 dark:text-indigo-900' :
-                      extension === 'svg' ? 'bg-cyan-300 text-cyan-800 dark:bg-cyan-300 dark:text-cyan-900' :
-                      extension === 'gif' ? 'bg-pink-300 text-pink-800 dark:bg-pink-300 dark:text-pink-900' :
-                      extension === 'html' ? 'bg-orange-300 text-orange-800 dark:bg-orange-300 dark:text-orange-900' :
-                      ['js', 'jsx'].includes(extension) ? 'bg-yellow-300 text-yellow-800 dark:bg-yellow-300 dark:text-yellow-900' :
-                      ['ts', 'tsx'].includes(extension) ? 'bg-blue-300 text-blue-800 dark:bg-blue-300 dark:text-blue-900' :
-                      extension === 'css' ? 'bg-sky-300 text-sky-800 dark:bg-sky-300 dark:text-sky-900' :
-                      extension === 'json' ? 'bg-amber-300 text-amber-800 dark:bg-amber-300 dark:text-amber-900' :
-                      extension === 'py' ? 'bg-violet-300 text-violet-800 dark:bg-violet-300 dark:text-violet-900' :
-                      ['doc', 'docx'].includes(extension) ? 'bg-blue-300 text-blue-800 dark:bg-blue-300 dark:text-blue-900' :
-                      extension === 'txt' ? 'bg-emerald-300 text-emerald-800 dark:bg-emerald-300 dark:text-emerald-900' :
-                      extension === 'md' ? 'bg-neutral-300 text-neutral-800 dark:bg-neutral-300 dark:text-neutral-900' :
-                      fileType === 'pdf' ? 'bg-red-300 text-red-800 dark:bg-red-300 dark:text-red-900' :
-                      fileType === 'image' ? 'bg-purple-300 text-purple-800 dark:bg-purple-300 dark:text-purple-900' :
-                      fileType === 'code' ? 'bg-blue-300 text-blue-800 dark:bg-blue-300 dark:text-blue-900' :
-                      fileType === 'text' ? 'bg-emerald-300 text-emerald-800 dark:bg-emerald-300 dark:text-emerald-900' :
-                      'bg-slate-300 text-slate-800 dark:bg-slate-300 dark:text-slate-900'
+                    <div className={`px-2 py-1 text-xs font-bold rounded-full shadow border border-black ${
+                      fileType === 'pdf' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                      fileType === 'image' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' :
+                      fileType === 'word' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                      fileType === 'code' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                      fileType === 'text' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                      'bg-[#e8ffdb] text-black dark:bg-gray-800 dark:text-gray-300'
                     }`}>
                       {cleanBadgeText}
                     </div>
                   </div>
-                      </div>
-                <CardHeader className="pb-4 flex flex-col items-center justify-center space-y-3 flex-grow">
-                  {getDocumentIcon(fileType, extension)}
-                  <div className="w-full text-center mt-4">
-                    <CardTitle className="text-lg font-semibold line-clamp-2 group-hover:text-primary transition-colors text-gray-900 dark:text-white">
+                </div>
+                <CardHeader className="pb-2 flex flex-col items-center justify-center space-y-2 flex-grow">
+                  <div className="w-20 h-20 flex items-center justify-center scale-[0.6]"> {/* Cambios aquí */}
+                    {getDocumentIcon(fileType, extension)}
+                  </div>
+                  <div className="w-full text-center mt-2">
+                    <CardTitle className="text-lg font-semibold line-clamp-2 text-black dark:text-white">
                       {displayName?.replace(/}/g, "") || 'Archivo sin nombre'}
                     </CardTitle>
-                    <CardDescription className="text-sm text-gray-500 dark:text-gray-300 flex items-center mt-2 justify-center">
+                    <CardDescription className="text-sm text-gray-600 flex items-center mt-2 justify-center">
                       <Folder className="h-4 w-4 mr-1.5" /> 
                       {doc.projectTitle?.replace(/}/g, "") || 'Sin proyecto'}
-                      </CardDescription>
+                    </CardDescription>
                   </div>
                 </CardHeader>
-                <CardFooter className="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center gap-3 mt-auto bg-gray-50/50 dark:bg-gray-900">
-                  {doc.url ? (
-                    <>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-9 px-4 bg-white dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/80 shadow-sm"
-                        onClick={() => window.open(doc.url, '_blank')}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        <span>Ver</span>
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="h-9 px-4 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 shadow-sm border border-blue-200 dark:border-blue-800/30" 
-                        onClick={() => downloadFile(doc.url!, doc.name)}
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        <span>Descargar</span>
-                      </Button>
-                    </>
-                  ) : (
-                    <Button variant="default" size="sm" className="h-9 px-4 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 shadow-sm border border-blue-200 dark:border-blue-800/30" onClick={() => 
+                <CardFooter className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-center gap-4 mt-auto bg-[#f9f9f9] dark:bg-gray-800">
+                {doc.url ? (
+                  <>
+                    <button
+                      onClick={() => handleViewDocument(doc)}
+                      className="h-10 w-10 rounded-full flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white border-2 border-black transition-colors"
+                      type="button"
+                    >
+                      <Eye className="h-5 w-5" />
+                    </button>
+                    
+                    <button
+                      onClick={() => handleDownload(doc)}
+                      className="h-10 w-10 rounded-full flex items-center justify-center bg-[#7fff00] hover:bg-[#90ff20] text-black border-2 border-black transition-colors"
+                      type="button"
+                    >
+                      <Download className="h-5 w-5" />
+                    </button>
+                  </>
+                ) : (
+                  <button 
+                    className="h-10 w-10 rounded-full flex items-center justify-center bg-gray-500 hover:bg-gray-600 text-white border-2 border-black transition-colors"
+                    onClick={() => 
                       toast({
-                        title: "Información",
-                        description: "Este archivo no tiene una URL de descarga. Por favor, contacte al administrador.",
+                        title: "Error",
+                        description: "Este archivo no tiene una URL de descarga",
+                        variant: "destructive",
                       })
-                    }>
-                      <Download className="mr-2 h-4 w-4" />
-                      <span>Descargar</span>
-                    </Button>
-                  )}
-                </CardFooter>
+                    }
+                    type="button"
+                  >
+                    <Download className="h-5 w-5" />
+                  </button>
+                )}
+              </CardFooter>
               </Card>
             );
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <File className="h-16 w-16 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium mb-1 text-gray-900 dark:text-gray-900">No se encontraron documentos</h3>
-          <p className="text-gray-600 dark:text-gray-600">Intenta con otro término de búsqueda o crea un proyecto con archivos</p>
+        <div className="flex flex-col items-center justify-center py-12 text-center bg-white border-2 border-black rounded-xl p-8">
+          <File className="h-16 w-16 text-black mb-4" />
+          <h3 className="text-lg font-medium mb-1 text-black">No se encontraron documentos</h3>
+          <p className="text-gray-600">Intenta con otro término de búsqueda o crea un proyecto con archivos</p>
         </div>
+      )}
+
+      {isViewerOpen && selectedDoc && (
+        <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
+          <DialogContent className="max-w-4xl h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>{selectedDoc.name}</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 overflow-auto p-4">
+              {selectedDoc.type === 'image' ? (
+                <img 
+                  src={selectedDoc.url} 
+                  alt={selectedDoc.name}
+                  className="w-full h-auto object-contain"
+                />
+              ) : selectedDoc.type === 'pdf' ? (
+                <iframe
+                  src={selectedDoc.url}
+                  className="w-full h-full min-h-[60vh]"
+                  title={selectedDoc.name}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full min-h-[60vh]">
+                  <p className="text-gray-500">Vista previa no disponible</p>
+                </div>
+              )}
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button 
+                onClick={() => handleDownload(selectedDoc)} 
+                className="bg-[#7fff00] hover:bg-[#90ff20] text-black"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Descargar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   )
-} 
+}
