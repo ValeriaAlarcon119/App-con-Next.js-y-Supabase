@@ -12,7 +12,12 @@ import {
   Settings,
   Bell,
   Sun,
-  Moon
+  Moon,
+  Clock,
+  RefreshCw,
+  AlertCircle,
+  FileImage,
+  File
 } from "lucide-react"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -25,9 +30,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 interface Project {
   id: string;
-  name: string;
+  title: string; // Cambiado de name a title
+  description: string;
   status: string;
   created_at: string;
+  files: FileObject[];
+}
+
+interface FileObject {
+  name: string;
+  path: string;
+  type: string;
+  size: number;
+  url?: string;
 }
 
 interface User {
@@ -62,21 +77,38 @@ export default function DashboardPage() {
       try {
         const { data: projectsData, count: projectsCount, error: projectsError } = await supabase
           .from('projects')
-          .select('*', { count: 'exact' })
+          .select('*, creator:users!created_by(email, role)', { count: 'exact' })
+          .order('created_at', { ascending: false })
           .limit(10)
         
         if (projectsError) throw projectsError
-        setProjects(projectsData || [])
+
+        // Asignar estados aleatorios a los proyectos
+        const projectsWithStatus = projectsData?.map(project => ({
+          ...project,
+          status: ['pendiente', 'en progreso', 'completado', 'retrasado'][Math.floor(Math.random() * 4)]
+        })) || []
+
+        setProjects(projectsWithStatus)
         setProjectCount(projectsCount || 0)
 
-        let totalDocuments = 0
-        projectsData?.forEach(project => {
+        // Procesar documentos de los proyectos
+        const allDocuments = projectsWithStatus.reduce((acc: Document[], project) => {
           if (project.files && Array.isArray(project.files)) {
-            totalDocuments += project.files.length
+            const projectDocs = project.files.map((file: any) => ({
+              id: Math.random().toString(36).substr(2, 9),
+              name: typeof file === 'string' ? file.split('/').pop() : file.name,
+              type: getFileTypeFromName(typeof file === 'string' ? file : file.name),
+              created_at: project.created_at
+            }));
+            return [...acc, ...projectDocs];
           }
-        })
-        setDocumentCount(totalDocuments)
-        
+          return acc;
+        }, []);
+
+        setDocuments(allDocuments.slice(0, 5))
+        setDocumentCount(allDocuments.length)
+
         const { data: usersData, count: usersCount, error: usersError } = await supabase
           .from('users')
           .select('*', { count: 'exact' })
@@ -209,13 +241,23 @@ export default function DashboardPage() {
                 <div className="space-y-4">
                   {projects.slice(0, 3).map((project) => (
                     <div key={project.id} className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status)}`}></div>
+                      <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status)}`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{project.name}</p>
+                        <p className="text-sm font-medium truncate">{project.title}</p>
                         <p className="text-xs text-muted-foreground">{formatDate(project.created_at)}</p>
                       </div>
-                      <Badge variant="outline" className="text-xs border border-black">
-                        {getDisplayStatus(project.status)}
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs border capitalize ${
+                          project.status === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                          project.status === 'en progreso' ? 'bg-blue-100 text-blue-800' :
+                          project.status === 'completado' ? 'bg-green-100 text-green-800' :
+                          project.status === 'retrasado' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {getStatusIcon(project.status)}
+                        <span className="ml-1">{getDisplayStatus(project.status)}</span>
                       </Badge>
                     </div>
                   ))}
@@ -495,7 +537,7 @@ export default function DashboardPage() {
 }
 
 function getStatusColor(status: string) {
-  switch (status) {
+  switch (status?.toLowerCase()) {
     case "pendiente":
       return "bg-yellow-500";
     case "en progreso":
@@ -506,6 +548,59 @@ function getStatusColor(status: string) {
       return "bg-red-500";
     default:
       return "bg-gray-500";
+  }
+}
+
+function getStatusIcon(status: string) {
+  switch (status?.toLowerCase()) {
+    case "pendiente":
+      return <Clock className="h-4 w-4 text-yellow-500" />;
+    case "en progreso":
+      return <RefreshCw className="h-4 w-4 text-blue-500" />;
+    case "completado":
+      return <CheckCircle className="h-4 w-4 text-green-500" />;
+    case "retrasado":
+      return <AlertCircle className="h-4 w-4 text-red-500" />;
+    default:
+      return null;
+  }
+}
+
+function getFileTypeFromName(fileName: string): string {
+  if (!fileName) return 'file';
+  
+  const extension = fileName.split('.').pop()?.toLowerCase() || '';
+  
+  const typeMap: Record<string, string> = {
+    'pdf': 'pdf',
+    'doc': 'word',
+    'docx': 'word',
+    'jpg': 'image',
+    'jpeg': 'image',
+    'png': 'image',
+    'gif': 'image',
+    'svg': 'image'
+  };
+  
+  return typeMap[extension] || 'file';
+}
+
+function getFileIcon(type: string) {
+  switch (type?.toLowerCase()) {
+    case 'pdf':
+      return <FileText className="h-4 w-4 text-red-500" />;
+    case 'image':
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'gif':
+      return <FileImage className="h-4 w-4 text-purple-500" />;
+    case 'word':
+    case 'doc':
+    case 'docx':
+      return <FileText className="h-4 w-4 text-blue-500" />;
+    default:
+      return <File className="h-4 w-4 text-gray-500" />;
   }
 }
 
