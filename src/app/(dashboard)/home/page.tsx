@@ -1,7 +1,8 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, Check, ChevronRight, ChevronUp, ExternalLink, Github, Instagram, Laptop, Linkedin, Mail, Palette, Phone, Share2 } from "lucide-react"
+import { ArrowRight, Check, ChevronRight, ChevronUp, ExternalLink, Github, Instagram, Laptop, Linkedin, Mail, Palette, Phone, Share2, FileText, Briefcase, Zap, Shield, Sparkles } from "lucide-react"
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -14,47 +15,53 @@ export default function HomePage() {
   const router = useRouter()
 
   return (
-    <div className="relative w-full overflow-x-hidden font-sans bg-gradient-to-r from-[#c9efb3] via-[#7ee8ff] to-[#94e0ff]">
+    <div className="relative w-full overflow-x-hidden font-sans bg-gradient-to-br from-emerald-50 via-white to-pink-50 min-h-screen">
       <div className="w-full">
 
-        <div className="w-full min-h-screen bg-transparent">
+        <motion.div
+          className="w-full min-h-screen bg-transparent"
+          initial={{ opacity: 0, y: -80 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          viewport={{ once: false }}
+        >
           <div className="flex flex-col min-h-screen w-full max-w-6xl mx-auto px-4">
-            <div className="absolute left-1/2 transform -translate-x-1/2 top-[12vh] z-10">
-              <Image 
+            <div className="absolute left-1/2 -translate-x-1/2 top-[-5vh] w-[350px] h-[350px] z-10 opacity-100 flex items-center justify-center">
+              <img
                 src="/images/grayola-bird-logo.svg"
                 alt="Grayola Bird"
-                width={2000}
-                height={2000}
-                className="w-auto h-auto"
-                priority
+                className="w-full h-full object-contain"
               />
             </div>
             <div className="flex-grow flex items-center justify-center">
               <div className="relative z-20 text-center mt-[20vh] max-w-6xl mx-auto">
-                <h1 className="mb-8 text-4xl sm:text-5xl md:text-[65px] lg:text-[72px] tracking-normal font-extrabold text-black mx-auto leading-[1.2] max-w-[1500px]">
-                  Suscripción de diseño para<br/>
-                  equipos que necesitan <br/>
-                  velocidad y calidad
-          </h1>
-                <p className="text-base md:text-lg text-black mb-8 max-w-2xl mx-auto leading-snug">
+                <h1 className="mb-8 text-4xl sm:text-5xl md:text-[65px] lg:text-[72px] tracking-tight font-black text-black mx-auto leading-[1.1] max-w-[1500px]">
+                  Suscripción de diseño para<br />
+                  equipos que necesitan <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-pink-400 animate-gradient">
+                    velocidad y calidad
+                  </span>
+                </h1>
+                <p className="text-base md:text-lg text-black/70 mb-8 max-w-2xl mx-auto leading-relaxed font-medium">
                   Escala y delega todas la operaciones de diseño de forma rápida y sencilla, sin la preocupación de contratar o administrar recursos adicionales.
                 </p>
-                <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mb-6">
-                  <span className="text-black font-medium text-sm">
-                    Diseño gráfico | Edición de video
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mb-10">
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-emerald-200">
+                    Diseño gráfico
+                  </span>
+                  <span className="bg-pink-100 text-pink-800 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-pink-200">
+                    Edición de video
                   </span>
                 </div>
-                <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-                  <a href="#" className="w-full sm:w-auto">
-                    <button className="w-full sm:w-auto bg-[#7fff00] hover:bg-[#90ff20] text-black px-4 py-3.5 text-xs border-2 border-b-4 border-black rounded-lg" style={{ letterSpacing: '0.5px' }}>
-                      Agendar prueba
-                    </button>
-                  </a>
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
+                  <button className="agendar-prueba-button px-10 py-5 text-sm">
+                    Agendar prueba
+                  </button>
                   <div className="flex flex-col items-start text-left">
-                    <p className="text-black font-medium text-xs">
+                    <p className="text-black/60 font-medium text-[10px] uppercase tracking-widest">
                       Agenda una reunión
                     </p>
-                    <p className="text-black font-bold text-xs">
+                    <p className="text-black font-black text-sm">
                       37 días en tu primer mes.
                     </p>
                   </div>
@@ -62,8 +69,8 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          </div>
-          
+        </motion.div>
+
         <div className="py-16 bg-transparent overflow-hidden">
           <div className="max-w-6xl mx-auto px-4">
             <h3 className="text-center text-black text-sm font-medium uppercase tracking-[0.2em] mb-16">
@@ -71,7 +78,7 @@ export default function HomePage() {
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-6 items-center animate-marquee-left">
               <div className="text-lg font-black text-black border-2 border-t-[1px] border-b-[3px] border-black py-1.5 px-3 text-center hover:bg-black hover:text-white transition-colors rounded-lg w-full">
-                Fundraising 
+                Fundraising
               </div>
               <div className="text-lg font-black text-black border-2 border-t-[1px] border-b-[3px] border-black py-1.5 px-3 text-center hover:bg-black hover:text-white transition-colors rounded-lg w-full">
                 Mavericks
@@ -102,7 +109,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        
+
         <style jsx>{`
           @keyframes marquee-left {
             from { transform: translateX(0); }
@@ -246,40 +253,40 @@ export default function HomePage() {
           }}
         />
 
-        <section className="bg-transparent py-12">
+        <motion.section
+          className="bg-transparent py-24"
+          initial={{ opacity: 0, y: 100 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: false }}
+        >
           <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
             <div>
-              <p className="text-xl text-black leading-relaxed relative">
-                <span className="absolute -left-6 top-0 text-6xl font-black text-[#7fff00] opacity-30" style={{ transform: 'translateY(-30%) rotate(-15deg)' }}>"</span>
+              <p className="text-2xl text-black font-medium leading-relaxed relative">
+                <span className="absolute -left-10 top-0 text-8xl font-black text-emerald-300 opacity-20" style={{ transform: 'translateY(-30%) rotate(-15deg)' }}>"</span>
                 Grayola se adapta y respalda a empresas y agencias de todos los tamaños, escalando sus operaciones de diseño a gran escala.
-                <span className="absolute -right-6 bottom-0 text-6xl font-black text-[#7fff00] opacity-30" style={{ transform: 'translateY(30%) rotate(-15deg)' }}>"</span>
+                <span className="absolute -right-10 bottom-0 text-8xl font-black text-pink-300 opacity-20" style={{ transform: 'translateY(30%) rotate(-15deg)' }}>"</span>
               </p>
-              
-              <div className="mt-8 grid grid-cols-3 gap-4">
-                <div className="bg-[#e0d4ff]/70 backdrop-blur-sm p-4 rounded-xl border-2 border-black flex items-center justify-center transform transition-all hover:scale-105 duration-300 animate-scale-1">
-                  <span className="text-3xl font-black text-[#6b4dc9]">142+</span>
+
+              <div className="mt-12 grid grid-cols-3 gap-6">
+                <div className="bg-emerald-50/50 backdrop-blur-sm p-6 rounded-2xl border-2 border-black flex items-center justify-center transform transition-all hover:scale-105 duration-300 animate-scale-1 shadow-md">
+                  <span className="text-3xl font-black text-emerald-600">142+</span>
                 </div>
-                <div className="bg-[#e0d4ff]/70 backdrop-blur-sm p-4 rounded-xl border-2 border-black flex items-center justify-center transform transition-all hover:scale-105 duration-300 animate-scale-2">
-                  <span className="text-3xl font-black text-[#6b4dc9]">4000+</span>
+                <div className="bg-pink-50/50 backdrop-blur-sm p-6 rounded-2xl border-2 border-black flex items-center justify-center transform transition-all hover:scale-105 duration-300 animate-scale-2 shadow-md">
+                  <span className="text-3xl font-black text-pink-600">4000+</span>
                 </div>
-                <div className="bg-[#e0d4ff]/70 backdrop-blur-sm p-4 rounded-xl border-2 border-black flex items-center justify-center transform transition-all hover:scale-105 duration-300 animate-scale-3">
-                  <span className="text-3xl font-black text-[#6b4dc9]">24/7</span>
-                </div>
-                <div className="col-span-3 bg-[#e0d4ff]/70 backdrop-blur-sm p-4 rounded-xl border-2 border-black text-center transform transition-all hover:scale-105 duration-300">
-                  <span className="text-xl font-black text-[#6b4dc9]">Diseños de alta calidad a gran escala</span>
+                <div className="bg-emerald-50/50 backdrop-blur-sm p-6 rounded-2xl border-2 border-black flex items-center justify-center transform transition-all hover:scale-105 duration-300 animate-scale-3 shadow-md">
+                  <span className="text-3xl font-black text-emerald-600">24/7</span>
                 </div>
               </div>
             </div>
-            
+
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#e8ffdb] to-[#7ee8ff] opacity-20 rounded-xl blur-xl animate-pulse-slow"></div>
-              <h2 className="text-[42px] font-black leading-tight text-black relative z-10 bg-white/70 backdrop-blur-sm p-8 rounded-xl border-2 border-black">
-                Un <span className="inline-flex items-center gap-2 bg-[#e8ffdb] px-3 py-1 rounded-full border border-black transform transition-all hover:scale-105 duration-300 hover:shadow-lg">
-                  <div className="w-7 h-7 rounded-full overflow-hidden bg-black flex items-center justify-center animate-spin-slow">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4">
-                      <path d="M12 2C9.79086 2 8 3.79086 8 6C8 8.20914 9.79086 10 12 10C14.2091 10 16 8.20914 16 6C16 3.79086 14.2091 2 12 2Z" fill="white"/>
-                      <path d="M12 12C7.58172 12 4 15.5817 4 20V22H20V20C20 15.5817 16.4183 12 12 12Z" fill="white"/>
-                    </svg>
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-200 to-pink-200 opacity-20 rounded-xl blur-[100px] animate-pulse-slow"></div>
+              <h2 className="text-[42px] font-black leading-tight text-black relative z-10 bg-white/40 backdrop-blur-md p-10 rounded-[2rem] card-gradient-border">
+                Un <span className="inline-flex items-center gap-2 bg-emerald-100 px-3 py-1 rounded-full border border-black transform transition-all hover:scale-105 duration-300 hover:shadow-lg">
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-black flex items-center justify-center animate-spin-slow">
+                    <Sparkles className="w-4 h-4 text-emerald-400" />
                   </div>
                   <span className="text-[42px]">equipo creativo</span>
                 </span> listo para diseñar a cualquier escala
@@ -287,146 +294,146 @@ export default function HomePage() {
 
               <div className="absolute -bottom-10 -right-10 w-40 h-40">
                 <div className="relative w-full h-full">
-                  <div className="absolute top-0 left-0 w-8 h-8 bg-[#7fff00] rounded-full animate-float-slow"></div>
-                  <div className="absolute top-10 left-20 w-6 h-6 bg-[#7ee8ff] rounded-full animate-float-slow delay-300"></div>
-                  <div className="absolute top-20 left-5 w-10 h-10 bg-[#e8ffdb] rounded-full animate-float-slow delay-700"></div>
+                  <div className="absolute top-0 left-0 w-8 h-8 bg-emerald-400 rounded-full animate-float-slow"></div>
+                  <div className="absolute top-10 left-20 w-6 h-6 bg-pink-400 rounded-full animate-float-slow delay-300"></div>
+                  <div className="absolute top-20 left-5 w-10 h-10 bg-emerald-200 rounded-full animate-float-slow delay-700"></div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+        </motion.section>
 
-        <section className="bg-transparent py-12">
+        <motion.section
+          className="bg-transparent py-24"
+          initial={{ opacity: 0, y: 100 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: false }}
+        >
           <div className="max-w-7xl mx-auto px-4">
             <h2 className="text-4xl font-black text-center mb-16 relative">
-              <span className="relative inline-block px-6 py-2 bg-gradient-to-r from-[#c9efb3] via-[#7ee8ff] to-[#94e0ff] rounded-xl border-2 border-black">
+              <span className="relative inline-block px-8 py-3 bg-gradient-to-r from-emerald-100 to-pink-100 rounded-2xl border-2 border-black shadow-lg">
                 ¿Cómo funciona?
               </span>
             </h2>
             <div className="grid md:grid-cols-3 gap-12">
               <div className="flex flex-col items-center relative group">
                 <div className="mb-6 relative flex justify-center w-full">
-                  <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border-2 border-black relative overflow-hidden group-hover:border-[#7fff00] transition-colors duration-300">
-                    <div className="absolute -inset-1 border-2 border-[#7fff00] opacity-30 animate-pulse rounded-xl"></div>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M3 7V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7Z" stroke="black" strokeWidth="2"/>
-                      <path d="M7 14L10 11M10 11L13 14M10 11V19M17 11H14" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
+                  <div className="w-16 h-16 bg-emerald-50 rounded-xl flex items-center justify-center border-2 border-black relative overflow-hidden group-hover:border-emerald-400 transition-colors duration-300">
+                    <div className="absolute -inset-1 border-2 border-emerald-400 opacity-30 animate-pulse rounded-xl"></div>
+                    <Zap className="w-8 h-8 text-black" />
                   </div>
-                  <div className="absolute top-0 right-1/3 -mr-2 -mt-2 w-6 h-6 bg-[#7fff00] rounded-full flex items-center justify-center border-2 border-black">
-                    <span className="text-xs font-bold">1</span>
+                  <div className="absolute top-0 right-1/3 -mr-2 -mt-2 w-7 h-7 bg-emerald-400 rounded-full flex items-center justify-center border-2 border-black shadow-md">
+                    <span className="text-xs font-black">1</span>
                   </div>
                 </div>
-                <div className="bg-white/70 backdrop-blur-sm p-6 rounded-xl border-2 border-black group-hover:border-[#7fff00] transition-colors duration-300 w-full h-full">
+                <div className="bg-white/40 backdrop-blur-md p-8 rounded-[2rem] border-2 border-black group-hover:border-emerald-400 transition-colors duration-300 w-full h-full shadow-sm">
                   <h3 className="text-2xl font-black text-black mb-4 text-center">
-                    Crea<br/>un pedido
+                    Crea<br />un pedido
                   </h3>
-                  <p className="text-lg text-black">
+                  <p className="text-lg text-black/80 font-medium">
                     Completa un breve formulario con todos los detalles que tengas en mente para tu diseño. ¡No te tomará más de 2 minutos!
                   </p>
-                  <div className="w-full h-1 bg-black/10 rounded-full mt-6 overflow-hidden">
-                    <div className="h-full w-0 bg-[#7fff00] group-hover:w-full transition-all duration-1000"></div>
+                  <div className="w-full h-1.5 bg-black/5 rounded-full mt-8 overflow-hidden">
+                    <div className="h-full w-0 bg-emerald-400 group-hover:w-full transition-all duration-1000"></div>
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex flex-col items-center relative group">
                 <div className="mb-6 relative flex justify-center w-full">
-                  <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border-2 border-black relative overflow-hidden group-hover:border-[#7fff00] transition-colors duration-300">
-                    <div className="absolute -inset-1 border-2 border-[#7fff00] opacity-30 animate-pulse rounded-xl"></div>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="12" cy="8" r="4" stroke="black" strokeWidth="2"/>
-                      <path d="M5 19C5 16.2386 8.13401 14 12 14C15.866 14 19 16.2386 19 19" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                      <circle cx="17" cy="6" r="2" fill="#e8ffdb" stroke="black" strokeWidth="2"/>
-                      <circle cx="7" cy="6" r="2" fill="#e8ffdb" stroke="black" strokeWidth="2"/>
-                    </svg>
+                  <div className="w-16 h-16 bg-pink-50 rounded-xl flex items-center justify-center border-2 border-black relative overflow-hidden group-hover:border-pink-400 transition-colors duration-300">
+                    <div className="absolute -inset-1 border-2 border-pink-400 opacity-30 animate-pulse rounded-xl"></div>
+                    <Briefcase className="w-8 h-8 text-black" />
                   </div>
-                  <div className="absolute top-0 right-1/3 -mr-2 -mt-2 w-6 h-6 bg-[#7fff00] rounded-full flex items-center justify-center border-2 border-black">
-                    <span className="text-xs font-bold">2</span>
+                  <div className="absolute top-0 right-1/3 -mr-2 -mt-2 w-7 h-7 bg-pink-400 rounded-full flex items-center justify-center border-2 border-black shadow-md">
+                    <span className="text-xs font-black">2</span>
                   </div>
                 </div>
-                <div className="bg-white/70 backdrop-blur-sm p-6 rounded-xl border-2 border-black group-hover:border-[#7fff00] transition-colors duration-300 w-full h-full">
+                <div className="bg-white/40 backdrop-blur-md p-8 rounded-[2rem] border-2 border-black group-hover:border-pink-400 transition-colors duration-300 w-full h-full shadow-sm">
                   <h3 className="text-2xl font-black text-black mb-4 text-center">
-                    Lo asignamos<br/>a nuestro equipo
+                    Lo asignamos<br />a nuestro equipo
                   </h3>
-                  <p className="text-lg text-black">
+                  <p className="text-lg text-black/80 font-medium">
                     Nuestro equipo seleccionará al mejor grupo de especialistas para tu proyecto, con un director creativo y diseñadores dedicados.
                   </p>
-                  <div className="w-full h-1 bg-black/10 rounded-full mt-6 overflow-hidden">
-                    <div className="h-full w-0 bg-[#7fff00] group-hover:w-full transition-all duration-1000"></div>
+                  <div className="w-full h-1.5 bg-black/5 rounded-full mt-8 overflow-hidden">
+                    <div className="h-full w-0 bg-pink-400 group-hover:w-full transition-all duration-1000"></div>
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex flex-col items-center relative group">
                 <div className="mb-6 relative flex justify-center w-full">
-                  <div className="w-16 h-16 bg-[#e8ffdb] rounded-xl flex items-center justify-center border-2 border-black relative overflow-hidden group-hover:border-[#7fff00] transition-colors duration-300">
-                    <div className="absolute -inset-1 border-2 border-[#7fff00] opacity-30 animate-pulse rounded-xl"></div>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M5 16L10 13L15 16L19 13" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                      <path d="M5 12L10 9L15 12L19 9" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                      <path d="M5 8L10 5L15 8L19 5" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
+                  <div className="w-16 h-16 bg-emerald-50 rounded-xl flex items-center justify-center border-2 border-black relative overflow-hidden group-hover:border-emerald-400 transition-colors duration-300">
+                    <div className="absolute -inset-1 border-2 border-emerald-400 opacity-30 animate-pulse rounded-xl"></div>
+                    <FileText className="w-8 h-8 text-black" />
                   </div>
-                  <div className="absolute top-0 right-1/3 -mr-2 -mt-2 w-6 h-6 bg-[#7fff00] rounded-full flex items-center justify-center border-2 border-black">
-                    <span className="text-xs font-bold">3</span>
+                  <div className="absolute top-0 right-1/3 -mr-2 -mt-2 w-7 h-7 bg-emerald-400 rounded-full flex items-center justify-center border-2 border-black shadow-md">
+                    <span className="text-xs font-black">3</span>
                   </div>
                 </div>
-                <div className="bg-white/70 backdrop-blur-sm p-6 rounded-xl border-2 border-black group-hover:border-[#7fff00] transition-colors duration-300 w-full h-full">
+                <div className="bg-white/40 backdrop-blur-md p-8 rounded-[2rem] border-2 border-black group-hover:border-emerald-400 transition-colors duration-300 w-full h-full shadow-sm">
                   <h3 className="text-2xl font-black text-black mb-4 text-center">
-                    Entregamos<br/>tus diseños
+                    Entregamos<br />tus diseños
                   </h3>
-                  <p className="text-lg text-black">
+                  <p className="text-lg text-black/80 font-medium">
                     Recibe las primeras iteraciones de tus pedidos en tiempo récord y con tu feedback haremos ajustes lo más rápido posible.
                   </p>
-                  <div className="w-full h-1 bg-black/10 rounded-full mt-6 overflow-hidden">
-                    <div className="h-full w-0 bg-[#7fff00] group-hover:w-full transition-all duration-1000"></div>
+                  <div className="w-full h-1.5 bg-black/5 rounded-full mt-8 overflow-hidden">
+                    <div className="h-full w-0 bg-emerald-400 group-hover:w-full transition-all duration-1000"></div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
-        
-        <section className="bg-transparent py-12">
+        </motion.section>
+
+        <motion.section
+          className="bg-transparent py-24"
+          initial={{ opacity: 0, y: 100 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: false }}
+        >
           <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
-            <div className="relative overflow-hidden rounded-2xl border-2 border-black p-8 bg-white/70 backdrop-blur-sm transform transition-all hover:scale-105 duration-500 shadow-xl">
-              <div className="absolute -right-16 -top-16 w-32 h-32 bg-[#7fff00] rounded-full opacity-30 animate-pulse"></div>
-              <div className="absolute -left-16 -bottom-16 w-32 h-32 bg-[#7ee8ff] rounded-full opacity-30 animate-pulse delay-700"></div>
-              <h2 className="text-[64px] font-black leading-tight text-black relative z-10">
-                Te encantará<br/>
-                <span className="relative inline-block">
+            <div className="relative overflow-hidden rounded-[2.5rem] card-gradient-border p-10 bg-white/20 backdrop-blur-xl transform transition-all hover:scale-[1.02] duration-500 shadow-2xl">
+              <div className="absolute -right-16 -top-16 w-32 h-32 bg-emerald-400 rounded-full opacity-10 animate-pulse"></div>
+              <div className="absolute -left-16 -bottom-16 w-32 h-32 bg-pink-400 rounded-full opacity-10 animate-pulse delay-700"></div>
+              <h2 className="text-[64px] font-black leading-[1.1] text-black relative z-10 tracking-tighter">
+                Te encantará<br />
+                <span className="relative inline-block text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-pink-600">
                   nuestra aplicación
-                  <span className="absolute bottom-0 left-0 w-full h-3 bg-[#7fff00]" style={{ transform: 'translateY(8px) rotate(-1deg)'}}></span>
+                  <span className="absolute bottom-0 left-0 w-full h-3 bg-emerald-100 -z-10" style={{ transform: 'translateY(4px) rotate(-1deg)' }}></span>
                 </span>
               </h2>
             </div>
             <div className="space-y-8 relative">
-              <p className="text-xl text-black leading-relaxed bg-white/50 backdrop-blur-sm p-6 rounded-xl border border-black">
+              <p className="text-xl text-black/80 font-medium leading-relaxed bg-white/30 backdrop-blur-sm p-8 rounded-[2rem] border border-black/10 shadow-sm">
                 Nuestra plataforma de gestión creativa te brinda la posibilidad de enviar proyectos, dar feedback, y recibir todos tus proyectos, incluyendo sus editables, todo en un mismo lugar.
               </p>
               <div className="relative group flex justify-center">
-                <div className="absolute inset-0 bg-[#7fff00] blur-xl opacity-30 group-hover:opacity-70 transition-all duration-700 rounded-2xl"></div>
-                <div className="bg-[#e8ffdb] rounded-2xl p-8 text-center inline-block border-2 border-black relative transform transition-all group-hover:translate-y-[-5px] duration-300">
-                  <div className="absolute -top-2 -right-2 w-10 h-10 bg-[#7ee8ff] rounded-full flex items-center justify-center border-2 border-black shadow-md">
-                    <span className="text-xs font-bold text-black">wow!</span>
+                <div className="absolute inset-0 bg-emerald-400 blur-[80px] opacity-10 group-hover:opacity-30 transition-all duration-700 rounded-2xl"></div>
+                <div className="bg-white/50 backdrop-blur-md rounded-[2rem] p-10 text-center inline-block border-2 border-black relative transform transition-all group-hover:translate-y-[-5px] duration-300 shadow-xl">
+                  <div className="absolute -top-3 -right-3 w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center border-2 border-black shadow-lg">
+                    <span className="text-[10px] font-black text-pink-600 uppercase tracking-tighter">wow!</span>
                   </div>
-                  <p className="text-4xl font-black text-black mb-1 relative">
-                    <span className="inline-block animate-bounce-slow">+</span>3900
+                  <p className="text-5xl font-black text-black mb-2 relative tracking-tighter">
+                    <span className="inline-block animate-bounce-slow text-emerald-500">+</span>3900
                   </p>
-                  <p className="text-lg text-black">pedidos<br/>completados</p>
-                  <div className="w-full h-1 bg-black/10 rounded-full mt-3 overflow-hidden">
-                    <div className="h-full w-3/4 bg-[#7fff00] animate-grow"></div>
+                  <p className="text-lg text-black/70 font-bold leading-tight">pedidos<br />completados</p>
+                  <div className="w-full h-2 bg-black/5 rounded-full mt-6 overflow-hidden">
+                    <div className="h-full w-3/4 bg-emerald-400 animate-grow"></div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+        </motion.section>
 
         <section className="bg-transparent py-12">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-xl">
+            <div className="aspect-video w-full rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white/50">
               <iframe
                 width="100%"
                 height="100%"
@@ -434,373 +441,150 @@ export default function HomePage() {
                 title="Video de Grayola"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                className="w-full h-full"
+                className="w-full h-full scale-[1.01]"
               ></iframe>
             </div>
           </div>
         </section>
 
-
-        <section className="bg-transparent py-20">
+        <motion.section
+          className="bg-transparent py-24"
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: false }}
+        >
           <div className="max-w-7xl mx-auto px-4">
-            <div className="grid md:grid-cols-12 gap-8 items-center">
-              <div className="md:col-span-4 relative">
-                <div className="relative">
-                  <Image 
+            <div className="grid md:grid-cols-12 gap-12 items-center mb-16">
+              <div className="md:col-span-4 relative flex justify-center">
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-emerald-100 blur-3xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                  <Image
                     src="/images/grayola-bird-logo.svg"
                     alt="Grayola Bird"
                     width={300}
                     height={300}
-                    className="w-auto h-auto"
+                    className="w-auto h-auto relative z-10"
+                    unoptimized
                   />
                 </div>
               </div>
               <div className="md:col-span-8 flex flex-col space-y-6">
-                <h2 className="text-[48px] font-black text-black leading-tight">
+                <h2 className="text-[48px] font-black text-black leading-tight tracking-tight">
                   Todos los servicios creativos que necesitas en un solo lugar.
                 </h2>
-                <p className="text-xl text-black">
+                <p className="text-xl text-black/60 font-medium">
                   Explora más de 100 servicios de diseño disponibles con nuestra suscripción
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                  <button className="w-full sm:w-auto bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3.5 text-lg font-bold border-2 border-b-4 border-black rounded-full">
+                <div className="flex flex-col sm:flex-row gap-6 mt-4">
+                  <button className="agendar-prueba-button px-8 py-5 text-sm">
                     Agendar prueba
                   </button>
-                  <button className="w-full sm:w-auto bg-transparent hover:bg-black/5 text-black px-6 py-3.5 text-lg font-bold border-2 border-black rounded-full">
+                  <button className="bg-white hover:bg-black/5 text-black px-8 py-5 text-sm font-bold border-2 border-black rounded-full transition-all">
                     Ver todos los servicios
                   </button>
                 </div>
               </div>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
-              <div className="bg-white/70 backdrop-blur-sm p-8 rounded-2xl border-2 border-black hover:border-[#7fff00] transition-all duration-300 hover:shadow-lg relative overflow-hidden">
-                <div className="mb-6">
-                  <div className="w-14 h-14 bg-[#e8ffdb] rounded-xl flex items-center justify-center border-2 border-black">
-                    <Palette className="h-7 w-7 text-black" />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                { title: "Diseño de marca", desc: "Manuales de marca, logotipos, key visuals y activos de marca.", icon: Palette, color: "emerald" },
+                { title: "Social Media", desc: "Anuncios para redes sociales y ads para Meta o Google.", icon: Share2, color: "pink" },
+                { title: "Edición de video", desc: "Tutoriales, demos de productos, podcast o videos informativos.", icon: Zap, color: "emerald" },
+                { title: "Presentaciones", desc: "Infografías, decks, ebooks y presentaciones comerciales.", icon: Laptop, color: "pink" },
+                { title: "Animación 2D/3D", desc: "Motion graphics, demos de producto y animación 2D/3D.", icon: Sparkles, color: "emerald" },
+                { title: "Ilustración", desc: "Assets digitales, iconos, personajes y material ilustrado.", icon: Palette, color: "pink" },
+              ].map((service, idx) => (
+                <div key={idx} className="bg-white/40 backdrop-blur-sm p-8 rounded-[2rem] border-2 border-black hover:border-emerald-400 transition-all duration-300 hover:shadow-xl group relative overflow-hidden">
+                  <div className={`w-14 h-14 bg-${service.color}-50 rounded-2xl flex items-center justify-center border-2 border-black mb-6 group-hover:scale-110 transition-transform`}>
+                    <service.icon className="h-7 w-7 text-black" />
                   </div>
+                  <h3 className="text-2xl font-black text-black mb-4">
+                    {service.title}
+                  </h3>
+                  <p className="text-lg text-black/70 font-medium">
+                    {service.desc}
+                  </p>
+                  <div className={`absolute -right-8 -bottom-8 w-24 h-24 bg-${service.color}-400/5 rounded-full`}></div>
                 </div>
-                <h3 className="text-2xl font-black text-black mb-4">
-                  Diseño de marca
-                </h3>
-                <p className="text-lg text-black">
-                  Manuales de marca, logotipos, key visuals y activos de marca.
-                </p>
-                <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-[#7fff00]/10 rounded-full"></div>
-              </div>
-              
-              <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl border-2 border-black hover:border-[#7fff00] transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
-                <div className="mb-6">
-                  <div className="w-14 h-14 bg-[#c9efb3] rounded-full flex items-center justify-center border-2 border-black">
-                    <Share2 className="h-7 w-7 text-black" />
-                  </div>
+              ))}
+
+              <div className="bg-emerald-50/50 backdrop-blur-md p-10 rounded-[2.5rem] border-2 border-black col-span-1 md:col-span-3 flex flex-col md:flex-row items-center justify-between shadow-lg">
+                <div className="flex items-center gap-8 mb-6 md:mb-0">
+                  <div className="text-7xl font-black text-black tracking-tighter">+100</div>
+                  <div className="text-xl font-bold text-black/60 max-w-[200px]">Servicios de diseño adicionales</div>
                 </div>
-                <h3 className="text-2xl font-black text-black mb-4">
-                  Social Media
-                </h3>
-                <p className="text-lg text-black">
-                  Anuncios para redes sociales y ads para Meta o Google.
-                </p>
-              </div>
-              
-              <div className="bg-white/75 backdrop-blur-sm p-8 rounded-2xl border-2 border-black hover:border-[#7fff00] transition-all duration-300 hover:shadow-lg relative">
-                <div className="absolute top-3 right-3 w-20 h-20 bg-[#7ee8ff]/20 rounded-full"></div>
-                <div className="mb-6 relative z-10">
-                  <div className="w-14 h-14 bg-[#7ee8ff] rounded-xl flex items-center justify-center border-2 border-black">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 8V16L12 20L20 16V8L12 4L4 8Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M12 4V20" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M4 8L20 16" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M20 8L4 16" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                </div>
-                <h3 className="text-2xl font-black text-black mb-4 relative z-10">
-                  Edición de video
-                </h3>
-                <p className="text-lg text-black relative z-10">
-                  Tutoriales, demos de productos, podcast o videos informativos.
-                </p>
-              </div>
-              
-              <div className="bg-white/70 backdrop-blur-sm p-8 rounded-2xl border-2 border-black hover:border-[#7fff00] transition-all duration-300 hover:shadow-lg hover:rotate-1">
-                <div className="mb-6">
-                  <div className="w-14 h-14 bg-[#e8ffdb] rounded-lg flex items-center justify-center border-2 border-black transform rotate-3">
-                    <Laptop className="h-7 w-7 text-black" />
-                  </div>
-                </div>
-                <h3 className="text-2xl font-black text-black mb-4">
-                  Presentaciones
-                </h3>
-                <p className="text-lg text-black">
-                  Infografías, decks, ebooks y presentaciones comerciales.
-                </p>
-              </div>
-              
-              <div className="bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-sm p-8 rounded-2xl border-2 border-black hover:border-[#7fff00] transition-all duration-300 hover:shadow-lg">
-                <div className="mb-6 flex justify-between items-center">
-                  <div className="w-14 h-14 bg-[#94e0ff] rounded-full flex items-center justify-center border-2 border-black">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 3L4 6V12C4 15.3137 7.13401 18 12 18C16.866 18 20 15.3137 20 12V6L12 3Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M12 18V21" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M4 12V16.5C4 17.8807 7.58172 19 12 19C16.4183 19 20 17.8807 20 16.5V12" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <div className="w-8 h-8 bg-[#7fff00]/30 rounded-full"></div>
-                </div>
-                <h3 className="text-2xl font-black text-black mb-4">
-                  Animación 2D/3D
-                </h3>
-                <p className="text-lg text-black">
-                  Motion graphics, demos de producto y animación 2D/3D.
-                </p>
-              </div>
-              
-              <div className="bg-white/70 backdrop-blur-sm p-8 rounded-2xl border-2 border-black hover:border-[#7fff00] transition-all duration-300 hover:shadow-lg relative">
-                <div className="absolute -top-4 -left-4 w-16 h-16 bg-[#7fff00]/20 rounded-full"></div>
-                <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-[#7ee8ff]/15 rounded-full"></div>
-                <div className="mb-6">
-                  <div className="w-14 h-14 bg-[#c9efb3] rounded-xl flex items-center justify-center border-2 border-black">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M5 3L19 12L5 21V3Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                </div>
-                <h3 className="text-2xl font-black text-black mb-4">
-                  Ilustración
-                </h3>
-                <p className="text-lg text-black">
-                  Assets digitales, iconos, personajes y material ilustrado.
-                </p>
-              </div>
-              
-              <div className="bg-[#f0ffe0] p-8 rounded-2xl border-2 border-black col-span-1 md:col-span-3 flex flex-col md:flex-row items-center justify-between">
-                <div className="flex items-center gap-4 mb-4 md:mb-0">
-                  <div className="text-6xl font-black text-black">+100</div>
-                  <div className="text-xl font-bold text-black">Servicios de diseño adicionales</div>
-                </div>
-                <button className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-lg font-bold rounded-full border-2 border-b-4 border-black">
+                <button className="agendar-prueba-button px-10 py-5 text-sm">
                   Ver todos los servicios
                 </button>
               </div>
             </div>
           </div>
-        </section>
-        
-        {/* Planes */}
-        <section className="bg-transparent py-20 px-8" id="planes">
+        </motion.section>
+
+        <motion.section
+          className="bg-transparent py-24 px-8"
+          id="planes"
+          initial={{ opacity: 0, y: 100 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: false }}
+        >
           <div className="max-w-7xl mx-auto">
-            <div className="relative mb-16">
-              <div className="absolute left-1/2 transform -translate-x-1/2 -top-24">
-                <Image 
-                  src="/images/grayola-bird-logo.svg"
-                  alt="Grayola Bird"
-                  width={120}
-                  height={120}
-                  className="w-auto h-auto"
-                />
-              </div>
+            <div className="relative mb-24">
               <div className="text-center">
-                <h2 className="text-[48px] font-black text-black mb-4">
-                  Diseños rápidos y de calidad<br/>por una fracción del costo
+                <h2 className="text-[56px] font-black text-black mb-6 tracking-tighter leading-tight">
+                  Diseños rápidos y de calidad<br />por una fracción del costo
                 </h2>
-                <p className="text-xl text-black">
+                <p className="text-xl text-black/60 font-medium max-w-2xl mx-auto">
                   Selecciona el plan de acuerdo al tamaño de tu empresa y necesidades de tu equipo.
                 </p>
               </div>
             </div>
-          
-          <div className="grid md:grid-cols-4 gap-4 mb-16">
-            <div className="bg-white p-8 rounded-2xl border border-black">
-              <h3 className="text-2xl font-black text-black mb-1">Basic</h3>
-              <div className="flex items-baseline">
-                <span className="text-3xl font-black text-black">$390</span>
-                <div className="ml-2">
-                  <p className="text-sm font-bold text-black">USD</p>
-                  <p className="text-sm text-black">/mes</p>
+
+            <div className="grid md:grid-cols-4 gap-6 mb-24">
+              {[
+                { name: "Basic", price: "390", features: ["80 créditos por mes", "2 pedidos activos", "1 Marca incluida", "Archivos editables"], popular: false, color: "emerald" },
+                { name: "Premium", price: "690", features: ["140 créditos por mes", "5 pedidos activos", "2 Marcas incluidas", "Archivos editables"], popular: false, color: "pink" },
+                { name: "Advance", price: "990", features: ["200 créditos por mes", "10 pedidos activos", "3 Marcas incluidas", "Archivos editables"], popular: true, color: "emerald" },
+                { name: "Enterprise", price: "1490", features: ["300 créditos por mes", "20 pedidos activos", "5 Marcas incluidas", "Archivos editables"], popular: false, color: "pink" },
+              ].map((plan, idx) => (
+                <div key={idx} className={`bg-white/60 backdrop-blur-sm p-10 rounded-[2.5rem] border-2 ${plan.popular ? 'border-emerald-400 scale-105 shadow-2xl relative z-20' : 'border-black shadow-lg'} hover:translate-y-[-10px] transition-all duration-300`}>
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-black text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
+                      Más popular
+                    </div>
+                  )}
+
+                  <h3 className="text-2xl font-black text-black mb-1">{plan.name}</h3>
+                  <div className="flex items-baseline gap-2 mb-6">
+                    <span className="text-4xl font-black text-black tracking-tighter">${plan.price}</span>
+                    <div className="text-black/50 leading-none">
+                      <p className="text-xs font-bold">USD</p>
+                      <p className="text-xs font-medium">/mes</p>
+                    </div>
+                  </div>
+
+                  <ul className="space-y-4 mb-10">
+                    {plan.features.map((feature, fIdx) => (
+                      <li key={fIdx} className="flex items-start gap-3">
+                        <div className={`mt-1 text-${plan.color === 'emerald' ? 'emerald' : 'pink'}-500`}>
+                          <Check className="h-4 w-4 stroke-[3px]" />
+                        </div>
+                        <span className="text-sm font-bold text-black/80">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button className={`agendar-prueba-button w-full py-4 text-xs font-black ${plan.color === 'pink' ? 'before:bg-pink-100 after:border-pink-300' : ''}`}>
+                    Empezar ahora
+                  </button>
                 </div>
-              </div>
-              
-              <p className="mt-4 mb-6 text-sm text-black">
-                Para pequeños equipos. Ideal para emprendimientos.
-              </p>
-              
-              <ul className="space-y-2 mb-6">
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">80 créditos por mes</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">2 pedidos activos a la vez</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">1 Marca incluida</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">Archivos editables</span>
-                </li>
-              </ul>
-              
-              <button className="w-full bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-lg font-bold rounded-full border-2 border-b-4 border-black">
-                Empezar ahora
-              </button>
-            </div>
-            
-            <div className="bg-white p-8 rounded-2xl border border-black">
-              <h3 className="text-2xl font-black text-black mb-1">Premium</h3>
-              <div className="flex items-baseline">
-                <span className="text-3xl font-black text-black">$690</span>
-                <div className="ml-2">
-                  <p className="text-sm font-bold text-black">USD</p>
-                  <p className="text-sm text-black">/mes</p>
-                </div>
-              </div>
-              
-              <p className="mt-4 mb-6 text-sm text-black">
-                Para empresa con equipos de marketing y comunicaciones.
-              </p>
-              
-              <ul className="space-y-2 mb-6">
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">140 créditos por mes</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">5 pedidos activos a la vez</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">2 Marcas incluidas</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">Archivos editables</span>
-                </li>
-              </ul>
-              
-              <button className="w-full bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-lg font-bold rounded-full border-2 border-b-4 border-black">
-                Empezar ahora
-              </button>
-            </div>
-            
-            <div className="bg-white p-8 rounded-2xl border-2 border-lime-400 relative">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-1 rounded-full">
-                Más popular
-              </div>
-              
-              <h3 className="text-2xl font-black text-black mb-1">Advance</h3>
-              <div className="flex items-baseline">
-                <span className="text-3xl font-black text-black">$990</span>
-                <div className="ml-2">
-                  <p className="text-sm font-bold text-black">USD</p>
-                  <p className="text-sm text-black">/mes</p>
-                </div>
-              </div>
-              
-              <p className="mt-4 mb-6 text-sm text-black">
-                Para agencias o empresas con varias marcas o proyectos.
-              </p>
-              
-              <ul className="space-y-2 mb-6">
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">200 créditos por mes</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">10 pedidos activos a la vez</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">3 Marcas incluidas</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">Archivos editables</span>
-                </li>
-              </ul>
-              
-              <button className="w-full bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-lg font-bold rounded-full border-2 border-b-4 border-black">
-                Empezar ahora
-              </button>
-            </div>
-            
-            <div className="bg-white p-8 rounded-2xl border border-black">
-              <h3 className="text-2xl font-black text-black mb-1">Enterprise</h3>
-              <div className="flex items-baseline">
-                <span className="text-3xl font-black text-black">$1490</span>
-                <div className="ml-2">
-                  <p className="text-sm font-bold text-black">USD</p>
-                  <p className="text-sm text-black">/mes</p>
-                </div>
-              </div>
-              
-              <p className="mt-4 mb-6 text-sm text-black">
-                Para grandes empresas con múltiples marcas y altos volúmenes.
-              </p>
-              
-              <ul className="space-y-2 mb-6">
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">300 créditos por mes</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">20 pedidos activos a la vez</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">5 Marcas incluidas</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm">
-                  <div className="mt-1 text-green-500">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <span className="text-black">Archivos editables</span>
-                </li>
-              </ul>
-              
-              <button className="w-full bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-lg font-bold rounded-full border-2 border-b-4 border-black">
-                Empezar ahora
-              </button>
+              ))}
             </div>
           </div>
-          </div>
-        </section>
+        </motion.section>
 
         <section className="bg-transparent py-20 px-8">
           <div className="max-w-7xl mx-auto">
@@ -841,7 +625,7 @@ export default function HomePage() {
             </h2>
 
             <div className="grid md:grid-cols-2 gap-8">
-  
+
               <div className="bg-white p-8 rounded-2xl border-2 border-black">
                 <p className="text-xl text-black mb-8">
                   Lo que más me gusta de trabajar con Grayola es que se puede diseñar cualquier cosa, iterar rápido y lanzar en tiempo récord.
@@ -849,17 +633,17 @@ export default function HomePage() {
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-[#e8ffdb] rounded-full flex items-center justify-center border border-black">
                     <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2C9.79086 2 8 3.79086 8 6C8 8.20914 9.79086 10 12 10C14.2091 10 16 8.20914 16 6C16 3.79086 14.2091 2 12 2Z" fill="black"/>
-                      <path d="M12 12C7.58172 12 4 15.5817 4 20V22H20V20C20 15.5817 16.4183 12 12 12Z" fill="black"/>
+                      <path d="M12 2C9.79086 2 8 3.79086 8 6C8 8.20914 9.79086 10 12 10C14.2091 10 16 8.20914 16 6C16 3.79086 14.2091 2 12 2Z" fill="black" />
+                      <path d="M12 12C7.58172 12 4 15.5817 4 20V22H20V20C20 15.5817 16.4183 12 12 12Z" fill="black" />
                     </svg>
                   </div>
                   <div>
                     <p className="font-bold text-black">Andrés Bilbao</p>
                     <p className="text-black">Rappi</p>
                   </div>
-        </div>
-      </div>
-      
+                </div>
+              </div>
+
               <div className="bg-white p-8 rounded-2xl border-2 border-black">
                 <p className="text-xl text-black mb-4">
                   No queríamos comprometernos con aumentar nuestra nómina de diseñadores inhouse, teniendo en cuenta que el flujo de clientes podía subir y bajar.
@@ -870,9 +654,9 @@ export default function HomePage() {
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-[#e8ffdb] rounded-full flex items-center justify-center border border-black">
                     <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2C9.79086 2 8 3.79086 8 6C8 8.20914 9.79086 10 12 10C14.2091 10 16 8.20914 16 6C16 3.79086 14.2091 2 12 2Z" fill="black"/>
-                      <path d="M12 12C7.58172 12 4 15.5817 4 20V22H20V20C20 15.5817 16.4183 12 12 12Z" fill="black"/>
-              </svg>
+                      <path d="M12 2C9.79086 2 8 3.79086 8 6C8 8.20914 9.79086 10 12 10C14.2091 10 16 8.20914 16 6C16 3.79086 14.2091 2 12 2Z" fill="black" />
+                      <path d="M12 12C7.58172 12 4 15.5817 4 20V22H20V20C20 15.5817 16.4183 12 12 12Z" fill="black" />
+                    </svg>
                   </div>
                   <div>
                     <p className="font-bold text-black">Mariana Mejía</p>
@@ -889,17 +673,17 @@ export default function HomePage() {
             <h2 className="text-4xl font-black text-white mb-4">Preguntas frecuentes</h2>
             <p className="text-lg text-white">Todo lo que necesitas saber sobre Grayola</p>
           </div>
-          
+
           <div className="max-w-3xl mx-auto">
             <div className="mb-6 flex justify-center">
               <button className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black">
                 Comencemos
               </button>
             </div>
-            
+
             <div className="mb-12">
               <h3 className="text-xl font-bold text-white mb-4">General</h3>
-              
+
               <Accordion type="single" collapsible className="space-y-4">
                 <AccordionItem value="item-1" className="border border-white/20 rounded-xl px-6 py-2">
                   <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
@@ -909,7 +693,7 @@ export default function HomePage() {
                     Básicamente todo lo que le pedirías a tu propio equipo de diseño, desde una impresión o un gráfico digital. Ilustraciones, edición de foto, diseño de marcas, presentaciones, edición de reels e incluso merchandising…. ¡Casi cualquier cosa que te puedas imaginar!
                   </AccordionContent>
                 </AccordionItem>
-                
+
                 <AccordionItem value="item-2" className="border border-white/20 rounded-xl px-6 py-2">
                   <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
                     ¿Para cuantos pedidos alcanza mi suscripción?
@@ -918,7 +702,7 @@ export default function HomePage() {
                     Dependiendo el plan que elijas, tendrás cierta cantidad de créditos disponibles en el mes, podrás revisar los costos en créditos de cada uno de nuestros servicios en este link. ¡Cada mes se recargarán tus créditos de manera automática al renovar nuestra suscripción!
                   </AccordionContent>
                 </AccordionItem>
-                
+
                 <AccordionItem value="item-3" className="border border-white/20 rounded-xl px-6 py-2">
                   <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
                     ¿Avances en 24 a 72 horas? wow!
@@ -929,10 +713,10 @@ export default function HomePage() {
                 </AccordionItem>
               </Accordion>
             </div>
-            
+
             <div className="mb-12">
               <h3 className="text-xl font-bold text-white mb-4">Nuestro equipo</h3>
-              
+
               <Accordion type="single" collapsible className="space-y-4">
                 <AccordionItem value="item-4" className="border border-white/20 rounded-xl px-6 py-2">
                   <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
@@ -942,7 +726,7 @@ export default function HomePage() {
                     Nuestros diseñadores cuentan con una amplia variedad de habilidades listas para aplicarlas a tus proyectos. Ya sea que necesites un diseño de Presentaciones o ilustraciones personalizadas para camisetas, nuestro equipo de diseñadores podrán crear todo lo que necesites.
                   </AccordionContent>
                 </AccordionItem>
-                
+
                 <AccordionItem value="item-5" className="border border-white/20 rounded-xl px-6 py-2">
                   <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
                     ¿Cómo son elegidos los diseñadores?
@@ -953,10 +737,10 @@ export default function HomePage() {
                 </AccordionItem>
               </Accordion>
             </div>
-            
+
             <div>
               <h3 className="text-xl font-bold text-white mb-4">Nuestro trabajo</h3>
-              
+
               <Accordion type="single" collapsible className="space-y-4">
                 <AccordionItem value="item-6" className="border border-white/20 rounded-xl px-6 py-2">
                   <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
@@ -966,7 +750,7 @@ export default function HomePage() {
                     Nos tomaremos un máximo de 72 horas más para enviarte una nueva versión mucho mas ajustada a tus expectativas.
                   </AccordionContent>
                 </AccordionItem>
-                
+
                 <AccordionItem value="item-7" className="border border-white/20 rounded-xl px-6 py-2">
                   <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
                     ¿No te gusta el estilo de un diseñador?
@@ -975,7 +759,7 @@ export default function HomePage() {
                     ¡Sin problemas! Háznoslo saber y te los cambiamos por otro diseñador más compatible con tu marca.
                   </AccordionContent>
                 </AccordionItem>
-                
+
                 <AccordionItem value="item-8" className="border border-white/20 rounded-xl px-6 py-2">
                   <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
                     ¿Dónde quedan mis archivos?
@@ -988,13 +772,13 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-        
+
         <footer className="bg-black text-white py-16 px-4">
           <div className="container max-w-7xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-16">
               <div>
                 <h3 className="text-2xl font-bold mb-4">
-                  Suscríbete a<br/>nuestro newsletter
+                  Suscríbete a<br />nuestro newsletter
                 </h3>
                 <div className="flex">
                   <input
@@ -1007,7 +791,7 @@ export default function HomePage() {
                   </button>
                 </div>
               </div>
-              
+
               <div>
                 <h3 className="text-xl font-bold mb-4">Grayola</h3>
                 <ul className="space-y-2">
@@ -1020,7 +804,7 @@ export default function HomePage() {
                   <li><Link href="#" className="text-gray-400 hover:text-white">Free Trial</Link></li>
                 </ul>
               </div>
-              
+
               <div>
                 <h3 className="text-xl font-bold mb-4">Recursos</h3>
                 <ul className="space-y-2">
@@ -1030,7 +814,7 @@ export default function HomePage() {
                   <li><Link href="#" className="text-gray-400 hover:text-white">Plantilla de parrilla de contenidos para redes</Link></li>
                 </ul>
               </div>
-              
+
               <div>
                 <h3 className="text-xl font-bold mb-4">Servicios</h3>
                 <div className="grid grid-cols-2 gap-2">
@@ -1040,7 +824,7 @@ export default function HomePage() {
                     <li><Link href="#" className="text-gray-400 hover:text-white">Presentaciones</Link></li>
                     <li><Link href="#" className="text-gray-400 hover:text-white">Ilustración</Link></li>
                   </ul>
-                  
+
                   <ul className="space-y-2">
                     <li><Link href="#" className="text-gray-400 hover:text-white">Edición de video</Link></li>
                     <li><Link href="#" className="text-gray-400 hover:text-white">Animación 2D/3D</Link></li>
@@ -1050,23 +834,23 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-            
+
             <p className="text-gray-400 text-sm mb-8 max-w-4xl">
               <strong className="text-white block mb-4">Grayola es una forma revolucionaria para que las empresas obtengan buen diseño a gran escala.</strong>
               Confiado por más de 100 empresas ambiciosas, Grayola hace que el diseño sea sin complicaciones para equipos de marketing y creativos. Al combinar el 1% superior del talento creativo de todo el mundo con tecnología específicamente diseñada y la rigurosidad de las operaciones de diseño, Grayola ayuda a marcas ambiciosas a crecer más rápido. Desde su inicio, Grayola ha sido una empresa completamente remota, con más de 15 miembros del equipo trabajando en 2 países y 2 zonas horarias. Grayola es una forma revolucionaria para que las empresas obtengan buen diseño a gran escala.
             </p>
-            
+
             <div className="grid md:grid-cols-3 gap-8 mb-12">
               <div>
                 <p className="text-white font-bold mb-2">Contáctanos</p>
                 <a href="mailto:team@grayola.io" className="text-white font-bold">team@grayola.io</a>
               </div>
-              
+
               <div>
                 <p className="text-white font-bold mb-2">Llámanos</p>
                 <a href="tel:+573107370651" className="text-white font-bold">+57 310-7370651</a>
               </div>
-              
+
               <div>
                 <p className="text-white font-bold mb-2">Todos nuestros servicios</p>
                 <div className="flex gap-4">
@@ -1079,12 +863,12 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
               <p className="text-gray-400 text-sm mb-4 md:mb-0">
                 © Grayola LLC {new Date().getFullYear()}. Todos los derechos reservados
               </p>
-              
+
               <div className="flex gap-6">
                 <Link href="#" className="text-gray-400 hover:text-white text-sm">
                   Términos y condiciones

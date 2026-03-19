@@ -189,7 +189,7 @@ export default function ProjectsPage() {
   const [titleCheckTimeout, setTitleCheckTimeout] = useState<NodeJS.Timeout | null>(null)
 
   const { toast } = useToast()
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
 
   const creatorOptions = [...new Set(projects.map(p => p.created_by_email))].filter(Boolean) as string[]
   const designerOptions = [...new Set(projects.map(p => p.assigned_to_email))].filter(Boolean) as string[]
@@ -207,7 +207,7 @@ export default function ProjectsPage() {
     false
 
   const canCreate = isProjectManager || isClient
-  const canEdit = isProjectManager
+  const canEdit = isProjectManager || isClient
   const canDelete = isProjectManager
   const canView = true
 
@@ -246,6 +246,7 @@ export default function ProjectsPage() {
   const [fileProgress, setFileProgress] = useState(0)
 
   useEffect(() => {
+    if (authLoading) return; // FIX BÚG DE RECARGA: Esperar a que la sesión cargue
     fetchProjects()
     fetchDesigners()
     console.log("Rol del usuario:", user?.role)
@@ -255,7 +256,7 @@ export default function ProjectsPage() {
     console.log("¿Puede crear?:", canCreate)
     console.log("¿Puede editar?:", canEdit)
     console.log("¿Puede eliminar?:", canDelete)
-  }, [user?.role])
+  }, [user?.role, user?.id, authLoading])
 
   const fetchDesigners = async () => {
     try {
@@ -287,42 +288,52 @@ const fetchProjects = async () => {
   try {
     setLoading(true);
     
+    // Obtenemos todos los usuarios para mapear creadores y diseñadores y evitar errores de Foreing Key en Supabase Cloud
+    const { data: usersData } = await supabase.from('users').select('id, email, role');
+    const usersMap = new Map();
+    if (usersData) {
+      usersData.forEach(u => usersMap.set(u.id, u));
+    }
+    
     let query = supabase
       .from('projects')
-      .select(`
-        *,
-        creator:users!created_by(email, role),
-        assignee:users!assigned_to(email, role)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
-    if (isClient) {
-      query = query.eq('created_by', user?.id);
-    } else if (isDesigner) {
-      query = query.eq('assigned_to', user?.id);
+    // Aplicar filtros según rol - ahora más robusto con el ID de usuario resuelto
+    if (isClient && user?.id) {
+      query = query.eq('created_by', user.id);
+    } else if (isDesigner && user?.id) {
+      query = query.eq('assigned_to', user.id);
     }
 
     const { data: projectsData, error: projectsError } = await query;
     
-    if (!projectsError && projectsData) {
-      const projectsWithStatus = projectsData.map(project => ({
-        ...project,
-        created_by_email: project.creator?.email || project.created_by,
-        created_by_role: project.creator?.role || 'Usuario',
-        assigned_to_email: project.assignee?.email || project.assigned_to,
-        assigned_to_role: project.assignee?.role || 'Usuario',
-       
-        status: ['pendiente', 'en progreso', 'completado', 'retrasado'][Math.floor(Math.random() * 4)]
-      }));
+    if (projectsError) throw projectsError;
+    
+    if (projectsData) {
+      const projectsWithStatus = projectsData.map(project => {
+        const creator = usersMap.get(project.created_by);
+        const assignee = usersMap.get(project.assigned_to);
+        
+        return {
+          ...project,
+          created_by_email: creator?.email || 'Usuario Creador',
+          created_by_role: creator?.role || 'Usuario',
+          assigned_to_email: assignee?.email || 'No asignado',
+          assigned_to_role: assignee?.role || 'Ninguno',
+          status: ['pendiente', 'en progreso', 'completado', 'retrasado'][Math.floor(Math.random() * 4)]
+        }
+      });
 
-      console.log('Proyectos con estados aleatorios:', projectsWithStatus);
+      console.log('Proyectos cargados exitosamente:', projectsWithStatus);
       setProjects(projectsWithStatus);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching projects:', error);
     toast({
-      title: "Error",
-      description: "No se pudieron cargar los proyectos",
+      title: "Error al cargar proyectos",
+      description: error.message || "No se pudieron obtener los datos de proyecto.",
       variant: "destructive",
     });
   } finally {
@@ -753,12 +764,12 @@ const viewProjectDetails = (project: Project) => {
   
   const renderActionButtons = (project: Project) => {
     return (
-      <div className="flex gap-1">
+      <div className="flex gap-1.5">
         {canView && (
           <Button 
             variant="ghost" 
             size="icon" 
-            className="icon-button text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
+            className="h-8 w-8 rounded-lg border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100/80 dark:hover:bg-blue-900/30 hover:border-blue-300 transition-colors shadow-sm"
             onClick={() => viewProjectDetails(project)}
             title="Ver detalles"
           >
@@ -770,7 +781,7 @@ const viewProjectDetails = (project: Project) => {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="icon-button text-indigo-700 hover:text-indigo-800 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-900/20"
+            className="h-8 w-8 rounded-lg border border-primary/20 dark:border-primary/20 bg-primary/5 dark:bg-primary/5 text-primary dark:text-primary hover:bg-primary/15 dark:hover:bg-primary/10 hover:border-primary/30 transition-colors shadow-sm"
             onClick={() => handleEditProject(project)}
             title="Editar proyecto"
           >
@@ -784,41 +795,41 @@ const viewProjectDetails = (project: Project) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="icon-button text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                className="h-8 w-8 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 hover:bg-red-100/80 dark:hover:bg-red-900/30 hover:border-red-300 transition-colors shadow-sm"
                 title="Eliminar proyecto"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] font-sans">
+            <DialogContent className="sm:max-w-[425px] font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl">
               <DialogHeader>
-                <DialogTitle>Confirmar eliminación</DialogTitle>
-                <DialogDescription>
-                  ¿Está seguro que desea eliminar este proyecto? Esta acción no se puede deshacer.
+                <DialogTitle className="text-xl font-bold">Confirmar eliminación</DialogTitle>
+                <DialogDescription className="text-zinc-500 dark:text-zinc-400">
+                  ¿Está seguro que desea eliminar este proyecto? Esta acción no se puede deshacer y borrará permanentemente todos sus archivos adjuntos.
                 </DialogDescription>
               </DialogHeader>
-              <DialogFooter className="mt-4 flex justify-center gap-4">
+              <DialogFooter className="mt-6 flex justify-end gap-3">
                 <DialogClose asChild>
                   <Button
                     variant="outline"
                     disabled={isDeleting}
-                    className="border-2 border-black rounded-full"
+                    className="rounded-xl px-6 transition-colors"
                   >
-                    No, cancelar
+                    Cancelar
                   </Button>
                 </DialogClose>
                 <Button 
                   onClick={() => deleteProject(project.id)}
                   disabled={isDeleting}
-                  className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
+                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-6 shadow-md transition-all rounded-xl"
                 >
                   {isDeleting ? (
                     <div className="flex items-center justify-center">
-                      <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-black"></div>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-inherit border-t-transparent"></div>
                       <span className="ml-2">Eliminando...</span>
                     </div>
                   ) : (
-                    'Sí, eliminar'
+                    'Eliminar'
                   )}
                 </Button>
               </DialogFooter>
@@ -1348,38 +1359,40 @@ const handleEditProject = async (project: Project) => {
         const fileName = getFileNameWithoutExtension(file.name);
         
         return (
-          <Card key={index} className="bg-white border-2 border-black rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all">
-            <CardContent className="p-4 flex flex-col items-center justify-center">
-              <div className="mb-3">
+          <Card key={index} className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-primary/50 transition-all group">
+            <CardContent className="p-5 flex flex-col items-center justify-center">
+              <div className="mb-4 bg-muted p-4 rounded-2xl group-hover:bg-primary/10 transition-colors">
                 {getFileIcon(fileType)}
               </div>
               <div className="text-center">
-                <h3 className="text-lg font-semibold mb-1 text-black">
+                <h3 className="text-sm font-bold mb-1 text-foreground line-clamp-1" title={fileName}>
                   {fileName}
                 </h3>
-                <p className="text-sm text-gray-500 mb-2">
+                <p className="text-xs text-muted-foreground mb-2">
                   {formatFileSize(file.size)}
                 </p>
               </div>
             </CardContent>
-            <CardFooter className="p-4 bg-gray-50 border-t border-gray-200 flex justify-center gap-6">
+            <CardFooter className="p-3 bg-muted/40 border-t border-border flex justify-center gap-2">
               {file.url && (
                 <>
                   <Button
-                    variant="outline"
-                    className="h-12 w-12 rounded-full flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white border-2 border-black"
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-xl hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground hover:scale-105"
                     onClick={() => window.open(file.url, '_blank')}
                     title="Ver archivo"
                   >
-                    <Eye className="h-6 w-6" />
+                    <Eye className="h-4 w-4" />
                   </Button>
                   <Button
-                    variant="outline"
-                    className="h-12 w-12 rounded-full flex items-center justify-center bg-green-500 hover:bg-green-600 text-white border-2 border-black"
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-xl hover:bg-emerald-500/10 hover:text-emerald-500 transition-colors text-muted-foreground hover:scale-105"
                     onClick={() => downloadFile(file.url!, file.name)}
                     title="Descargar archivo"
                   >
-                    <Download className="h-6 w-6" />
+                    <Download className="h-4 w-4" />
                   </Button>
                 </>
               )}
@@ -1396,25 +1409,25 @@ function getFileIcon(type: string) {
   
   switch (fileType) {
     case 'pdf':
-      return <FileText className="h-8 w-8 text-red-500" />;
+      return <FileText className="h-7 w-7 text-red-500" />;
     case 'image':
     case 'jpg':
     case 'jpeg':
     case 'png':
     case 'gif':
     case 'svg':
-      return <FileImage className="h-8 w-8 text-purple-500" />;
+      return <FileImage className="h-7 w-7 text-purple-500" />;
     case 'video':
     case 'mp4':
     case 'mov':
     case 'avi':
     case 'mkv':
     case 'webm':
-      return <FileVideo className="h-8 w-8 text-blue-500" />;
+      return <FileVideo className="h-7 w-7 text-blue-500" />;
     case 'word':
     case 'doc':
     case 'docx':
-      return <FileText className="h-8 w-8 text-blue-500" />;
+      return <FileText className="h-7 w-7 text-blue-500" />;
     case 'code':
     case 'html':
     case 'css':
@@ -1422,11 +1435,11 @@ function getFileIcon(type: string) {
     case 'jsx':
     case 'ts':
     case 'tsx':
-      return <FileCode className="h-8 w-8 text-emerald-500" />;
+      return <FileCode className="h-7 w-7 text-emerald-500" />;
     case 'text':
     case 'txt':
     case 'md':
-      return <FileText className="h-8 w-8 text-gray-500" />;
+      return <FileText className="h-7 w-7 text-zinc-500" />;
     default:
       return <File className="h-8 w-8 text-gray-400" />;
   }
@@ -1667,49 +1680,61 @@ function getFileIcon(type: string) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <p className="mt-4 text-muted-foreground">Cargando proyectos...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background font-sans transition-colors duration-300">
+        <div className="relative">
+          <div className="absolute inset-0 bg-primary blur-xl opacity-20 rounded-full animate-pulse" />
+          <Loader2 className="h-12 w-12 text-primary animate-spin relative z-10" />
+        </div>
+        <p className="mt-6 text-muted-foreground font-medium tracking-wide">Iniciando entorno de proyectos...</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6 font-sans">
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#7ee8ff] to-[#94e0ff] p-4 rounded-xl shadow-sm border-2 border-black">
-        <div className="relative flex flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left md:items-center">
-          <div className="mx-auto md:mx-0">
-            <h1 className="text-3xl font-black text-black">
-              Proyectos
-            </h1>
-            
-            <span className="inline-block bg-[#e8ffdb] text-black py-0.5 px-2 rounded-full text-xs mt-1 font-medium border border-black">
-              {isProjectManager && "Acceso completo"}
-              {isClient && "Puedes crear proyectos"}
-              {isDesigner && "Solo visualización"}
-            </span>
-          </div>
+    <div className="min-h-[calc(100vh-4rem)] bg-background font-sans text-foreground pb-20 transition-colors duration-300">
+      <div className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
+        {/* Header Premium SaaS */}
+        <div className="page-header-card">
+          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/10 blur-[100px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2" />
+          
+          <div className="relative flex flex-col items-start justify-between gap-6 md:flex-row md:items-center z-10">
+            <div>
+              <h1 className="text-4xl font-extrabold tracking-tight text-foreground mb-2 flex items-center gap-3 transition-colors">
+                <Briefcase className="h-8 w-8 text-primary" />
+                Panel de Proyectos
+              </h1>
+              
+              <div className="flex items-center gap-3 mt-3">
+                <Badge className="bg-muted text-muted-foreground hover:bg-muted/80 border-none px-3 py-1 transition-colors">
+                  {projects.length} {projects.length === 1 ? 'proyecto' : 'proyectos'} totales
+                </Badge>
+                <span className="inline-flex items-center gap-1.5 bg-[#ccff00] text-black py-1 px-3 rounded-full text-xs font-bold shadow-sm transition-colors border border-black dark:border-transparent">
+                  <ShieldCheck className="h-3 w-3" />
+                  {isProjectManager ? "Gerente de Proyecto" : isClient ? "Cliente VIP" : "Diseñador"}
+                </span>
+              </div>
+            </div>
 
-          {(isClient || isProjectManager) && (
-            <Button
-              className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
-              onClick={() => setDialogOpen(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar
-            </Button>
-          )}
+            {canCreate && (
+              <Button
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-6 text-sm font-bold rounded-2xl shadow-md transition-all hover:shadow-lg hover:-translate-y-1"
+                onClick={() => setDialogOpen(true)}
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Nuevo Proyecto
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto font-sans">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl">
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Briefcase className="h-5 w-5 text-primary" />
+                <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+                  <Briefcase className="h-5 w-5 text-green-600 dark:text-[#ccff00]" />
                   Crear nuevo proyecto
                 </DialogTitle>
-                <DialogDescription>
+                <DialogDescription className="text-zinc-500 dark:text-zinc-400">
                   Completa los detalles del proyecto y asígnalo a un diseñador.
                 </DialogDescription>
               </DialogHeader>
@@ -1795,17 +1820,19 @@ function getFileIcon(type: string) {
                   {formData.files.length > 0 && (
                     <div className="mt-2 space-y-2">
                       <p className="text-sm font-medium">Archivos seleccionados:</p>
-                      <div className="bg-muted/50 rounded-md p-2 space-y-1">
+                      <div className="space-y-2">
                         {formData.files.map((file, index) => (
-                          <div key={index} className="flex items-center justify-between bg-background rounded px-3 py-1.5 text-sm">
-                            <div className="flex items-center">
-                              {getFileIcon(file.type)}
-                              <span className="ml-2">{file.name}</span>
+                          <div key={index} className="flex items-center justify-between bg-card border border-border rounded-xl px-4 py-3 text-sm shadow-sm">
+                            <div className="flex items-center gap-3">
+                              <div className="bg-muted p-2 rounded-lg">
+                                {getFileIcon(file.type)}
+                              </div>
+                              <span className="font-medium">{file.name}</span>
                             </div>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 text-destructive"
+                              className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors"
                               onClick={() => handleRemoveFile(index)}
                               disabled={isCreatingProject}
                             >
@@ -1819,27 +1846,27 @@ function getFileIcon(type: string) {
                 </div>
               </div>
 
-              <DialogFooter className="mt-4 flex justify-center gap-4">
+              <DialogFooter className="mt-6 flex justify-end gap-3">
                 <Button
                   variant="outline"
                   onClick={() => setDialogOpen(false)}
                   disabled={isCreatingProject}
-                  className="border-2 border-black rounded-full"
+                  className="rounded-xl px-6 transition-colors"
                 >
                   Cancelar
                 </Button>
                 <Button 
                   onClick={createProject}
                   disabled={isCreatingProject}
-                  className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-xl font-bold shadow-md transition-all hover:-translate-y-0.5"
                 >
                   {isCreatingProject ? (
                     <div className="flex items-center justify-center">
-                      <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-black"></div>
-                      <span className="ml-2">Creando proyecto...</span>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                      <span className="ml-2">Creando...</span>
                     </div>
                   ) : (
-                    'Agregar'
+                    'Crear proyecto'
                   )}
                 </Button>
               </DialogFooter>
@@ -1848,47 +1875,44 @@ function getFileIcon(type: string) {
 
       <Tabs defaultValue="grid" className="w-full">
         <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-            <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               <Button 
-                variant="default" 
-                className="bg-black hover:bg-gray-900 text-white h-8 px-3 text-xs shadow-sm dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-white"
+                variant="outline" 
+                className="bg-card border border-border hover:bg-muted text-foreground h-12 px-4 rounded-xl shadow-sm transition-all"
                 onClick={() => setShowFilters(!showFilters)}
               >
-                <Filter className="h-3.5 w-3.5 text-white" />
+                <Filter className="h-4 w-4 text-primary" />
+                <span className="ml-2 font-medium">Filtros</span>
                 {(statusFilter || creatorFilter || designerFilter) && (
-                  <Badge variant="secondary" className="ml-2 text-xs bg-white text-black dark:bg-gray-800 dark:text-white">
+                  <Badge variant="secondary" className="ml-2 px-1.5 py-0 min-w-5 h-5 flex items-center justify-center bg-primary text-primary-foreground">
                     {[statusFilter, creatorFilter, designerFilter].filter(Boolean).length}
                   </Badge>
                 )}
               </Button>
               
-              <div className="relative w-40 md:w-64">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-300" />
+              <div className="relative w-full md:w-80">
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar proyectos..."
+                  placeholder="Buscar proyectos por nombre..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 w-full border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white bg-white dark:bg-black"
+                  className="pl-11 h-12 w-full bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus:ring-primary focus:border-primary rounded-xl transition-all shadow-inner"
                 />
               </div>
             </div>
 
-            <TabsList className="bg-gray-100 dark:bg-gray-800 p-1 rounded-full border border-gray-200 dark:border-gray-700">
-              <TabsTrigger value="grid" className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700">
+            <TabsList className="bg-muted p-1.5 rounded-xl border border-border shadow-inner h-12 hidden md:flex">
+              <TabsTrigger value="grid" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground transition-all font-medium h-full">
                 <div className="flex items-center gap-2">
-                  <div className="bg-pink-100 dark:bg-pink-900/30 w-5 h-5 flex items-center justify-center rounded-full">
-                    <Tag className="h-3 w-3 text-pink-600 dark:text-pink-400" />
-                  </div>
-                  <span className="hidden sm:inline text-xs">Tarjetas</span>
+                  <Tag className="h-4 w-4" />
+                  <span className="hidden sm:inline">Tarjetas</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="list" className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700">
+              <TabsTrigger value="list" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground transition-all font-medium h-full">
                 <div className="flex items-center gap-2">
-                  <div className="bg-violet-100 dark:bg-violet-900/30 w-5 h-5 flex items-center justify-center rounded-full">
-                    <ListFilter className="h-3 w-3 text-violet-600 dark:text-violet-400" />
-                  </div>
-                  <span className="hidden sm:inline text-xs">Lista</span>
+                  <ListFilter className="h-4 w-4" />
+                  <span className="hidden sm:inline">Lista</span>
                 </div>
               </TabsTrigger>
             </TabsList>
@@ -2010,170 +2034,176 @@ function getFileIcon(type: string) {
           )}
         </div>
 
-        <TabsContent value="grid" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <TabsContent value="grid" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProjects.length > 0 ? (
               filteredProjects.map((project) => (
                 <div 
                   key={project.id} 
-                  className="card-hover border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] max-w-xs flex flex-col dark:bg-gray-900"
+                  className="group relative bg-card/60 backdrop-blur-sm border-none rounded-[1.5rem] shadow-sm transition-all duration-500 hover:shadow-lg hover:-translate-y-1 flex flex-col h-full card-gradient-border"
                 >
-                  <div className="h-1 bg-gradient-to-r from-gray-800 to-black"></div>
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <CardTitle className="text-base font-medium overflow-hidden">{project.title}</CardTitle>
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:to-transparent transition-all duration-500 pointer-events-none"></div>
+                  
+                  <div className="p-6 flex-grow flex flex-col relative z-10">
+                    <div className="flex justify-between items-start gap-4 mb-4">
+                      <div className="bg-muted p-3 rounded-2xl backdrop-blur-md border border-border shadow-inner">
+                        <FolderOpen className="h-6 w-6 text-primary" />
                       </div>
-                      <div title={project.status} className="tooltip">
+                      <div className="transform transition-transform duration-300 group-hover:scale-105">
                         {getStatusBadge(project.status)}
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-1 pb-2 flex-grow">
-                    <div className="p-4 rounded-md shadow-sm border border-gray-300 dark:border-gray-700 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800">
-                      <h3 className="font-medium mb-2">Detalles del proyecto</h3>
-                      <p className="text-sm text-gray-800 dark:text-gray-300">
-                        {project.description || "Sin descripción"}
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 mt-4">
-                      <div className="relative overflow-hidden flex items-center gap-1 text-xs bg-gradient-to-br from-blue-100 via-indigo-100 to-blue-100 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-blue-900/20 p-2 rounded-md border border-blue-200 dark:border-blue-800/30">
-                        <div className="absolute -top-10 -left-10 w-20 h-20 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse dark:bg-blue-900"></div>
-                        <User className="h-3 w-3 text-blue-800 dark:text-blue-400" />
-                        <div>
-                          <p className="font-medium text-[10px] text-gray-700 dark:text-gray-400">Creado por:</p>
-                          <p className="text-gray-900 dark:text-gray-200 text-[10px] truncate">
-                            {project.created_by_email ? project.created_by_email.split('@')[0] : 'No asignado'}
-                          </p>
+                    
+                    <h3 className="text-xl font-bold text-foreground mb-2 line-clamp-2 leading-tight transition-colors">{project.title}</h3>
+                    
+                    <p className="text-sm text-muted-foreground mb-6 line-clamp-3 leading-relaxed flex-grow">
+                      {project.description || "Sin descripción proporcionada para este proyecto."}
+                    </p>
+
+                    <div className="space-y-3 mt-auto pt-4 border-t border-border">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground font-medium tracking-wide uppercase text-[10px]">Responsable</span>
+                        <div className="flex items-center gap-1.5 text-foreground bg-muted/50 px-2.5 py-1 rounded-md border border-border">
+                          <User className="h-3 w-3 text-primary" />
+                          <span className="truncate max-w-[120px] font-medium">{project.assigned_to_email ? project.assigned_to_email.split('@')[0] : 'Sin asignar'}</span>
                         </div>
                       </div>
-                      <div className="relative overflow-hidden flex items-center gap-1 text-xs bg-gradient-to-br from-indigo-50/80 via-blue-50/80 to-sky-50/80 dark:from-indigo-900/20 dark:via-blue-900/20 dark:to-sky-900/20 p-2 rounded-md border border-indigo-100/50 dark:border-indigo-800/30">
-                        <div className="absolute -bottom-10 -right-10 w-20 h-20 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
-                        <User className="h-3 w-3 text-indigo-700 dark:text-indigo-400" />
-                        <div>
-                          <p className="font-medium text-[10px] text-gray-600 dark:text-gray-400">Asignado a:</p>
-                          <p className="text-gray-800 dark:text-gray-200 text-[10px] truncate">
-                            {project.assigned_to_email ? project.assigned_to_email.split('@')[0] : 'No asignado'}
-                          </p>
-                        </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground font-medium tracking-wide uppercase text-[10px]">Creado por</span>
+                        <span className="text-muted-foreground truncate max-w-[140px] font-medium">{project.created_by_email ? project.created_by_email.split('@')[0] : 'Anónimo'}</span>
                       </div>
                     </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between p-3 pt-2 border-t border-gray-100 dark:border-gray-800 mt-auto">
-                    <div className="flex items-center gap-1">
-                      <FileText className="h-3 w-3 text-gray-500 dark:text-white" />
-                      <span className="text-[10px] text-gray-500 dark:text-white">
-                        {project.files?.length || 0}
-                      </span>
+                  </div>
+                  
+                  <div className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-between mt-auto z-20 relative">
+                    <div className="flex items-center gap-2 text-xs font-medium text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                      <Paperclip className="h-3.5 w-3.5" />
+                      <span>{project.files?.length || 0} adjuntos</span>
                     </div>
-                    <div className="flex gap-1">
+                    
+                    <div className="flex gap-1.5">
                       {renderActionButtons(project)}
                     </div>
-                  </CardFooter>
+                  </div>
                 </div>
               ))
             ) : (
-              <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                <Briefcase className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-medium mb-1">No se encontraron proyectos</h3>
-                <p className="text-muted-foreground">
+              <div className="col-span-full flex flex-col items-center justify-center py-24 text-center bg-muted/30 rounded-3xl border border-border backdrop-blur-sm">
+                <div className="bg-muted p-6 rounded-full mb-6 relative">
+                  <div className="absolute inset-0 bg-primary/10 rounded-full animate-ping opacity-50"></div>
+                  <Briefcase className="h-10 w-10 text-muted-foreground relative z-10" />
+                </div>
+                <h3 className="text-2xl font-bold text-foreground mb-2">No se encontraron proyectos</h3>
+                <p className="text-muted-foreground max-w-md">
                   {searchTerm || statusFilter || creatorFilter || designerFilter 
-                    ? "Intenta con otros filtros" 
-                    : "Crea tu primer proyecto para comenzar"}
+                    ? "Al parecer ningún proyecto coincide con los filtros aplicados." 
+                    : "Aún no hay proyectos en el sistema. Crea tu primer proyecto para comenzar a colaborar."}
                 </p>
                 {canCreate && !searchTerm && !statusFilter && !creatorFilter && !designerFilter && (
                   <Button 
-                    className="mt-4 bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                    className="mt-8 bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 rounded-2xl font-bold text-sm shadow-[0_0_20px_rgba(204,255,0,0.15)] transition-all hover:-translate-y-1 hover:shadow-lg"
                     onClick={() => setDialogOpen(true)}
                   >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Crear primer proyecto
-                      </Button>
+                    <Plus className="mr-2 h-5 w-5" />
+                    Crear nuevo proyecto
+                  </Button>
                 )}
               </div>
             )}
           </div>
         </TabsContent>
 
-        <TabsContent value="list" className="mt-0">
-          <div className="overflow-hidden rounded-lg border border-border/50 bg-card shadow-sm">
-            <table className="w-full text-sm">
-              <thead className="bg-black text-white">
-                <tr>
-                  <th className="px-4 py-3 text-center font-medium">Proyecto</th>
-                  <th className="px-4 py-3 text-center font-medium">Estado</th>
-                  <th className="px-4 py-3 text-center font-medium hidden md:table-cell">Creado por</th>
-                  <th className="px-4 py-3 text-center font-medium hidden md:table-cell">Asignado a</th>
-                  <th className="px-4 py-3 text-center font-medium hidden lg:table-cell">Archivos</th>
-                  <th className="px-4 py-3 text-center font-medium hidden lg:table-cell">Última actualización</th>
-                  <th className="px-4 py-3 text-center font-medium">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
-                {filteredProjects.length > 0 ? (
-                  filteredProjects.map((project) => (
-                    <tr key={project.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                      <td className="px-4 py-3">
-                        <div>
-                          <p className="font-medium">{project.title}</p>
-                          <p className="text-xs text-muted-foreground italic line-clamp-1">{project.description}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {getStatusBadge(project.status)}
-                      </td>
-                      <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs text-center">
-                        {project.created_by_email || 'No asignado'}
-                      </td>
-                      <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs text-center">
-                        {project.assigned_to_email || 'No asignado'}
-                      </td>
-                      <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground text-xs text-center">
-                        {project.files?.length || 0} archivos
-                      </td>
-                      <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground text-xs text-center">
-                        {formatDate(project.updated_at)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-1">
-                          {renderActionButtons(project)}
+        <TabsContent value="list" className="mt-6">
+          <div className="overflow-hidden rounded-3xl border border-border/50 dark:border-border bg-card/60 backdrop-blur-sm shadow-sm transition-colors">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-muted/60 text-muted-foreground text-[10px] uppercase tracking-widest font-bold">
+                  <tr>
+                    <th className="px-6 py-5">Proyecto</th>
+                    <th className="px-6 py-5 text-center">Estado</th>
+                    <th className="px-6 py-5 hidden md:table-cell text-center">Creador</th>
+                    <th className="px-6 py-5 hidden md:table-cell text-center">Asignado a</th>
+                    <th className="px-6 py-5 hidden lg:table-cell text-center">Archivos</th>
+                    <th className="px-6 py-5 hidden lg:table-cell text-center">Apertura</th>
+                    <th className="px-6 py-5 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border text-foreground">
+                  {filteredProjects.length > 0 ? (
+                    filteredProjects.map((project) => (
+                      <tr key={project.id} className="hover:bg-muted/50 transition-colors group">
+                        <td className="px-6 py-5">
+                          <div>
+                            <p className="font-bold text-foreground transition-colors">{project.title}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{project.description || "Sin descripción"}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5 text-center">
+                          <div className="flex justify-center">{getStatusBadge(project.status)}</div>
+                        </td>
+                        <td className="px-6 py-5 hidden md:table-cell text-center">
+                          <span className="bg-muted text-foreground px-2.5 py-1 rounded-md text-xs font-medium border border-border">
+                            {project.created_by_email ? project.created_by_email.split('@')[0] : 'S/A'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-5 hidden md:table-cell text-center">
+                          <span className="bg-muted text-foreground px-2.5 py-1 rounded-md text-xs font-medium border border-border">
+                            {project.assigned_to_email ? project.assigned_to_email.split('@')[0] : 'S/A'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-5 hidden lg:table-cell text-center">
+                          <div className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                            {project.files?.length || 0} adjuntos
+                          </div>
+                        </td>
+                        <td className="px-6 py-5 hidden lg:table-cell text-muted-foreground text-xs text-center font-medium">
+                          {formatDate(project.created_at || project.updated_at)}
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex items-center justify-center gap-1.5 z-20 relative">
+                            {renderActionButtons(project)}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-24 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="bg-muted p-6 rounded-full mb-6 relative">
+                            <div className="absolute inset-0 bg-primary/10 rounded-full animate-ping opacity-50"></div>
+                            <Briefcase className="h-10 w-10 text-muted-foreground relative z-10" />
+                          </div>
+                          <h3 className="text-xl font-bold text-foreground mb-2">No se encontraron proyectos</h3>
+                          <p className="text-muted-foreground max-w-sm">
+                            {searchTerm || statusFilter || creatorFilter || designerFilter 
+                              ? "Cero coincidencias con tus filtros actuales." 
+                              : "Tu lista está vacía actualmente. Comienza agregando uno nuevo."}
+                          </p>
                         </div>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <Briefcase className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                        <h3 className="text-lg font-medium mb-1">No se encontraron proyectos</h3>
-                        <p className="text-muted-foreground">
-                          {searchTerm || statusFilter || creatorFilter || designerFilter 
-                            ? "Intenta con otros filtros" 
-                            : "Crea tu primer proyecto para comenzar"}
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
+      </div>
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-gray-200 dark:border-gray-700 font-sans">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl">
           {viewingProject && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-2xl">
-                  <Briefcase className="h-6 w-6 text-primary" />
+                <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
+                  <Briefcase className="h-6 w-6 text-green-600 dark:text-[#ccff00]" />
                   {viewingProject.title}
                 </DialogTitle>
                 <div className="flex items-center gap-2 mt-2">
                     {getStatusBadge(viewingProject.status)}
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">
                     Última actualización: {formatDate(viewingProject.updated_at)}
                   </span>
                 </div>
@@ -2182,46 +2212,46 @@ function getFileIcon(type: string) {
               <div className="py-4">
                 <div className="space-y-6">
                   <div>
-                    <h3 className="font-medium mb-2">Descripción</h3>
-                    <p className="text-sm text-muted-foreground bg-white/50 dark:bg-gray-800/50 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h3 className="font-bold mb-2 text-foreground">Descripción</h3>
+                    <p className="text-sm text-muted-foreground bg-muted p-4 rounded-2xl shadow-sm border border-border">
                       {viewingProject.description || "Sin descripción"}
                     </p>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
-                      <h3 className="font-medium mb-2">Creado por</h3>
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                          <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                      </div>
+                    <div className="bg-muted p-4 rounded-2xl shadow-sm border border-border">
+                      <h3 className="font-bold mb-3 text-foreground">Creado por</h3>
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center border border-border">
+                          <User className="h-5 w-5 text-primary" />
+                        </div>
                         <div>
-                          <p className="text-sm font-medium">{viewingProject.created_by_email || 'No asignado'}</p>
-                          <p className="text-xs text-muted-foreground">{viewingProject.created_by_role || 'Usuario'}</p>
+                          <p className="text-sm font-bold text-foreground">{viewingProject.created_by_email || 'No asignado'}</p>
+                          <p className="text-xs text-muted-foreground uppercase tracking-widest">{viewingProject.created_by_role || 'Usuario'}</p>
+                        </div>
+                      </div>
                     </div>
-                </div>
-              </div>
               
-                    <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
-                      <h3 className="font-medium mb-2">Asignado a</h3>
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                          <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    <div className="bg-muted p-4 rounded-2xl shadow-sm border border-border">
+                      <h3 className="font-bold mb-3 text-foreground">Asignado a</h3>
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center border border-border">
+                          <User className="h-5 w-5 text-primary" />
                           </div>
                         <div>
-                          <p className="text-sm font-medium">{viewingProject.assigned_to_email || 'No asignado'}</p>
-                          <p className="text-xs text-muted-foreground">{viewingProject.assigned_to_role || 'Diseñador'}</p>
+                          <p className="text-sm font-bold text-foreground">{viewingProject.assigned_to_email || 'No asignado'}</p>
+                          <p className="text-xs text-muted-foreground uppercase tracking-widest">{viewingProject.assigned_to_role || 'Diseñador'}</p>
                         </div>
                     </div>
                   </div>
               </div>
               
                   <div>
-                    <h3 className="font-medium mb-2">Archivos del proyecto</h3>
+                    <h3 className="font-bold mb-3 text-foreground">Archivos del proyecto</h3>
                     {viewingProject.files && viewingProject.files.length > 0 ? (
                       renderFileCards(viewingProject.files)
                     ) : (
-                      <div className="text-center py-6 text-muted-foreground bg-white/50 dark:bg-gray-800/50 p-4 rounded-md shadow-sm border border-gray-100 dark:border-gray-700">
+                      <div className="text-center py-6 text-muted-foreground bg-muted p-4 rounded-2xl shadow-sm border border-border">
                         No hay archivos adjuntos
                       </div>
                     )}
@@ -2234,41 +2264,41 @@ function getFileIcon(type: string) {
       </Dialog>
 
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] font-sans">
+        <DialogContent className="sm:max-w-[425px] font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl">
           <DialogHeader>
-            <DialogTitle>Confirmar actualización</DialogTitle>
-            <DialogDescription>
-              ¿Está seguro que desea actualizar este proyecto?
+            <DialogTitle className="text-xl font-bold">Confirmar actualización</DialogTitle>
+            <DialogDescription className="text-zinc-500 dark:text-zinc-400">
+              ¿Está seguro que desea actualizar los datos de este proyecto?
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-6 flex justify-end gap-3">
             <Button
               variant="outline"
               onClick={() => setConfirmDialogOpen(false)}
               disabled={isEditingProject}
-              className="border-2 border-black rounded-full"
+              className="rounded-xl px-6 transition-colors"
             >
-              No, cancelar
+              Cancelar
             </Button>
             <Button 
               onClick={updateProject}
               disabled={isEditingProject}
-              className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-xl font-bold shadow-md hover:-translate-y-0.5 transition-all"
             >
-              Sí, confirmar
+              Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto font-sans">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-              <Edit className="h-5 w-5 text-primary" />
+              <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+              <Edit className="h-5 w-5 text-green-600 dark:text-[#ccff00]" />
               Editar proyecto
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-zinc-500 dark:text-zinc-400">
               Modifica los detalles del proyecto y asígnalo a un diseñador.
               </DialogDescription>
             </DialogHeader>
@@ -2356,7 +2386,7 @@ function getFileIcon(type: string) {
       {editFormData.files.length > 0 && (
         <div className="mt-2 space-y-2">
           <p className="text-sm font-medium">Archivos seleccionados:</p>
-          <div className="bg-muted/50 rounded-md p-2 space-y-1">
+          <div className="space-y-2">
             {editFormData.files.map((file, index) => {
               // Procesar el archivo si viene como string JSON
               let fileData = file;
@@ -2372,15 +2402,17 @@ function getFileIcon(type: string) {
               const fileType = fileData.type || getFileTypeFromName(fileName);
 
               return (
-                <div key={index} className="flex items-center justify-between bg-background rounded px-3 py-1.5 text-sm">
-                  <div className="flex items-center gap-2">
-                    {getFileIcon(fileType)}
-                    <span>{fileName}</span>
+                <div key={index} className="flex items-center justify-between bg-card border border-border rounded-xl px-4 py-3 text-sm shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-muted p-2 rounded-lg">
+                      {getFileIcon(fileType)}
+                    </div>
+                    <span className="font-medium">{fileName}</span>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 text-destructive hover:text-destructive/90"
+                    className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors"
                     onClick={() => handleRemoveEditFile(index)}
                     disabled={isEditingProject}
                   >
@@ -2397,24 +2429,24 @@ function getFileIcon(type: string) {
 </div>
             </div>
 
-          <DialogFooter className="mt-4 flex justify-center gap-4">
+          <DialogFooter className="mt-6 flex justify-end gap-3">
             <Button
               variant="outline"
               onClick={() => setEditDialogOpen(false)}
               disabled={isEditingProject}
-              className="border-2 border-black rounded-full"
+              className="rounded-xl px-6 transition-colors"
             >
               Cancelar
             </Button>
             <Button 
               onClick={initiateProjectUpdate}
               disabled={isEditingProject || editTitleStatus?.isError === true}
-              className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-xl font-bold shadow-md hover:-translate-y-0.5 transition-all"
             >
               {isEditingProject ? (
                 <div className="flex items-center justify-center">
-                  <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-black"></div>
-                  <span className="ml-2">Actualizando proyecto...</span>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                  <span className="ml-2">Actualizando...</span>
                 </div>
               ) : (
                 'Actualizar proyecto'

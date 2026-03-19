@@ -281,15 +281,15 @@ export function Navbar() {
   return (
     <div className="border-b shadow-sm dark:shadow-gray-800/10 dark:bg-black font-sans">
       <div className="flex h-16 items-center px-4 md:px-6">
-        <Link href="/dashboard" className="flex items-center mr-6">
-          <Image
-            src="/logo.png"
-            width={180}
-            height={50}
-            alt="Logo"
-            priority
-            className="shrink-0 h-auto"
-          />
+        <Link href="/dashboard" className="flex items-center gap-2 mr-6 no-underline">
+          <div className="w-10 h-10 flex items-center justify-center translate-y-[6px]">
+            <img 
+              src="/images/grayola-bird-logo.svg?v=2"
+              alt="Grayola Bird"
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <span className="text-xl font-black tracking-tighter text-black dark:text-white">GRAYOLA</span>
         </Link>
         <nav className="mx-4 flex-1">
           <ul className="flex gap-2 text-sm font-medium">

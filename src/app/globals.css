@@ -52,8 +52,8 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 100 85% 67%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 142.1 76.2% 36.3%; /* Verde más fuerte y legible en fondo blanco */
+    --primary-foreground: 355.7 100% 97.3%; /* Texto blanco en botones primary */
     --secondary: 178 75% 55%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96%;
@@ -281,5 +281,43 @@
   
   .animate-marquee-reverse {
     animation: marquee-reverse 30s linear infinite;
+  }
+  
+  /* Banner Header Global para páginas (Dashboard, Projects, Documents, etc) */
+  .page-header-card {
+    @apply relative overflow-hidden p-6 md:p-8 rounded-3xl transition-all duration-300;
+    /* Light Mode: Gradiente verde a rosadito (un poquito más oscuro para que resalte) */
+    @apply bg-gradient-to-r from-emerald-100/80 via-white to-pink-100/80 shadow-md shadow-primary/10;
+  }
+  
+  .dark .page-header-card {
+    /* Dark Mode: No bebe/pastel, borde puramente neón y glow */
+    @apply bg-card/80 backdrop-blur-md bg-none text-primary shadow-[0_0_20px_hsla(72,100%,50%,0.15)];
+  }
+
+  /* Borde de gradiente permanente para todas las tarjetas tipo SaaS */
+  .card-gradient-border {
+    position: relative;
+    border: 0 !important; /* Evitar conflictos con bordes de tailwind */
+  }
+  
+  .card-gradient-border::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.5px; /* Grosor del borde */
+    background: linear-gradient(to right, #10b981, #f472b6); /* Verde a Rosado */
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 20; /* Dibuja sobre el contenido interno (borde interno) */
+  }
+  
+  .dark .card-gradient-border::after {
+    /* Oscuro: Neón intenso */
+    background: linear-gradient(to right, #059669, #be185d); 
   }
 }

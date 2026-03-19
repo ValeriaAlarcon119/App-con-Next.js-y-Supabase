@@ -7,17 +7,15 @@ import {
   Users, 
   Files,
   BookOpen,
-  Upload,
-  FileText,
   Settings,
   Bell,
-  Sun,
-  Moon,
   Clock,
   RefreshCw,
   AlertCircle,
   FileImage,
-  File
+  File,
+  Briefcase,
+  FileText
 } from "lucide-react"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -30,10 +28,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 interface Project {
   id: string;
-  title: string; // Cambiado de name a title
+  title: string;
   description: string;
   status: string;
   created_at: string;
+  created_by?: string;
+  assigned_to?: string;
   files: FileObject[];
 }
 
@@ -64,36 +64,73 @@ export default function DashboardPage() {
   const [documentCount, setDocumentCount] = useState(0)
   const [projectCount, setProjectCount] = useState(0)
   const [userCount, setUserCount] = useState(0)
+  const [performance, setPerformance] = useState(0)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
-  const [theme, setTheme] = useState("dark")
-  const [showNotifications, setShowNotifications] = useState(false)
   
-  const notificationsRef = React.useRef<HTMLDivElement>(null)
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const { data: projectsData, count: projectsCount, error: projectsError } = await supabase
-          .from('projects')
-          .select('*, creator:users!created_by(email, role)', { count: 'exact' })
-          .order('created_at', { ascending: false })
-          .limit(10)
-        
-        if (projectsError) throw projectsError
+        const authResult = await supabase.auth.getUser()
+        const authUser = authResult.data.user;
+        if (!authUser) return;
 
-        // Asignar estados aleatorios a los proyectos
-        const projectsWithStatus = projectsData?.map(project => ({
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authUser.id)
+          .single()
+        
+        setUser(userData)
+
+        let query = supabase
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (userData?.role === 'client') {
+          query = query.eq('created_by', authUser.id);
+        } else if (userData?.role === 'designer') {
+          query = query.eq('assigned_to', authUser.id);
+        }
+
+        const { data: projectsData, error: projectsError } = await query;
+        if (projectsError) throw projectsError;
+
+        const cleanProjects = projectsData?.map((project: any) => ({
           ...project,
-          status: ['pendiente', 'en progreso', 'completado', 'retrasado'][Math.floor(Math.random() * 4)]
+          status: project.status || 'pendiente'
         })) || []
 
-        setProjects(projectsWithStatus)
-        setProjectCount(projectsCount || 0)
+        setProjects(cleanProjects)
+        setProjectCount(cleanProjects.length)
 
-        // Procesar documentos de los proyectos
-        const allDocuments = projectsWithStatus.reduce((acc: Document[], project) => {
+        // Rendimiento
+        const completed = cleanProjects.filter(p => p.status === 'completado').length;
+        const total = cleanProjects.length;
+        setPerformance(total > 0 ? Math.round((completed / total) * 100) : 0)
+
+        // Count logic based on Role
+        if (userData?.role === 'client') {
+          const distinctDesigners = new Set(cleanProjects.map(p => p.assigned_to).filter(Boolean));
+          setUserCount(distinctDesigners.size);
+        } else if (userData?.role === 'designer') {
+          const distinctClients = new Set(cleanProjects.map(p => p.created_by).filter(Boolean));
+          setUserCount(distinctClients.size);
+        } else {
+          // Project manager count all users
+          const { count: usersCount } = await supabase.from('users').select('*', { count: 'exact', head: true });
+          setUserCount(usersCount || 0);
+        }
+
+        // Recent users (For PM show recent 10. For clients/designers show those they interact with maybe?)
+        // Let's just fetch recent users all for visual on the widget for now or limit.
+        const { data: recentUsers } = await supabase.from('users').select('*').limit(10).order('created_at', { ascending: false });
+        setUsers(recentUsers || [])
+
+        // Procesar documentos de los proyectos filtrados
+        const allDocuments = cleanProjects.reduce((acc: Document[], project) => {
           if (project.files && Array.isArray(project.files)) {
             const projectDocs = project.files.map((file: any) => ({
               id: Math.random().toString(36).substr(2, 9),
@@ -104,28 +141,11 @@ export default function DashboardPage() {
             return [...acc, ...projectDocs];
           }
           return acc;
-        }, []);
+        }, []).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-        setDocuments(allDocuments.slice(0, 5))
+        setDocuments(allDocuments)
         setDocumentCount(allDocuments.length)
 
-        const { data: usersData, count: usersCount, error: usersError } = await supabase
-          .from('users')
-          .select('*', { count: 'exact' })
-          .limit(10)
-        
-        if (usersError) throw usersError
-        setUsers(usersData || [])
-        setUserCount(usersCount || 0)
-
-        const { data: userData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', (await supabase.auth.getUser()).data.user?.id ?? '')
-        
-        if (userData && userData.length > 0) {
-          setUser(userData[0])
-        }
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
@@ -136,190 +156,221 @@ export default function DashboardPage() {
     fetchData()
   }, [])
 
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] flex-col items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+        <p className="mt-4 text-sm text-muted-foreground">Cargando tu dashboard...</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6 font-sans">
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#7ee8ff] to-[#94e0ff] p-4 rounded-xl shadow-sm border-2 border-black">
-        <div className="relative flex flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left md:items-center">
-          <div className="mx-auto md:mx-0">
-            <h1 className="text-3xl font-black text-black">
-              Dashboard
+    <div className="container mx-auto px-4 py-8 space-y-8 font-sans transition-colors duration-300">
+      {/* Header Banner */}
+      <div className="page-header-card">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/10 blur-[100px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2" />
+        <div className="relative flex flex-col items-start justify-between gap-6 md:flex-row md:items-center z-10">
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground flex items-center gap-3">
+              <BarChart className="h-8 w-8 text-primary" />
+              Panel de Estadísticas
             </h1>
-            
-            <span className="inline-block bg-[#e8ffdb] text-black py-0.5 px-2 rounded-full text-xs mt-1 font-medium border border-black">
-              {user?.role === 'client' && "Cliente"}
-              {user?.role === 'designer' && "Diseñador"}
-              {user?.role === 'project_manager' && "Gerente de Proyecto"}
-            </span>
+            <div className="flex items-center gap-3 mt-3">
+              <span className="inline-flex items-center gap-1.5 bg-[#ccff00] text-black border border-black dark:border-transparent py-1 px-3 rounded-full text-xs font-bold shadow-sm transition-colors">
+                <CheckCircle className="h-3 w-3" />
+                {user?.role === 'client' ? "Cliente VIP" : user?.role === 'designer' ? "Diseñador" : "Gerente de Proyecto"}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="transition-all hover:shadow-md bg-white dark:bg-black border-2 border-black rounded-xl overflow-hidden">
-          <CardContent className="p-6 flex gap-4 items-center">
-            <div className="rounded-full p-3 bg-[#e8ffdb]">
-              <Files className="h-6 w-6 text-black" />
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* Documentos */}
+        <Card className="transition-all hover:shadow-lg bg-card/60 backdrop-blur-sm border border-border/50 dark:border-border rounded-3xl overflow-hidden hover:-translate-y-1 hover:border-primary/50 dark:hover:border-primary/50 group">
+          <CardContent className="p-6 flex gap-4 items-center h-full">
+            <div className="rounded-2xl p-4 bg-muted border border-border group-hover:bg-primary/10 transition-colors">
+              <Files className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-xl mb-1 dark:text-white">Documentos</CardTitle>
-              <p className="text-3xl font-bold dark:text-white">{documentCount}</p>
+              <CardTitle className="text-xl mb-1 text-foreground">Documentos</CardTitle>
+              <p className="text-3xl font-black text-foreground transition-colors">{documentCount}</p>
+              <p className="text-xs text-muted-foreground">Archivos totales</p>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="transition-all hover:shadow-md bg-white dark:bg-black border-2 border-black rounded-xl overflow-hidden">
-          <CardContent className="p-6 flex gap-4 items-center">
-            <div className="rounded-full p-3 bg-[#e8ffdb]">
-              <CheckCircle className="h-6 w-6 text-black" />
+        {/* Proyectos */}
+        <Card className="transition-all hover:shadow-lg bg-card/60 backdrop-blur-sm border border-border/50 dark:border-border rounded-3xl overflow-hidden hover:-translate-y-1 hover:border-primary/50 dark:hover:border-primary/50 group">
+          <CardContent className="p-6 flex gap-4 items-center h-full">
+            <div className="rounded-2xl p-4 bg-muted border border-border group-hover:bg-primary/10 transition-colors">
+              <Briefcase className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-xl mb-1">Proyectos</CardTitle>
-              <p className="text-3xl font-bold">{projectCount}</p>
+              <CardTitle className="text-xl mb-1 text-foreground">Proyectos</CardTitle>
+              <p className="text-3xl font-black text-foreground transition-colors">{projectCount}</p>
+              <p className="text-xs text-muted-foreground">
+                {user?.role === 'client' ? 'Proyectos solicitados' : user?.role === 'designer' ? 'Proyectos asignados' : 'Proyectos activos'}
+              </p>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="transition-all hover:shadow-md bg-white dark:bg-black border-2 border-black rounded-xl overflow-hidden">
-          <CardContent className="p-6 flex gap-4 items-center">
-            <div className="rounded-full p-3 bg-[#e8ffdb]">
-              <Users className="h-6 w-6 text-black" />
+        {/* Usuarios Interconectados */}
+        <Card className="transition-all hover:shadow-lg bg-card/60 backdrop-blur-sm border border-border/50 dark:border-border rounded-3xl overflow-hidden hover:-translate-y-1 hover:border-primary/50 dark:hover:border-primary/50 group">
+          <CardContent className="p-6 flex gap-4 items-center h-full">
+            <div className="rounded-2xl p-4 bg-muted border border-border group-hover:bg-primary/10 transition-colors">
+              <Users className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-xl mb-1">Usuarios</CardTitle>
-              <p className="text-3xl font-bold">{userCount}</p>
+              <CardTitle className="text-xl mb-1 text-foreground">
+                 {user?.role === 'project_manager' ? 'Usuarios Totales' : 'Conexiones'}
+              </CardTitle>
+              <p className="text-3xl font-black text-foreground transition-colors">{userCount}</p>
+              <p className="text-xs text-muted-foreground">
+                 {user?.role === 'client' ? 'Diseñadores asignados' : user?.role === 'designer' ? 'Clientes únicos' : 'Registrados'}
+              </p>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="transition-all hover:shadow-md bg-white dark:bg-black border-2 border-black rounded-xl overflow-hidden">
-          <CardContent className="p-6 flex gap-4 items-center">
-            <div className="rounded-full p-3 bg-[#e8ffdb]">
-              <BarChart className="h-6 w-6 text-black" />
+        {/* Rendimiento */}
+        <Card className="transition-all hover:shadow-lg bg-card/60 backdrop-blur-sm border border-border/50 dark:border-border rounded-3xl overflow-hidden hover:-translate-y-1 hover:border-primary/50 dark:hover:border-primary/50 group">
+          <CardContent className="p-6 flex gap-4 items-center h-full">
+            <div className="rounded-2xl p-4 bg-muted border border-border group-hover:bg-primary/10 transition-colors">
+              <BarChart className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-xl mb-1">Rendimiento</CardTitle>
-              <p className="text-3xl font-bold">87%</p>
+              <CardTitle className="text-xl mb-1 text-foreground">Rendimiento</CardTitle>
+              <p className="text-3xl font-black text-foreground transition-colors">{performance}%</p>
+              <p className="text-xs text-muted-foreground">Proyectos completados</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="resumen" className="mt-6">
-        <div className="flex justify-between items-center mb-4">
-          <TabsList className="bg-white/60 dark:bg-black/60 border-2 border-black rounded-lg p-1">
+      <Tabs defaultValue="resumen" className="mt-8">
+        <div className="flex justify-between items-center mb-6">
+          <TabsList className="bg-muted p-1.5 rounded-xl border border-border shadow-inner">
             <TabsTrigger 
               value="resumen" 
-              className="data-[state=active]:bg-[#7fff00] rounded-md data-[state=active]:text-black data-[state=inactive]:text-black dark:data-[state=inactive]:text-white font-bold"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground transition-all font-medium"
             >
               Resumen
             </TabsTrigger>
             <TabsTrigger 
               value="guias" 
-              className="data-[state=active]:bg-[#7fff00] rounded-md data-[state=active]:text-black data-[state=inactive]:text-black dark:data-[state=inactive]:text-white font-bold"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground transition-all font-medium"
             >
               Guías
             </TabsTrigger>
             <TabsTrigger 
               value="tareas" 
-              className="data-[state=active]:bg-[#7fff00] rounded-md data-[state=active]:text-black data-[state=inactive]:text-black dark:data-[state=inactive]:text-white font-bold"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground transition-all font-medium"
             >
               Tareas
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="resumen" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="border-2 border-black rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
-              <CardHeader className="pb-2 bg-gradient-to-r from-[#c9efb3]/20 to-[#7ee8ff]/20">
-                <CardTitle className="text-lg font-black">Proyectos Activos</CardTitle>
-                <CardDescription>
-                  Detalles de los últimos proyectos activos
+        <TabsContent value="resumen" className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="bg-card/60 backdrop-blur-sm border border-border rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300">
+              <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
+                <CardTitle className="text-lg font-bold">Últimos Proyectos</CardTitle>
+                <CardDescription className="text-xs">
+                  Proyectos activos recientes
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4">
                 <div className="space-y-4">
-                  {projects.slice(0, 3).map((project) => (
+                  {projects.length > 0 ? projects.slice(0, 4).map((project) => (
                     <div key={project.id} className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status)}`} />
+                      <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status).replace('bg-','bg-')}`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{project.title}</p>
+                        <p className="text-sm font-semibold truncate text-foreground">{project.title}</p>
                         <p className="text-xs text-muted-foreground">{formatDate(project.created_at)}</p>
                       </div>
                       <Badge 
                         variant="outline" 
-                        className={`text-xs border capitalize ${
-                          project.status === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                          project.status === 'en progreso' ? 'bg-blue-100 text-blue-800' :
-                          project.status === 'completado' ? 'bg-green-100 text-green-800' :
-                          project.status === 'retrasado' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
+                        className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border-transparent ${
+                          project.status === 'pendiente' ? 'bg-yellow-500/10 text-yellow-500' :
+                          project.status === 'en progreso' ? 'bg-blue-500/10 text-blue-500' :
+                          project.status === 'completado' ? 'bg-emerald-500/10 text-emerald-500' :
+                          project.status === 'retrasado' ? 'bg-red-500/10 text-red-500' :
+                          'bg-muted text-muted-foreground'
                         }`}
                       >
-                        {getStatusIcon(project.status)}
-                        <span className="ml-1">{getDisplayStatus(project.status)}</span>
+                        {getDisplayStatus(project.status)}
                       </Badge>
                     </div>
-                  ))}
+                  )) : (
+                     <p className="text-sm text-muted-foreground text-center py-4">No tienes proyectos asignados aún.</p>
+                  )}
                 </div>
-                {projects.length > 3 && (
-                  <Button variant="link" className="px-0 mt-3 text-sm text-black dark:text-white font-bold">
-                    <Link href="/projects">Ver todos los proyectos</Link>
+                {projects.length > 4 && (
+                  <Button variant="link" className="px-0 mt-4 text-xs font-bold text-primary hover:text-primary/80">
+                    <Link href="/projects">Ver todos los proyectos →</Link>
                   </Button>
                 )}
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-black rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
-              <CardHeader className="pb-2 bg-gradient-to-r from-[#c9efb3]/20 to-[#7ee8ff]/20">
-                <CardTitle className="text-lg font-black">Usuarios Recientes</CardTitle>
-                <CardDescription>
-                  Usuarios que han interactuado recientemente
+            <Card className="bg-card/60 backdrop-blur-sm border border-border rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300">
+              <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
+                <CardTitle className="text-lg font-bold">Usuarios Recientes</CardTitle>
+                <CardDescription className="text-xs">
+                  Interacciones en la plataforma
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4">
                 <div className="space-y-4">
-                  {users.slice(0, 3).map((user) => (
-                    <div key={user.id} className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8 border border-black">
-                        <AvatarFallback className="text-xs bg-[#e8ffdb] text-black font-bold">
-                          {user.email?.charAt(0)}
+                  {users.length > 0 ? users.slice(0, 4).map((u) => (
+                    <div key={u.id} className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9 border border-border">
+                        <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
+                          {u.email?.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{user.email?.split("@")[0]}</p>
-                        <p className="text-xs text-muted-foreground">{user.role || "Usuario"}</p>
+                        <p className="text-sm font-semibold truncate text-foreground">{u.email?.split("@")[0]}</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-widest">{u.role || "Usuario"}</p>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                     <p className="text-sm text-muted-foreground text-center py-4">Sin usuarios recientes.</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-black rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
-              <CardHeader className="pb-2 bg-gradient-to-r from-[#c9efb3]/20 to-[#7ee8ff]/20">
-                <CardTitle className="text-lg font-black">Documentos Recientes</CardTitle>
-                <CardDescription>
-                  Últimos documentos subidos a la plataforma
+            <Card className="bg-card/60 backdrop-blur-sm border border-border rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300">
+              <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
+                <CardTitle className="text-lg font-bold">Documentos Recientes</CardTitle>
+                <CardDescription className="text-xs">
+                  Últimos archivos subidos
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4">
                 <div className="space-y-4">
-                  {documents.slice(0, 3).map((doc) => (
+                  {documents.length > 0 ? documents.slice(0, 4).map((doc) => (
                     <div key={doc.id} className="flex items-center gap-3">
-                      <div className="rounded-full p-2 bg-[#e8ffdb]">
-                        <FileText className="h-4 w-4 text-black" />
+                      <div className="rounded-lg p-2 bg-muted border border-border">
+                        {getFileIcon(getFileTypeFromName(doc.name))}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{doc.name}</p>
+                        <p className="text-sm font-semibold truncate text-foreground">{doc.name}</p>
                         <p className="text-xs text-muted-foreground">{formatDate(doc.created_at)}</p>
                       </div>
                     </div>
-                  ))}
+                  )): (
+                     <p className="text-sm text-muted-foreground text-center py-4">No hay documentos aún.</p>
+                  )}
                 </div>
-                {documents.length > 3 && (
-                  <Button variant="link" className="px-0 mt-3 text-sm text-black font-bold">
-                    <Link href="/documents">Ver todos los documentos</Link>
+                {documents.length > 4 && (
+                  <Button variant="link" className="px-0 mt-4 text-xs font-bold text-primary hover:text-primary/80">
+                    <Link href="/documents">Ver todos los documentos →</Link>
                   </Button>
                 )}
               </CardContent>
@@ -327,135 +378,54 @@ export default function DashboardPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="guias" className="space-y-4">
-          <Card className="border-2 border-black rounded-xl overflow-hidden">
-            <CardHeader className="text-center bg-gradient-to-r from-[#c9efb3]/20 to-[#7ee8ff]/20">
-              <CardTitle className="font-black">Guías de Uso</CardTitle>
-              <CardDescription className="mx-auto max-w-md">
-                Documentación para ayudarte a utilizar la plataforma
+        <TabsContent value="guias" className="space-y-6">
+          <Card className="bg-card/60 backdrop-blur-sm border border-border rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300">
+            <CardHeader className="text-center bg-muted/20 border-b border-border/50 pb-8 pt-8">
+              <CardTitle className="font-extrabold text-2xl">Guías de Uso</CardTitle>
+              <CardDescription className="mx-auto max-w-md mt-2">
+                Documentación para ayudarte a gestionar proyectos
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
               <Dialog>
                 <DialogTrigger asChild>
-                  <div className="rounded-lg border-2 border-black p-4 hover:border-[#7fff00] transition-colors cursor-pointer bg-white dark:bg-black dark:text-white hover:shadow-md">
-                    <h3 className="font-medium text-lg mb-1 flex items-center gap-2 dark:text-white">
-                      <div className="rounded-full p-2 bg-[#e8ffdb]">
-                        <BookOpen className="h-4 w-4 text-black" />
+                  <div className="rounded-2xl border border-border p-5 hover:border-primary/50 transition-colors cursor-pointer bg-card/40 hover:bg-muted/30 group">
+                    <h3 className="font-bold text-lg mb-2 flex items-center gap-3 text-foreground group-hover:text-primary">
+                      <div className="rounded-xl p-2.5 bg-muted">
+                        <BookOpen className="h-5 w-5 text-primary" />
                       </div>
                       Gestión de Proyectos
                     </h3>
-                    <p className="text-sm text-muted-foreground dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground">
                       Aprende a crear, editar y gestionar proyectos en la plataforma.
                     </p>
-                    <Button variant="link" className="px-0 mt-2 text-sm text-black dark:text-white font-bold">Ver guía</Button>
                   </div>
                 </DialogTrigger>
-                <DialogContent className="border-2 border-black rounded-xl bg-white">
+                <DialogContent className="border border-border rounded-3xl bg-card/95 backdrop-blur-xl text-foreground font-sans">
                   <DialogHeader>
-                    <DialogTitle className="font-black">Guía de Gestión de Proyectos</DialogTitle>
+                    <DialogTitle className="font-bold text-xl">Guía de Gestión de Proyectos</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <div className="space-y-5 mt-4">
                     <div className="space-y-2">
-                      <h4 className="font-medium">Product Manager</h4>
-                      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-                        <li>Crear nuevos proyectos</li>
-                        <li>Editar proyectos existentes</li>
-                        <li>Eliminar proyectos</li>
-                        <li>Asignar diseñadores</li>
-                        <li>Gestionar todos los proyectos</li>
+                      <h4 className="font-bold text-primary">Project Manager</h4>
+                      <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                        <li>Crear y editar cualquier proyecto</li>
+                        <li>Asignar diseñadores libremente</li>
+                        <li>Eliminar proyectos de forma permanente</li>
+                        <li>Visión global y métricas totales</li>
                       </ul>
                     </div>
                     <div className="space-y-2">
-                      <h4 className="font-medium">Cliente</h4>
-                      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-                        <li>Ver proyectos creados</li>
-                        <li>Crear nuevos proyectos</li>
-                        <li>Asignar diseñadores a sus proyectos</li>
+                      <h4 className="font-bold text-primary">Cliente</h4>
+                      <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                        <li>Crear solicitudes de diseño propias</li>
+                        <li>Ver progreso de sus proyectos</li>
+                        <li>Sugerir diseñadores desde la creación</li>
                       </ul>
                     </div>
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Diseñador</h4>
-                      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-                        <li>Ver proyectos asignados</li>
-                        <li>Actualizar estado de proyectos</li>
-                        <li>Subir archivos a proyectos</li>
-                      </ul>
-                    </div>
-                    <Button asChild className="w-full bg-[#7fff00] hover:bg-[#90ff20] text-black font-bold border-2 border-b-4 border-black rounded-full">
+                    <Button asChild className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl mt-4">
                       <Link href="/projects">Ir a Proyectos</Link>
                     </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              
-              <Dialog>
-                <DialogTrigger asChild>
-                  <div className="rounded-lg border-2 border-black p-4 hover:border-[#7fff00] transition-colors cursor-pointer bg-white dark:bg-black dark:text-white hover:shadow-md">
-                    <h3 className="font-medium text-lg mb-1 flex items-center gap-2 dark:text-white">
-                      <div className="rounded-full p-2 bg-[#e8ffdb]">
-                        <Upload className="h-4 w-4 text-black" />
-                      </div>
-                      Subida de Documentos
-                    </h3>
-                    <p className="text-sm text-muted-foreground dark:text-gray-400">
-                      Tutorial para subir y organizar documentos en el sistema.
-                    </p>
-                    <Button variant="link" className="px-0 mt-2 text-sm text-black dark:text-white font-bold">Ver guía</Button>
-                  </div>
-                </DialogTrigger>
-                <DialogContent className="border-2 border-black rounded-xl bg-white">
-                  <DialogHeader>
-                    <DialogTitle className="font-black">Guía de Subida de Documentos</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      Encuentra todos los documentos que se han subido en cada proyecto con su formato adecuado.
-                      Próximamente se podrán descargar correctamente.
-                    </p>
-                    <Button asChild className="w-full bg-[#7fff00] hover:bg-[#90ff20] text-black font-bold border-2 border-b-4 border-black rounded-full">
-                      <Link href="/documents">Ir a Documentos</Link>
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              
-              <Dialog>
-                <DialogTrigger asChild>
-                  <div className="rounded-lg border-2 border-black p-4 hover:border-[#7fff00] transition-colors cursor-pointer bg-white dark:bg-black dark:text-white hover:shadow-md">
-                    <h3 className="font-medium text-lg mb-1 flex items-center gap-2 dark:text-white">
-                      <div className="rounded-full p-2 bg-[#e8ffdb]">
-                        <Users className="h-4 w-4 text-black" />
-                      </div>
-                      Gestión de Usuarios
-                    </h3>
-                    <p className="text-sm text-muted-foreground dark:text-gray-400">
-                      Aprende a administrar usuarios y permisos en la plataforma.
-                    </p>
-                    <Button variant="link" className="px-0 mt-2 text-sm text-black dark:text-white font-bold">Ver guía</Button>
-                  </div>
-                </DialogTrigger>
-                <DialogContent className="border-2 border-black rounded-xl bg-white">
-                  <DialogHeader>
-                    <DialogTitle className="font-black">Guía de Gestión de Usuarios</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Tipos de Usuarios</h4>
-                      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-                        <li>Product Manager: Gestión total de proyectos</li>
-                        <li>Cliente: Creación y visualización de proyectos propios</li>
-                        <li>Diseñador: Trabajo en proyectos asignados</li>
-                      </ul>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Permisos</h4>
-                      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-                        <li>Product Manager: Acceso total</li>
-                        <li>Cliente: Acceso limitado a sus proyectos</li>
-                        <li>Diseñador: Acceso a proyectos asignados</li>
-                      </ul>
-                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -463,66 +433,33 @@ export default function DashboardPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="tareas" className="space-y-4">
-          <Card className="border-2 border-black rounded-xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-[#c9efb3]/20 to-[#7ee8ff]/20">
-              <CardTitle className="font-black">Tareas Pendientes</CardTitle>
+        <TabsContent value="tareas" className="space-y-6">
+          <Card className="bg-card/60 backdrop-blur-sm border border-border rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300">
+            <CardHeader className="bg-muted/20 border-b border-border/50">
+              <CardTitle className="font-extrabold text-xl">Tareas Pendientes del Sistema</CardTitle>
               <CardDescription>
-                Lista de tareas pendientes para completar el desarrollo
+                Lista de optimizaciones pendientes
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="space-y-4">
-                <div className="border-2 border-black rounded-lg p-4 bg-[#e8ffdb]">
-                  <h3 className="font-medium flex items-center gap-2 text-black">
-                    <CheckCircle className="h-5 w-5" />
-                    Gestión de Estados de Proyectos
+                <div className="border border-border rounded-2xl p-5 bg-card hover:border-primary/30 transition-colors">
+                  <h3 className="font-bold flex items-center gap-2 text-foreground">
+                    <Settings className="h-5 w-5 text-primary" />
+                    Gestión Avanzada de Usuarios
                   </h3>
-                  <p className="text-sm mt-1 text-black">
-                    Implementar lógica completa del estado de cada proyecto, incluyendo notificaciones 
-                    automáticas cuando un proyecto cambia de estado.
+                  <p className="text-sm mt-2 text-muted-foreground">
+                    Ampliar el panel de configuraciones para delegar edición de credenciales
                   </p>
                 </div>
                 
-                <div className="border-2 border-black rounded-lg p-4 bg-[#e8ffdb]">
-                  <h3 className="font-medium flex items-center gap-2 text-black">
-                    <Settings className="h-5 w-5" />
-                    Gestión de Usuarios
+                <div className="border border-border rounded-2xl p-5 bg-card hover:border-primary/30 transition-colors">
+                  <h3 className="font-bold flex items-center gap-2 text-foreground">
+                    <Bell className="h-5 w-5 text-primary" />
+                    Centralización de Notificaciones
                   </h3>
-                  <p className="text-sm mt-1 text-black">
-                    Mejorar la lógica en configuración para gestionar la edición de usuarios y sus permisos.
-                  </p>
-                </div>
-                
-                <div className="border-2 border-black rounded-lg p-4 bg-[#e8ffdb]">
-                  <h3 className="font-medium flex items-center gap-2 text-black">
-                    <BookOpen className="h-5 w-5" />
-                    Internacionalización
-                  </h3>
-                  <p className="text-sm mt-1 text-black">
-                    Implementar soporte completo para idioma inglés en toda la aplicación.
-                  </p>
-                </div>
-                
-                <div className="border-2 border-black rounded-lg p-4 bg-[#e8ffdb]">
-                  <h3 className="font-medium flex items-center gap-2 text-black">
-                    <Bell className="h-5 w-5" />
-                    Sistema de Notificaciones
-                  </h3>
-                  <p className="text-sm mt-1 text-black">
-                    Mejorar el funcionamiento de notificaciones para alertar sobre cambios en proyectos y 
-                    asignaciones.
-                  </p>
-                </div>
-                
-                <div className="border-2 border-black rounded-lg p-4 bg-[#e8ffdb]">
-                  <h3 className="font-medium flex items-center gap-2 text-black">
-                    <Bell className="h-5 w-5" />
-                    Ajustes de Notificaciones
-                  </h3>
-                  <p className="text-sm mt-1 text-black">
-                    Implementar configuración de notificaciones para diseñadores cuando se actualizan o 
-                    eliminan proyectos asignados. Crear panel de gestión de notificaciones completo.
+                  <p className="text-sm mt-2 text-muted-foreground">
+                    Conectar los triggers de Supabase con el drop-down de la navbar.
                   </p>
                 </div>
               </div>
@@ -530,8 +467,6 @@ export default function DashboardPage() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      
     </div>
   );
 }
@@ -543,34 +478,17 @@ function getStatusColor(status: string) {
     case "en progreso":
       return "bg-blue-500";
     case "completado":
-      return "bg-green-500";
+      return "bg-emerald-500";
     case "retrasado":
       return "bg-red-500";
     default:
-      return "bg-gray-500";
-  }
-}
-
-function getStatusIcon(status: string) {
-  switch (status?.toLowerCase()) {
-    case "pendiente":
-      return <Clock className="h-4 w-4 text-yellow-500" />;
-    case "en progreso":
-      return <RefreshCw className="h-4 w-4 text-blue-500" />;
-    case "completado":
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
-    case "retrasado":
-      return <AlertCircle className="h-4 w-4 text-red-500" />;
-    default:
-      return null;
+      return "bg-zinc-500";
   }
 }
 
 function getFileTypeFromName(fileName: string): string {
   if (!fileName) return 'file';
-  
   const extension = fileName.split('.').pop()?.toLowerCase() || '';
-  
   const typeMap: Record<string, string> = {
     'pdf': 'pdf',
     'doc': 'word',
@@ -581,7 +499,6 @@ function getFileTypeFromName(fileName: string): string {
     'gif': 'image',
     'svg': 'image'
   };
-  
   return typeMap[extension] || 'file';
 }
 
@@ -590,41 +507,28 @@ function getFileIcon(type: string) {
     case 'pdf':
       return <FileText className="h-4 w-4 text-red-500" />;
     case 'image':
-    case 'jpg':
-    case 'jpeg':
-    case 'png':
-    case 'gif':
       return <FileImage className="h-4 w-4 text-purple-500" />;
     case 'word':
-    case 'doc':
-    case 'docx':
       return <FileText className="h-4 w-4 text-blue-500" />;
     default:
-      return <File className="h-4 w-4 text-gray-500" />;
+      return <File className="h-4 w-4 text-zinc-500" />;
   }
 }
 
 function getDisplayStatus(status: string) {
   switch (status) {
-    case "pendiente":
-      return "Pendiente";
-    case "en progreso":
-      return "En Progreso";
-    case "completado":
-      return "Completado";
-    case "retrasado":
-      return "Retrasado";
-    default:
-      return "Sin estado";
+    case "pendiente": return "Pendiente";
+    case "en progreso": return "En Progreso";
+    case "completado": return "Completado";
+    case "retrasado": return "Retrasado";
+    default: return "Desconocido";
   }
 }
 
 function formatDate(dateString: string) {
-  if (!dateString) return "Fecha no disponible";
+  if (!dateString) return "No disponible";
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('es-ES', { 
-    day: '2-digit', 
-    month: '2-digit', 
-    year: 'numeric' 
+    day: '2-digit', month: '2-digit', year: 'numeric' 
   }).format(date);
 }

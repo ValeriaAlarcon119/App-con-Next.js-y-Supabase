@@ -31,10 +31,11 @@ import {
   Smartphone, 
   Mail, 
   Github, 
-  RefreshCw,
   CheckCircle,
   Save,
-  ExternalLink
+  ExternalLink,
+  Settings,
+  RefreshCw
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
@@ -131,18 +132,22 @@ export default function SettingsPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6 font-sans">
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#7ee8ff] to-[#94e0ff] p-4 rounded-xl shadow-sm border-2 border-black">
-        <div className="relative flex flex-col items-center justify-between gap-3 text-center md:flex-row md:text-left md:items-center">
-          <div className="mx-auto md:mx-0">
-            <h1 className="text-3xl font-black text-black">
+      <div className="page-header-card">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/10 blur-[100px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2" />
+        <div className="relative flex flex-col items-start justify-between gap-6 md:flex-row md:items-center z-10">
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground flex items-center gap-3 transition-colors">
+              <Settings className="h-8 w-8 text-primary" />
               Configuración
             </h1>
             
-            <span className="inline-block bg-[#e8ffdb] text-black py-0.5 px-2 rounded-full text-xs mt-1 font-medium border border-black">
-              {user?.role === 'client' && "Cliente"}
-              {user?.role === 'designer' && "Diseñador"}
-              {user?.role === 'project_manager' && "Project Manager"}
-            </span>
+            <div className="flex items-center gap-3 mt-3">
+              <span className="inline-flex items-center gap-1.5 bg-[#ccff00] text-black border border-black dark:border-transparent py-1 px-3 rounded-full text-xs font-bold shadow-sm transition-colors">
+                {user?.role === 'client' && "Cliente"}
+                {user?.role === 'designer' && "Diseñador"}
+                {user?.role === 'project_manager' && "Project Manager"}
+              </span>
+            </div>
           </div>
         </div>
       </div>
