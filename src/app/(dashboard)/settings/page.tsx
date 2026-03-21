@@ -142,7 +142,7 @@ export default function SettingsPage() {
             </h1>
             
             <div className="flex items-center gap-3 mt-3">
-              <span className="inline-flex items-center gap-1.5 bg-[#ccff00] text-black border border-black dark:border-transparent py-1 px-3 rounded-full text-xs font-bold shadow-sm transition-colors">
+              <span className="inline-flex items-center gap-1.5 bg-primary/20 text-black border border-black dark:border-transparent py-1 px-3 rounded-full text-xs font-bold shadow-sm transition-colors">
                 {user?.role === 'client' && "Cliente"}
                 {user?.role === 'designer' && "Diseñador"}
                 {user?.role === 'project_manager' && "Project Manager"}
@@ -267,7 +267,7 @@ export default function SettingsPage() {
                 <Button 
                   onClick={handleSaveProfile} 
                   disabled={isLoading}
-                  className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
+                  className="bg-primary hover:bg-primary/90 text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
                 >
                   {isLoading ? (
                     <>
@@ -334,7 +334,7 @@ export default function SettingsPage() {
                 <Button 
                   onClick={handleSaveProfile} 
                   disabled={isLoading}
-                  className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
+                  className="bg-primary hover:bg-primary/90 text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black"
                 >
                   {isLoading ? (
                     <>

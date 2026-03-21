@@ -3,29 +3,28 @@ import Image from 'next/image';
 
 const ClientLogos = () => {
   const logos = [
-    { name: 'Cliente 1', src: '/images/clients/client1.png' },
-    { name: 'Cliente 2', src: '/images/clients/client2.png' },
-    { name: 'Cliente 3', src: '/images/clients/client3.png' },
-    { name: 'Cliente 4', src: '/images/clients/client4.png' },
-    { name: 'Cliente 5', src: '/images/clients/client5.png' },
-    { name: 'Cliente 6', src: '/images/clients/client6.png' },
+    { name: 'Tabuga' },
+    { name: 'HubSpot' },
+    { name: 'CESA' },
+    { name: 'Selia' },
+    { name: 'Rockstart' },
+    { name: 'LatamFintech' },
   ];
 
   return (
-    <div className="w-full overflow-hidden">
-      <div className="flex justify-center items-center space-x-8 md:space-x-12 py-4 animate-marquee">
-        {logos.map((logo, index) => (
-          <div key={index} className="flex-shrink-0 grayscale hover:grayscale-0 transition-all">
-            <Image 
-              src={logo.src} 
-              alt={logo.name} 
-              width={120} 
-              height={50}
-              className="h-10 w-auto object-contain" 
-            />
+    <div className="w-full overflow-hidden relative group">
+      <div className="flex animate-marquee-slower whitespace-nowrap">
+        {[...logos, ...logos, ...logos].map((logo, index) => (
+          <div key={index} className="flex-shrink-0 mx-8 md:mx-12">
+            <span className="text-xl md:text-3xl font-black text-foreground/40 dark:text-foreground/30 hover:text-primary transition-all cursor-default tracking-tighter uppercase italic">
+              {logo.name}
+            </span>
           </div>
         ))}
       </div>
+      {/* Opacity mask for smooth edges */}
+      <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-background to-transparent z-10"></div>
+      <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-background to-transparent z-10"></div>
     </div>
   );
 };

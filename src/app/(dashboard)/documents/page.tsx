@@ -474,7 +474,7 @@ export default function DocumentsPage() {
   if (loading) {
     return (
       <div className="container mx-auto py-8 px-4 min-h-screen flex flex-col items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7fff00]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         <p className="mt-4 text-black">Cargando documentos...</p>
       </div>
     );
@@ -492,7 +492,7 @@ export default function DocumentsPage() {
             </h1>
             
             <div className="flex items-center gap-3 mt-3">
-              <span className="inline-flex items-center gap-1.5 bg-[#ccff00] text-black border border-black dark:border-transparent py-1 px-3 rounded-full text-xs font-bold shadow-sm transition-colors">
+              <span className="inline-flex items-center gap-1.5 bg-primary/20 text-black border border-black dark:border-transparent py-1 px-3 rounded-full text-xs font-bold shadow-sm transition-colors">
                 {userRole === 'client' && "Cliente"}
                 {userRole === 'designer' && "Diseñador"}
                 {userRole === 'project_manager' && "Gerente de Proyecto"}
@@ -660,7 +660,7 @@ export default function DocumentsPage() {
             <div className="mt-4 flex justify-end gap-2">
               <Button 
                 onClick={() => handleDownload(selectedDoc)} 
-                className="bg-[#7fff00] hover:bg-[#90ff20] text-black"
+                className="bg-primary hover:bg-primary/90 text-black"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Descargar

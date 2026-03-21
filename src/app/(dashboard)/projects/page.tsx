@@ -1708,7 +1708,7 @@ function getFileIcon(type: string) {
                 <Badge className="bg-muted text-muted-foreground hover:bg-muted/80 border-none px-3 py-1 transition-colors">
                   {projects.length} {projects.length === 1 ? 'proyecto' : 'proyectos'} totales
                 </Badge>
-                <span className="inline-flex items-center gap-1.5 bg-[#ccff00] text-black py-1 px-3 rounded-full text-xs font-bold shadow-sm transition-colors border border-black dark:border-transparent">
+                <span className="inline-flex items-center gap-1.5 bg-primary/20 text-black py-1 px-3 rounded-full text-xs font-bold shadow-sm transition-colors border border-black dark:border-transparent">
                   <ShieldCheck className="h-3 w-3" />
                   {isProjectManager ? "Gerente de Proyecto" : isClient ? "Cliente VIP" : "Diseñador"}
                 </span>
@@ -1731,7 +1731,7 @@ function getFileIcon(type: string) {
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-                  <Briefcase className="h-5 w-5 text-green-600 dark:text-[#ccff00]" />
+                  <Briefcase className="h-5 w-5 text-primary" />
                   Crear nuevo proyecto
                 </DialogTitle>
                 <DialogDescription className="text-zinc-500 dark:text-zinc-400">
@@ -2198,7 +2198,7 @@ function getFileIcon(type: string) {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
-                  <Briefcase className="h-6 w-6 text-green-600 dark:text-[#ccff00]" />
+                  <Briefcase className="h-6 w-6 text-primary" />
                   {viewingProject.title}
                 </DialogTitle>
                 <div className="flex items-center gap-2 mt-2">
@@ -2295,7 +2295,7 @@ function getFileIcon(type: string) {
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-              <Edit className="h-5 w-5 text-green-600 dark:text-[#ccff00]" />
+              <Edit className="h-5 w-5 text-primary" />
               Editar proyecto
               </DialogTitle>
               <DialogDescription className="text-zinc-500 dark:text-zinc-400">

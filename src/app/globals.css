@@ -47,38 +47,38 @@
 @layer base {
   :root {
     --background: 165 100% 98%;
-    --foreground: 222 47% 11%;
+    --foreground: 0 0% 0%; /* Pure Black text for readability */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 0 0% 0%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 142.1 76.2% 36.3%; /* Verde más fuerte y legible en fondo blanco */
-    --primary-foreground: 355.7 100% 97.3%; /* Texto blanco en botones primary */
-    --secondary: 178 75% 55%;
-    --secondary-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 142 71% 75%; /* More defined Pastel Green for better visibility */
+    --primary-foreground: 0 0% 0%; /* Pure Black for buttons */
+    --secondary: 178 75% 85%; /* Pastel Turquoise */
+    --secondary-foreground: 0 0% 0%;
     --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 178 75% 55%;
-    --accent-foreground: 222 47% 11%;
+    --muted-foreground: 215 16% 40%;
+    --accent: 178 75% 85%;
+    --accent-foreground: 0 0% 0%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 100 85% 67%;
+    --ring: 142 71% 45%;
     --radius: 0.75rem;
   }
 
   .dark {
     --background: 222 47% 5%;
-    --foreground: 210 40% 98%;
+    --foreground: 0 0% 100%;
     --card: 222 47% 7%;
-    --card-foreground: 210 40% 98%;
+    --card-foreground: 0 0% 100%;
     --popover: 222 47% 7%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 100 85% 67%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 178 75% 55%;
-    --secondary-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 142 71% 45%; /* High-contrast emerald for dark mode */
+    --primary-foreground: 0 0% 0%; /* Pure black for text on neon/bright backgrounds */
+    --secondary: 178 75% 45%;
+    --secondary-foreground: 0 0% 0%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
     --accent: 178 75% 55%;
@@ -87,7 +87,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217 33% 17%;
     --input: 217 33% 17%;
-    --ring: 100 85% 67%;
+    --ring: 142 71% 45%;
   }
 }
 
@@ -283,6 +283,10 @@
     animation: marquee-reverse 30s linear infinite;
   }
   
+  .animate-marquee-slower {
+    animation: marquee 40s linear infinite;
+  }
+  
   /* Banner Header Global para páginas (Dashboard, Projects, Documents, etc) */
   .page-header-card {
     @apply relative overflow-hidden p-6 md:p-8 rounded-3xl transition-all duration-300;
@@ -317,7 +321,8 @@
   }
   
   .dark .card-gradient-border::after {
-    /* Oscuro: Neón intenso */
-    background: linear-gradient(to right, #059669, #be185d); 
+    /* Oscuro: Neón intenso con resplandor externo real */
+    background: linear-gradient(to right, #10b981, #f472b6); 
+    filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.4));
   }
 }

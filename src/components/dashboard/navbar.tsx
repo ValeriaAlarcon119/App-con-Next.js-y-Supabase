@@ -263,6 +263,8 @@ export function Navbar() {
     { name: 'Proyectos', href: '/projects', icon: <Briefcase className="h-5 w-5" /> },
     { name: 'Documentos', href: '/documents', icon: <FileText className="h-5 w-5" /> },
     { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
+    { name: 'Facturación', href: '/billing', icon: <Briefcase className="h-5 w-5" /> },
+    { name: 'Soporte', href: '/support', icon: <Settings className="h-5 w-5" /> },
   ]
 
   function getRoleDisplay(role?: string) {
@@ -300,8 +302,8 @@ export function Navbar() {
                   className={cn(
                     "px-4 py-2.5 rounded-full inline-flex items-center gap-2 transition-colors font-medium group no-underline",
                     pathname === item.href
-                      ? "bg-[#7fff00]/20 text-black dark:text-white"
-                      : "text-black dark:text-white hover:bg-[#7fff00]/20"
+                      ? "bg-primary/20 text-black dark:text-white"
+                      : "text-black dark:text-white hover:bg-primary/20"
                   )}
                 >
                   <span className={cn(
@@ -327,7 +329,7 @@ export function Navbar() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="rounded-full h-8 w-8 bg-[#7fff00] hover:bg-[#7fff00] dark:bg-[#7fff00] dark:hover:bg-[#7fff00] text-black dark:text-black border border-black flex items-center justify-center"
+                className="rounded-full h-8 w-8 bg-primary hover:bg-primary/90 text-black border border-black flex items-center justify-center"
                 aria-label="Mostrar notificaciones"
               >
                 <Bell className="h-4 w-4" />
@@ -428,7 +430,7 @@ export function Navbar() {
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="rounded-full h-8 w-8 bg-[#7fff00] hover:bg-[#7fff00] dark:bg-[#7fff00] dark:hover:bg-[#7fff00] text-black dark:text-black border border-black flex items-center justify-center"
+            className="rounded-full h-8 w-8 bg-primary hover:bg-primary/90 text-black border border-black flex items-center justify-center"
             aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -443,7 +445,7 @@ export function Navbar() {
                 >
                   <Avatar className="h-8 w-8 border border-black">
                     <AvatarImage src="/avatar.png" alt="Avatar" />
-                    <AvatarFallback className="text-sm bg-[#7fff00] text-black uppercase">
+                    <AvatarFallback className="text-sm bg-primary text-black uppercase">
                       {user.user_metadata?.name
                         ? user.user_metadata.name
                             .split(" ")

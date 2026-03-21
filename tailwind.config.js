@@ -55,9 +55,9 @@ module.exports = {
         },
         // Colores específicos de Grayola
         grayola: {
-          lime: "#b4f264",
-          turquoise: "#36e2c2",
-          teal: "#12a594",     // Color verde azulado oscuro para hover
+          lime: "#dcfce7",     // Verde pastel suave
+          turquoise: "#ccfbf1", // Turquesa pastel
+          teal: "#065f46",      // Teal oscuro para texto y hover contrastado
           darkblue: "#010d16",
           lightblue: "#b6f8ff",
         },

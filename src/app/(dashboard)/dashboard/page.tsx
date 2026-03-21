@@ -15,7 +15,8 @@ import {
   FileImage,
   File,
   Briefcase,
-  FileText
+  FileText,
+  Calendar
 } from "lucide-react"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -177,7 +178,7 @@ export default function DashboardPage() {
               Panel de Estadísticas
             </h1>
             <div className="flex items-center gap-3 mt-3">
-              <span className="inline-flex items-center gap-1.5 bg-[#ccff00] text-black border border-black dark:border-transparent py-1 px-3 rounded-full text-xs font-bold shadow-sm transition-colors">
+              <span className="inline-flex items-center gap-1.5 bg-primary/20 text-black border border-black dark:border-transparent py-1 px-3 rounded-full text-xs font-bold shadow-sm transition-colors">
                 <CheckCircle className="h-3 w-3" />
                 {user?.role === 'client' ? "Cliente VIP" : user?.role === 'designer' ? "Diseñador" : "Gerente de Proyecto"}
               </span>
@@ -191,7 +192,7 @@ export default function DashboardPage() {
         <Card className="transition-all hover:shadow-lg bg-card/60 backdrop-blur-sm border border-border/50 dark:border-border rounded-3xl overflow-hidden hover:-translate-y-1 hover:border-primary/50 dark:hover:border-primary/50 group">
           <CardContent className="p-6 flex gap-4 items-center h-full">
             <div className="rounded-2xl p-4 bg-muted border border-border group-hover:bg-primary/10 transition-colors">
-              <Files className="h-7 w-7 text-primary" />
+              <Files className="h-7 w-7 text-emerald-600 dark:text-primary" />
             </div>
             <div>
               <CardTitle className="text-xl mb-1 text-foreground">Documentos</CardTitle>
@@ -205,7 +206,7 @@ export default function DashboardPage() {
         <Card className="transition-all hover:shadow-lg bg-card/60 backdrop-blur-sm border border-border/50 dark:border-border rounded-3xl overflow-hidden hover:-translate-y-1 hover:border-primary/50 dark:hover:border-primary/50 group">
           <CardContent className="p-6 flex gap-4 items-center h-full">
             <div className="rounded-2xl p-4 bg-muted border border-border group-hover:bg-primary/10 transition-colors">
-              <Briefcase className="h-7 w-7 text-primary" />
+              <Briefcase className="h-7 w-7 text-emerald-600 dark:text-primary" />
             </div>
             <div>
               <CardTitle className="text-xl mb-1 text-foreground">Proyectos</CardTitle>
@@ -221,7 +222,7 @@ export default function DashboardPage() {
         <Card className="transition-all hover:shadow-lg bg-card/60 backdrop-blur-sm border border-border/50 dark:border-border rounded-3xl overflow-hidden hover:-translate-y-1 hover:border-primary/50 dark:hover:border-primary/50 group">
           <CardContent className="p-6 flex gap-4 items-center h-full">
             <div className="rounded-2xl p-4 bg-muted border border-border group-hover:bg-primary/10 transition-colors">
-              <Users className="h-7 w-7 text-primary" />
+              <Users className="h-7 w-7 text-emerald-600 dark:text-primary" />
             </div>
             <div>
               <CardTitle className="text-xl mb-1 text-foreground">
@@ -239,7 +240,7 @@ export default function DashboardPage() {
         <Card className="transition-all hover:shadow-lg bg-card/60 backdrop-blur-sm border border-border/50 dark:border-border rounded-3xl overflow-hidden hover:-translate-y-1 hover:border-primary/50 dark:hover:border-primary/50 group">
           <CardContent className="p-6 flex gap-4 items-center h-full">
             <div className="rounded-2xl p-4 bg-muted border border-border group-hover:bg-primary/10 transition-colors">
-              <BarChart className="h-7 w-7 text-primary" />
+              <BarChart className="h-7 w-7 text-emerald-600 dark:text-primary" />
             </div>
             <div>
               <CardTitle className="text-xl mb-1 text-foreground">Rendimiento</CardTitle>
@@ -271,7 +272,20 @@ export default function DashboardPage() {
             >
               Tareas
             </TabsTrigger>
+            <TabsTrigger 
+              value="equipo" 
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground transition-all font-medium"
+            >
+              Mi Equipo
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sesiones" 
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground transition-all font-medium"
+            >
+              Sesiones
+            </TabsTrigger>
           </TabsList>
+
         </div>
 
         <TabsContent value="resumen" className="space-y-6">
@@ -466,6 +480,61 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="equipo" className="space-y-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { name: "Juan Pérez", role: "Project Manager", status: "Disponible" },
+              { name: "María García", role: "DIseñadora UI", status: "En reunión" },
+              { name: "Luis Torres", role: "Illustrador", status: "Disponible" },
+              { name: "Elena R.", role: "Motion Designer", status: "Ocupada" }
+            ].map((member, i) => (
+              <Card key={i} className="bg-card/60 backdrop-blur-sm border border-border rounded-3xl overflow-hidden hover:shadow-xl transition-all">
+                <CardContent className="p-6 text-center">
+                  <Avatar className="h-16 w-16 mx-auto mb-4 border-2 border-primary">
+                    <AvatarFallback className="bg-primary/20 text-primary font-black uppercase">{member.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <h3 className="font-black text-foreground">{member.name}</h3>
+                  <p className="text-xs text-muted-foreground mb-4">{member.role}</p>
+                  <Badge variant={member.status === 'Disponible' ? 'secondary' : 'outline'} className="text-[10px]">
+                    {member.status}
+                  </Badge>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="sesiones" className="space-y-6">
+          <Card className="bg-card/60 backdrop-blur-sm border border-border rounded-3xl overflow-hidden">
+            <CardHeader>
+              <CardTitle className="text-2xl font-black">Próximas Sesiones</CardTitle>
+              <CardDescription>Agenda y gestiona tus reuniones creativas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border border-border rounded-2xl bg-muted/20">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-primary/20 p-3 rounded-xl border border-primary/30">
+                      <Calendar className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-foreground lowercase">Revisión de Marca - Grayola</p>
+                      <p className="text-xs text-muted-foreground">Lunes, 25 de Marzo • 10:00 AM</p>
+                    </div>
+                  </div>
+                  <Button size="sm" className="rounded-xl font-bold bg-primary text-black">Unirse</Button>
+                </div>
+
+                <div className="text-center py-12 border-2 border-dashed border-border rounded-3xl">
+                  <p className="text-muted-foreground mb-4">¿Necesitas una sesión extraordinaria?</p>
+                  <Button className="agendar-prueba-button px-8 py-4">Agenda una sesión</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
     </div>
   );

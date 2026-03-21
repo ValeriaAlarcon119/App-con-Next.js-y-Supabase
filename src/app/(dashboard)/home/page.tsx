@@ -1,886 +1,387 @@
 'use client'
-
-import { motion } from 'framer-motion'
-import { useRouter } from 'next/navigation'
-import { ArrowRight, Check, ChevronRight, ChevronUp, ExternalLink, Github, Instagram, Laptop, Linkedin, Mail, Palette, Phone, Share2, FileText, Briefcase, Zap, Shield, Sparkles } from "lucide-react"
-import { Button } from '@/components/ui/button'
+import React from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
+import { motion, useScroll, useTransform } from 'framer-motion'
+import { 
+  ArrowRight, Sparkles, Zap, Shield, Laptop, ChevronRight, FileText, Briefcase, 
+  Users, Check, Palette, Share2, Instagram, Linkedin, Github, PieChart, Bell, Layout 
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import ClientLogos from "@/components/ClientLogos"
-import { Suspense } from "react"
-import { cn } from "@/lib/utils"
+import { ModeToggle } from "@/components/ui/mode-toggle"
 
 export default function HomePage() {
-  const router = useRouter()
+  const { scrollYProgress } = useScroll();
+  const yRange = useTransform(scrollYProgress, [0, 1], [0, -100]);
 
   return (
-    <div className="relative w-full overflow-x-hidden font-sans bg-gradient-to-br from-emerald-50 via-white to-pink-50 min-h-screen">
-      <div className="w-full">
-
-        <motion.div
-          className="w-full min-h-screen bg-transparent"
-          initial={{ opacity: 0, y: -80 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          viewport={{ once: false }}
-        >
-          <div className="flex flex-col min-h-screen w-full max-w-6xl mx-auto px-4">
-            <div className="absolute left-1/2 -translate-x-1/2 top-[-5vh] w-[350px] h-[350px] z-10 opacity-100 flex items-center justify-center">
-              <img
-                src="/images/grayola-bird-logo.svg"
-                alt="Grayola Bird"
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div className="flex-grow flex items-center justify-center">
-              <div className="relative z-20 text-center mt-[20vh] max-w-6xl mx-auto">
-                <h1 className="mb-8 text-4xl sm:text-5xl md:text-[65px] lg:text-[72px] tracking-tight font-black text-black mx-auto leading-[1.1] max-w-[1500px]">
-                  Suscripción de diseño para<br />
-                  equipos que necesitan <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-pink-400 animate-gradient">
-                    velocidad y calidad
-                  </span>
-                </h1>
-                <p className="text-base md:text-lg text-black/70 mb-8 max-w-2xl mx-auto leading-relaxed font-medium">
-                  Escala y delega todas la operaciones de diseño de forma rápida y sencilla, sin la preocupación de contratar o administrar recursos adicionales.
-                </p>
-                <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mb-10">
-                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-emerald-200">
-                    Diseño gráfico
-                  </span>
-                  <span className="bg-pink-100 text-pink-800 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-pink-200">
-                    Edición de video
-                  </span>
-                </div>
-                <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
-                  <button className="agendar-prueba-button px-10 py-5 text-sm">
-                    Agendar prueba
-                  </button>
-                  <div className="flex flex-col items-start text-left">
-                    <p className="text-black/60 font-medium text-[10px] uppercase tracking-widest">
-                      Agenda una reunión
-                    </p>
-                    <p className="text-black font-black text-sm">
-                      37 días en tu primer mes.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-emerald-400 selection:text-black overflow-x-hidden selection:bg-primary/30">
+      {/* Hero Section */}
+      <motion.section 
+        className="relative pt-12 pb-12 md:pt-20 md:pb-20 overflow-hidden"
+        initial={{ opacity: 0, y: -80 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        viewport={{ once: true }}
+      >
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-400/10 blur-[150px] rounded-full pointer-events-none" />
+        
+        <div className="container mx-auto px-6 relative z-10 text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 px-4 py-2 rounded-full mb-8"
+          >
+            <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">GrayolaOS is now available 24/7</span>
+          </motion.div>
+          
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[1.1] mb-8 text-foreground">
+            Diseño. Organización.<br />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#EC4899]">
+              Evolución Digital.
+            </span>
+          </h1>
+          
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
+            Centraliza tu marca, conecta la producción y preserva la memoria creativa para moverte rápido sin perder la consistencia.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
+            <Button className="agendar-prueba-button px-12 py-8 text-lg group">
+              Explorar GrayolaOS <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Button>
+            <Button variant="ghost" className="rounded-full px-8 py-8 text-lg font-black hover:bg-emerald-50 dark:hover:bg-emerald-900/10">
+              Ver Portafolio
+            </Button>
           </div>
-        </motion.div>
+        </div>
+      </motion.section>
 
-        <div className="py-16 bg-transparent overflow-hidden">
-          <div className="max-w-6xl mx-auto px-4">
-            <h3 className="text-center text-black text-sm font-medium uppercase tracking-[0.2em] mb-16">
-              EMPRESAS DE TODO EL MUNDO ESCALAN SUS OPERACIONES DE DISEÑO CON GRAYOLA
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-6 items-center animate-marquee-left">
-              <div className="text-lg font-black text-black border-2 border-t-[1px] border-b-[3px] border-black py-1.5 px-3 text-center hover:bg-black hover:text-white transition-colors rounded-lg w-full">
-                Fundraising
-              </div>
-              <div className="text-lg font-black text-black border-2 border-t-[1px] border-b-[3px] border-black py-1.5 px-3 text-center hover:bg-black hover:text-white transition-colors rounded-lg w-full">
-                Mavericks
-              </div>
-              <div className="text-lg font-black text-black border-2 border-t-[1px] border-b-[3px] border-black py-1.5 px-3 text-center hover:bg-black hover:text-white transition-colors rounded-lg w-full">
-                Payana
-              </div>
-              <div className="text-lg font-black text-black border-2 border-t-[1px] border-b-[3px] border-black py-1.5 px-3 text-center hover:bg-black hover:text-white transition-colors rounded-lg w-full">
-                Naranja
-              </div>
-              <div className="text-lg font-black text-black border-2 border-t-[1px] border-b-[3px] border-black py-1.5 px-3 text-center hover:bg-black hover:text-white transition-colors rounded-lg w-full">
-                Finky
+      {/* Client Logos Section */}
+      <section className="py-12 border-y border-border/50 bg-muted/10">
+        <div className="container mx-auto px-6">
+           <p className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-8">Brands worldwide scale their design operations with Grayola</p>
+           <ClientLogos />
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-20" id="features">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-5xl md:text-6xl font-black mb-8 tracking-tighter leading-none">Un espacio, <br /><span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#EC4899] font-black italic">poder ilimitado.</span></h2>
+              <p className="text-xl text-muted-foreground mb-12">Gestiona todos tus pedidos a la vez sin caos. Diseñado para equipos de alto rendimiento.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[
+                  { title: "Marca Centralizada", desc: "Assets, guías, manuales y editables siempre al día.", icon: Shield, bg: "indigo-100" },
+                  { title: "Flujo Claro", desc: "Pedidos, feedback y aprobaciones en un solo lugar.", icon: Zap, bg: "emerald-100" },
+                  { title: "Memoria Compartida", desc: "Historial y contexto para que el equipo no empiece de cero.", icon: Briefcase, bg: "pink-100" },
+                  { title: "Colaboración", desc: "Equipos internos y externos trabajando desde la misma fuente.", icon: Users, bg: "sky-100" }
+                ].map((benefit, i) => (
+                  <div key={i} className={`card-gradient-border bg-${benefit.bg}/60 dark:bg-emerald-950/20 p-8 rounded-[2rem] transition-all hover:shadow-2xl hover:-translate-y-2 group shadow-lg`}>
+                    <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-6 shadow-md transform group-hover:rotate-12 transition-transform border border-black/5 dark:border-white/10">
+                      <benefit.icon className="w-7 h-7 text-black dark:text-white" />
+                    </div>
+                    <h3 className="font-black text-2xl mb-3 tracking-tighter text-foreground">{benefit.title}</h3>
+                    <p className="text-muted-foreground dark:text-white/60 text-sm font-medium leading-relaxed">{benefit.desc}</p>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-center mt-6 animate-marquee-right">
-              <div className="text-lg font-black text-black border-2 border-t-[1px] border-b-[3px] border-black py-1.5 px-3 text-center hover:bg-black hover:text-white transition-colors rounded-lg w-full">
-                Frubana
-              </div>
-              <div className="text-lg font-black text-black border-2 border-t-[1px] border-b-[3px] border-black py-1.5 px-3 text-center hover:bg-black hover:text-white transition-colors rounded-lg w-full">
-                LaHaus
-              </div>
-              <div className="text-lg font-black text-black border-2 border-t-[1px] border-b-[3px] border-black py-1.5 px-3 text-center hover:bg-black hover:text-white transition-colors rounded-lg w-full">
-                Hoytrabajas
-              </div>
-              <div className="text-lg font-black text-black border-2 border-t-[1px] border-b-[3px] border-black py-1.5 px-3 text-center hover:bg-black hover:text-white transition-colors rounded-lg w-full">
-                Rockstart
-              </div>
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-4 group relative overflow-hidden dark:shadow-[0_0_50px_-12px_rgba(16,185,129,0.3)]">
+               <div className="aspect-video bg-gray-900 rounded-3xl overflow-hidden relative shadow-2xl">
+                  {/* Decorative Floating Icons */}
+                  <div className="absolute top-4 left-4 z-20 flex gap-2">
+                     <div className="p-2 bg-pink-500/20 rounded-lg border border-pink-500/30 backdrop-blur-sm animate-bounce">
+                        <Palette className="w-4 h-4 text-pink-400" />
+                     </div>
+                     <div className="p-2 bg-primary/20 rounded-lg border border-primary/30 backdrop-blur-sm animate-pulse">
+                        <Zap className="w-4 h-4 text-primary" />
+                     </div>
+                  </div>
+                  <div className="absolute bottom-4 right-4 z-20 p-3 bg-white/10 rounded-full border border-white/20 backdrop-blur-md">
+                     <PieChart className="w-5 h-5 text-white" />
+                  </div>
+                  
+                  <img 
+                    src="/images/dashboard-preview.png" 
+                    alt="GrayolaOS Dashboard Preview" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 opacity-90"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                  
+                  {/* Dark mode 'light effect' overlay */}
+                  <div className="absolute inset-0 bg-emerald-500/5 dark:bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+               </div>
             </div>
           </div>
         </div>
+      </section>
 
-        <style jsx>{`
-          @keyframes marquee-left {
-            from { transform: translateX(0); }
-            to { transform: translateX(-10%); }
-          }
+      {/* Process Section */}
+      <motion.section className="py-20 bg-black text-white rounded-[4rem] mx-4 my-8 relative overflow-hidden" id="how-it-works">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent pointer-events-none" />
+        <div className="container mx-auto px-6 max-w-7xl relative z-10">
+          <div className="text-center mb-20">
+            <h2 className="text-5xl font-black mb-6 tracking-tighter">Cómo funciona Grayola</h2>
+            <p className="text-white/60 text-lg max-w-xl mx-auto">Un proceso pulido para entregarte calidad en tiempo récord.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {[
+              { n: 1, t: "Crea un pedido", d: "Completa un formulario corto con todos los detalles. ¡No toma más de 2 minutos!" },
+              { n: 2, t: "Asignamos un equipo", d: "Seleccionamos al mejor grupo de especialistas y directores creativos." },
+              { n: 3, t: "Entregamos tus diseños", d: "En menos de 48h tendrás las primeras versiones para iterar hasta estar 100% satisfecho." }
+            ].map((step, i) => (
+              <div key={i} className="relative p-10 rounded-[3rem] border-2 border-white/20 hover:border-emerald-500 transition-all group overflow-hidden">
+                <div className="absolute -right-4 -bottom-4 text-9xl font-black text-white/5 group-hover:text-emerald-500/10 transition-colors">{step.n}</div>
+                <div className="w-10 h-10 rounded-full border-2 border-emerald-500 flex items-center justify-center font-black text-emerald-500 shrink-0 mb-8">{step.n}</div>
+                <h3 className="text-2xl font-black mb-4 tracking-tight">{step.t}</h3>
+                <p className="text-white/50 leading-relaxed">{step.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
 
-          @keyframes marquee-right {
-            from { transform: translateX(0); }
-            to { transform: translateX(10%); }
-          }
-
-          @keyframes bounce-slow {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-          }
-
-          @keyframes spin-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-
-          @keyframes float-slow {
-            0%, 100% { transform: translate(0, 0); }
-            25% { transform: translate(10px, -10px); }
-            50% { transform: translate(20px, 0); }
-            75% { transform: translate(10px, 10px); }
-          }
-
-          @keyframes grow {
-            0% { width: 0; }
-            100% { width: 75%; }
-          }
-
-          @keyframes scale-sequence-1 {
-            0%, 15%, 100% { transform: scale(1); }
-            5%, 10% { transform: scale(1.15); }
-          }
-
-          @keyframes scale-sequence-2 {
-            0%, 30%, 100% { transform: scale(1); }
-            20%, 25% { transform: scale(1.15); }
-          }
-
-          @keyframes scale-sequence-3 {
-            0%, 45%, 100% { transform: scale(1); }
-            35%, 40% { transform: scale(1.15); }
-          }
-
-          .animate-marquee-left {
-            animation: marquee-left 3s linear infinite alternate;
-          }
-
-          .animate-marquee-right {
-            animation: marquee-right 3s linear infinite alternate;
-          }
-
-          .animate-bounce-slow {
-            animation: bounce-slow 3s ease-in-out infinite;
-          }
-
-          .animate-spin-slow {
-            animation: spin-slow 8s linear infinite;
-          }
-
-          .animate-float-slow {
-            animation: float-slow 8s ease-in-out infinite;
-          }
-
-          .animate-grow {
-            animation: grow 2s ease-out forwards;
-          }
-
-          .animate-pulse-slow {
-            animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-          }
-
-          .animate-scale-1 {
-            animation: scale-sequence-1 8s ease-in-out infinite;
-          }
-
-          .animate-scale-2 {
-            animation: scale-sequence-2 8s ease-in-out infinite;
-          }
-
-          .animate-scale-3 {
-            animation: scale-sequence-3 8s ease-in-out infinite;
-          }
-        `}</style>
-
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              document.addEventListener('DOMContentLoaded', function() {
-                const container = document.getElementById('mouseMoveContainer');
-                if (!container) return;
-                
-                const elements = container.querySelectorAll('[data-depth]');
-                let lastX = 0;
-                let lastY = 0;
-                
-                // Posición inicial del mouse en el centro
-                const initialX = window.innerWidth / 2;
-                const initialY = window.innerHeight / 2;
-                lastX = initialX;
-                lastY = initialY;
-                
-                function updatePositions(x, y) {
-                  // Suavizado de movimiento
-                  lastX = lastX + (x - lastX) * 0.03;
-                  lastY = lastY + (y - lastY) * 0.03;
-                  
-                  elements.forEach(element => {
-                    const depth = parseFloat(element.getAttribute('data-depth'));
-                    const moveX = (lastX - window.innerWidth / 2) * depth * 0.5;
-                    const moveY = (lastY - window.innerHeight / 2) * depth * 0.5;
-                    
-                    element.style.transform = \`translate(\${moveX}px, \${moveY}px)\`;
-                  });
-                }
-                
-                document.addEventListener('mousemove', function(e) {
-                  updatePositions(e.clientX, e.clientY);
-                });
-                
-                // Animación suave inicial
-                setInterval(() => {
-                  if (!container.classList.contains('mouse-moved')) {
-                    const now = Date.now() / 1000;
-                    const x = initialX + Math.sin(now * 0.5) * 50;
-                    const y = initialY + Math.cos(now * 0.3) * 30;
-                    updatePositions(x, y);
-                  }
-                }, 1000/30);
-                
-                // Detener flotación automática cuando se mueve el mouse
-                document.addEventListener('mousemove', function() {
-                  container.classList.add('mouse-moved');
-                }, { once: true });
-              });
-            `
-          }}
-        />
-
-        <motion.section
-          className="bg-transparent py-24"
-          initial={{ opacity: 0, y: 100 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: false }}
-        >
-          <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
+      {/* Services Grid */}
+      <section className="py-20 bg-transparent overflow-hidden">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="flex justify-between items-end mb-12">
             <div>
-              <p className="text-2xl text-black font-medium leading-relaxed relative">
-                <span className="absolute -left-10 top-0 text-8xl font-black text-emerald-300 opacity-20" style={{ transform: 'translateY(-30%) rotate(-15deg)' }}>"</span>
-                Grayola se adapta y respalda a empresas y agencias de todos los tamaños, escalando sus operaciones de diseño a gran escala.
-                <span className="absolute -right-10 bottom-0 text-8xl font-black text-pink-300 opacity-20" style={{ transform: 'translateY(30%) rotate(-15deg)' }}>"</span>
-              </p>
-
-              <div className="mt-12 grid grid-cols-3 gap-6">
-                <div className="bg-emerald-50/50 backdrop-blur-sm p-6 rounded-2xl border-2 border-black flex items-center justify-center transform transition-all hover:scale-105 duration-300 animate-scale-1 shadow-md">
-                  <span className="text-3xl font-black text-emerald-600">142+</span>
-                </div>
-                <div className="bg-pink-50/50 backdrop-blur-sm p-6 rounded-2xl border-2 border-black flex items-center justify-center transform transition-all hover:scale-105 duration-300 animate-scale-2 shadow-md">
-                  <span className="text-3xl font-black text-pink-600">4000+</span>
-                </div>
-                <div className="bg-emerald-50/50 backdrop-blur-sm p-6 rounded-2xl border-2 border-black flex items-center justify-center transform transition-all hover:scale-105 duration-300 animate-scale-3 shadow-md">
-                  <span className="text-3xl font-black text-emerald-600">24/7</span>
-                </div>
-              </div>
+              <h2 className="text-5xl font-black mb-4 tracking-tighter">Servicios que transforman</h2>
+              <p className="text-muted-foreground">Más de 100 servicios creativos a tu disposición.</p>
             </div>
-
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-200 to-pink-200 opacity-20 rounded-xl blur-[100px] animate-pulse-slow"></div>
-              <h2 className="text-[42px] font-black leading-tight text-black relative z-10 bg-white/40 backdrop-blur-md p-10 rounded-[2rem] card-gradient-border">
-                Un <span className="inline-flex items-center gap-2 bg-emerald-100 px-3 py-1 rounded-full border border-black transform transition-all hover:scale-105 duration-300 hover:shadow-lg">
-                  <div className="w-8 h-8 rounded-full overflow-hidden bg-black flex items-center justify-center animate-spin-slow">
-                    <Sparkles className="w-4 h-4 text-emerald-400" />
-                  </div>
-                  <span className="text-[42px]">equipo creativo</span>
-                </span> listo para diseñar a cualquier escala
-              </h2>
-
-              <div className="absolute -bottom-10 -right-10 w-40 h-40">
-                <div className="relative w-full h-full">
-                  <div className="absolute top-0 left-0 w-8 h-8 bg-emerald-400 rounded-full animate-float-slow"></div>
-                  <div className="absolute top-10 left-20 w-6 h-6 bg-pink-400 rounded-full animate-float-slow delay-300"></div>
-                  <div className="absolute top-20 left-5 w-10 h-10 bg-emerald-200 rounded-full animate-float-slow delay-700"></div>
-                </div>
-              </div>
-            </div>
+            <Button variant="outline" className="rounded-full border-2 border-primary font-black uppercase text-xs px-10 py-6 mb-4 hover:bg-primary hover:text-black">Ver Catálogo</Button>
           </div>
-        </motion.section>
-
-        <motion.section
-          className="bg-transparent py-24"
-          initial={{ opacity: 0, y: 100 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: false }}
-        >
-          <div className="max-w-7xl mx-auto px-4">
-            <h2 className="text-4xl font-black text-center mb-16 relative">
-              <span className="relative inline-block px-8 py-3 bg-gradient-to-r from-emerald-100 to-pink-100 rounded-2xl border-2 border-black shadow-lg">
-                ¿Cómo funciona?
-              </span>
-            </h2>
-            <div className="grid md:grid-cols-3 gap-12">
-              <div className="flex flex-col items-center relative group">
-                <div className="mb-6 relative flex justify-center w-full">
-                  <div className="w-16 h-16 bg-emerald-50 rounded-xl flex items-center justify-center border-2 border-black relative overflow-hidden group-hover:border-emerald-400 transition-colors duration-300">
-                    <div className="absolute -inset-1 border-2 border-emerald-400 opacity-30 animate-pulse rounded-xl"></div>
-                    <Zap className="w-8 h-8 text-black" />
-                  </div>
-                  <div className="absolute top-0 right-1/3 -mr-2 -mt-2 w-7 h-7 bg-emerald-400 rounded-full flex items-center justify-center border-2 border-black shadow-md">
-                    <span className="text-xs font-black">1</span>
-                  </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {[
+              { t: "Brand Design", i: Palette, c: "emerald" },
+              { t: "Social Media", i: Share2, c: "pink" },
+              { t: "Video Editing", i: Zap, c: "indigo" },
+              { t: "Presentations", i: Laptop, c: "sky" },
+              { t: "2D Animation", i: Sparkles, c: "emerald" },
+              { t: "Illustration", i: Palette, c: "pink" }
+            ].map((s, i) => (
+              <div key={i} className={`card-gradient-border bg-${s.c}-100/40 dark:bg-${s.c}-950/20 p-8 rounded-[2.5rem] text-center hover:bg-white dark:hover:bg-gray-800 hover:shadow-2xl transition-all group cursor-default shadow-md hover:-translate-y-2`}>
+                <div className={`bg-white dark:bg-gray-800 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-${s.c}-500 transition-all shadow-sm border border-black/5 dark:border-white/10`}>
+                  <s.i className="w-7 h-7 text-black dark:text-white group-hover:text-white" />
                 </div>
-                <div className="bg-white/40 backdrop-blur-md p-8 rounded-[2rem] border-2 border-black group-hover:border-emerald-400 transition-colors duration-300 w-full h-full shadow-sm">
-                  <h3 className="text-2xl font-black text-black mb-4 text-center">
-                    Crea<br />un pedido
-                  </h3>
-                  <p className="text-lg text-black/80 font-medium">
-                    Completa un breve formulario con todos los detalles que tengas en mente para tu diseño. ¡No te tomará más de 2 minutos!
-                  </p>
-                  <div className="w-full h-1.5 bg-black/5 rounded-full mt-8 overflow-hidden">
-                    <div className="h-full w-0 bg-emerald-400 group-hover:w-full transition-all duration-1000"></div>
-                  </div>
-                </div>
+                <h4 className="font-black text-xs uppercase tracking-tighter text-foreground group-hover:text-primary transition-colors">{s.t}</h4>
               </div>
-
-              <div className="flex flex-col items-center relative group">
-                <div className="mb-6 relative flex justify-center w-full">
-                  <div className="w-16 h-16 bg-pink-50 rounded-xl flex items-center justify-center border-2 border-black relative overflow-hidden group-hover:border-pink-400 transition-colors duration-300">
-                    <div className="absolute -inset-1 border-2 border-pink-400 opacity-30 animate-pulse rounded-xl"></div>
-                    <Briefcase className="w-8 h-8 text-black" />
-                  </div>
-                  <div className="absolute top-0 right-1/3 -mr-2 -mt-2 w-7 h-7 bg-pink-400 rounded-full flex items-center justify-center border-2 border-black shadow-md">
-                    <span className="text-xs font-black">2</span>
-                  </div>
-                </div>
-                <div className="bg-white/40 backdrop-blur-md p-8 rounded-[2rem] border-2 border-black group-hover:border-pink-400 transition-colors duration-300 w-full h-full shadow-sm">
-                  <h3 className="text-2xl font-black text-black mb-4 text-center">
-                    Lo asignamos<br />a nuestro equipo
-                  </h3>
-                  <p className="text-lg text-black/80 font-medium">
-                    Nuestro equipo seleccionará al mejor grupo de especialistas para tu proyecto, con un director creativo y diseñadores dedicados.
-                  </p>
-                  <div className="w-full h-1.5 bg-black/5 rounded-full mt-8 overflow-hidden">
-                    <div className="h-full w-0 bg-pink-400 group-hover:w-full transition-all duration-1000"></div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col items-center relative group">
-                <div className="mb-6 relative flex justify-center w-full">
-                  <div className="w-16 h-16 bg-emerald-50 rounded-xl flex items-center justify-center border-2 border-black relative overflow-hidden group-hover:border-emerald-400 transition-colors duration-300">
-                    <div className="absolute -inset-1 border-2 border-emerald-400 opacity-30 animate-pulse rounded-xl"></div>
-                    <FileText className="w-8 h-8 text-black" />
-                  </div>
-                  <div className="absolute top-0 right-1/3 -mr-2 -mt-2 w-7 h-7 bg-emerald-400 rounded-full flex items-center justify-center border-2 border-black shadow-md">
-                    <span className="text-xs font-black">3</span>
-                  </div>
-                </div>
-                <div className="bg-white/40 backdrop-blur-md p-8 rounded-[2rem] border-2 border-black group-hover:border-emerald-400 transition-colors duration-300 w-full h-full shadow-sm">
-                  <h3 className="text-2xl font-black text-black mb-4 text-center">
-                    Entregamos<br />tus diseños
-                  </h3>
-                  <p className="text-lg text-black/80 font-medium">
-                    Recibe las primeras iteraciones de tus pedidos en tiempo récord y con tu feedback haremos ajustes lo más rápido posible.
-                  </p>
-                  <div className="w-full h-1.5 bg-black/5 rounded-full mt-8 overflow-hidden">
-                    <div className="h-full w-0 bg-emerald-400 group-hover:w-full transition-all duration-1000"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
-        </motion.section>
+        </div>
+      </section>
 
-        <motion.section
-          className="bg-transparent py-24"
-          initial={{ opacity: 0, y: 100 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: false }}
-        >
-          <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
-            <div className="relative overflow-hidden rounded-[2.5rem] card-gradient-border p-10 bg-white/20 backdrop-blur-xl transform transition-all hover:scale-[1.02] duration-500 shadow-2xl">
-              <div className="absolute -right-16 -top-16 w-32 h-32 bg-emerald-400 rounded-full opacity-10 animate-pulse"></div>
-              <div className="absolute -left-16 -bottom-16 w-32 h-32 bg-pink-400 rounded-full opacity-10 animate-pulse delay-700"></div>
-              <h2 className="text-[64px] font-black leading-[1.1] text-black relative z-10 tracking-tighter">
-                Te encantará<br />
-                <span className="relative inline-block text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-pink-600">
-                  nuestra aplicación
-                  <span className="absolute bottom-0 left-0 w-full h-3 bg-emerald-100 -z-10" style={{ transform: 'translateY(4px) rotate(-1deg)' }}></span>
-                </span>
-              </h2>
-            </div>
-            <div className="space-y-8 relative">
-              <p className="text-xl text-black/80 font-medium leading-relaxed bg-white/30 backdrop-blur-sm p-8 rounded-[2rem] border border-black/10 shadow-sm">
-                Nuestra plataforma de gestión creativa te brinda la posibilidad de enviar proyectos, dar feedback, y recibir todos tus proyectos, incluyendo sus editables, todo en un mismo lugar.
-              </p>
-              <div className="relative group flex justify-center">
-                <div className="absolute inset-0 bg-emerald-400 blur-[80px] opacity-10 group-hover:opacity-30 transition-all duration-700 rounded-2xl"></div>
-                <div className="bg-white/50 backdrop-blur-md rounded-[2rem] p-10 text-center inline-block border-2 border-black relative transform transition-all group-hover:translate-y-[-5px] duration-300 shadow-xl">
-                  <div className="absolute -top-3 -right-3 w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center border-2 border-black shadow-lg">
-                    <span className="text-[10px] font-black text-pink-600 uppercase tracking-tighter">wow!</span>
-                  </div>
-                  <p className="text-5xl font-black text-black mb-2 relative tracking-tighter">
-                    <span className="inline-block animate-bounce-slow text-emerald-500">+</span>3900
-                  </p>
-                  <p className="text-lg text-black/70 font-bold leading-tight">pedidos<br />completados</p>
-                  <div className="w-full h-2 bg-black/5 rounded-full mt-6 overflow-hidden">
-                    <div className="h-full w-3/4 bg-emerald-400 animate-grow"></div>
-                  </div>
-                </div>
+      {/* Stats Section */}
+      <section className="py-20 bg-transparent px-8">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-[48px] font-black text-foreground mb-16 text-center">
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center gap-2">
+                <span className="bg-primary/20 px-4 py-1.5 rounded-full border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:text-white">+8500 proyectos</span>
+                <span className="dark:text-white">terminados para 142 empresas</span>
               </div>
+              <span className="text-black/60 dark:text-white/60">alrededor del mundo con calidad premium</span>
             </div>
+          </h2>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 bg-muted/30 border-y border-border/20 px-6" id="pricing">
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center mb-12 text-black dark:text-white">
+            <h2 className="text-6xl font-black mb-4 tracking-tighter dark:text-foreground">Un equipo de diseño on demand</h2>
+            <p className="text-muted-foreground text-xl">Precios transparentes y escalables.</p>
           </div>
-        </motion.section>
-
-        <section className="bg-transparent py-12">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="aspect-video w-full rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white/50">
-              <iframe
-                width="100%"
-                height="100%"
-                src="https://www.youtube.com/embed/tfFnNi1iro4?autoplay=0"
-                title="Video de Grayola"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full scale-[1.01]"
-              ></iframe>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {[
+              { n: "Pro", p: "300", f: ["1 Brand", "Brand assets", "File management", "180 credits/sem", "Unlimited projects", "3 team members"] },
+              { n: "Business", p: "500", f: ["5 Brands", "Brand assets", "File management", "300 credits/sem", "Unlimited projects", "5 team members"], popular: true },
+              { n: "Scale", p: "1000", f: ["Unlimited brands", "Brand assets", "File management", "480 credits/sem", "Unlimited projects", "10 team members", "Priority support"] },
+              { n: "Enterprise", p: "Custom", f: ["Unlimited brands", "Brand assets", "File management", "Custom credits", "Unlimited projects", "Unlimited storage", "API integrations"] }
+            ].map((plan, i) => (
+              <div key={i} className={`bg-card p-10 rounded-[2.5rem] border-2 ${plan.popular ? 'border-primary shadow-2xl relative' : 'border-border'} flex flex-col transition-all hover:scale-[1.02]`}>
+                {plan.popular && <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-black text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest border-2 border-black">Most Popular</span>}
+                <div className="mb-8">
+                   <h3 className="text-2xl font-black mb-2">{plan.n}</h3>
+                   <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-black">${plan.p}</span>
+                      {plan.p !== 'Custom' && <span className="text-muted-foreground text-sm font-bold uppercase tracking-widest ml-1">USD/mo</span>}
+                   </div>
+                   {plan.p !== 'Custom' && <p className="text-[10px] text-muted-foreground font-bold uppercase mt-1">Billed semi-annually</p>}
+                </div>
+                <ul className="space-y-4 mb-10 flex-grow">
+                   {plan.f.map((f, k) => (
+                     <li key={k} className="flex gap-2 items-center text-sm font-medium">
+                        <Check className="w-4 h-4 text-emerald-500" /> {f}
+                     </li>
+                   ))}
+                </ul>
+                <Button className={`${plan.popular ? 'agendar-prueba-button' : 'bg-black text-white hover:bg-black/80 rounded-full py-6'} w-full font-black text-sm uppercase`}>Start Now</Button>
+              </div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        <motion.section
-          className="bg-transparent py-24"
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: false }}
-        >
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="grid md:grid-cols-12 gap-12 items-center mb-16">
-              <div className="md:col-span-4 relative flex justify-center">
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-emerald-100 blur-3xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                  <Image
-                    src="/images/grayola-bird-logo.svg"
-                    alt="Grayola Bird"
-                    width={300}
-                    height={300}
-                    className="w-auto h-auto relative z-10"
-                    unoptimized
-                  />
-                </div>
-              </div>
-              <div className="md:col-span-8 flex flex-col space-y-6">
-                <h2 className="text-[48px] font-black text-black leading-tight tracking-tight">
-                  Todos los servicios creativos que necesitas en un solo lugar.
-                </h2>
-                <p className="text-xl text-black/60 font-medium">
-                  Explora más de 100 servicios de diseño disponibles con nuestra suscripción
-                </p>
-                <div className="flex flex-col sm:flex-row gap-6 mt-4">
-                  <button className="agendar-prueba-button px-8 py-5 text-sm">
-                    Agendar prueba
-                  </button>
-                  <button className="bg-white hover:bg-black/5 text-black px-8 py-5 text-sm font-bold border-2 border-black rounded-full transition-all">
-                    Ver todos los servicios
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                { title: "Diseño de marca", desc: "Manuales de marca, logotipos, key visuals y activos de marca.", icon: Palette, color: "emerald" },
-                { title: "Social Media", desc: "Anuncios para redes sociales y ads para Meta o Google.", icon: Share2, color: "pink" },
-                { title: "Edición de video", desc: "Tutoriales, demos de productos, podcast o videos informativos.", icon: Zap, color: "emerald" },
-                { title: "Presentaciones", desc: "Infografías, decks, ebooks y presentaciones comerciales.", icon: Laptop, color: "pink" },
-                { title: "Animación 2D/3D", desc: "Motion graphics, demos de producto y animación 2D/3D.", icon: Sparkles, color: "emerald" },
-                { title: "Ilustración", desc: "Assets digitales, iconos, personajes y material ilustrado.", icon: Palette, color: "pink" },
-              ].map((service, idx) => (
-                <div key={idx} className="bg-white/40 backdrop-blur-sm p-8 rounded-[2rem] border-2 border-black hover:border-emerald-400 transition-all duration-300 hover:shadow-xl group relative overflow-hidden">
-                  <div className={`w-14 h-14 bg-${service.color}-50 rounded-2xl flex items-center justify-center border-2 border-black mb-6 group-hover:scale-110 transition-transform`}>
-                    <service.icon className="h-7 w-7 text-black" />
-                  </div>
-                  <h3 className="text-2xl font-black text-black mb-4">
-                    {service.title}
-                  </h3>
-                  <p className="text-lg text-black/70 font-medium">
-                    {service.desc}
-                  </p>
-                  <div className={`absolute -right-8 -bottom-8 w-24 h-24 bg-${service.color}-400/5 rounded-full`}></div>
-                </div>
-              ))}
-
-              <div className="bg-emerald-50/50 backdrop-blur-md p-10 rounded-[2.5rem] border-2 border-black col-span-1 md:col-span-3 flex flex-col md:flex-row items-center justify-between shadow-lg">
-                <div className="flex items-center gap-8 mb-6 md:mb-0">
-                  <div className="text-7xl font-black text-black tracking-tighter">+100</div>
-                  <div className="text-xl font-bold text-black/60 max-w-[200px]">Servicios de diseño adicionales</div>
-                </div>
-                <button className="agendar-prueba-button px-10 py-5 text-sm">
-                  Ver todos los servicios
-                </button>
-              </div>
-            </div>
+      {/* Testimonials Section */}
+      <section className="py-32 bg-transparent px-6 overflow-hidden">
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center mb-20">
+            <h2 className="text-5xl md:text-6xl font-black tracking-tighter">Testimonios que nos impulsan</h2>
           </div>
-        </motion.section>
-
-        <motion.section
-          className="bg-transparent py-24 px-8"
-          id="planes"
-          initial={{ opacity: 0, y: 100 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: false }}
-        >
-          <div className="max-w-7xl mx-auto">
-            <div className="relative mb-24">
-              <div className="text-center">
-                <h2 className="text-[56px] font-black text-black mb-6 tracking-tighter leading-tight">
-                  Diseños rápidos y de calidad<br />por una fracción del costo
-                </h2>
-                <p className="text-xl text-black/60 font-medium max-w-2xl mx-auto">
-                  Selecciona el plan de acuerdo al tamaño de tu empresa y necesidades de tu equipo.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-4 gap-6 mb-24">
-              {[
-                { name: "Basic", price: "390", features: ["80 créditos por mes", "2 pedidos activos", "1 Marca incluida", "Archivos editables"], popular: false, color: "emerald" },
-                { name: "Premium", price: "690", features: ["140 créditos por mes", "5 pedidos activos", "2 Marcas incluidas", "Archivos editables"], popular: false, color: "pink" },
-                { name: "Advance", price: "990", features: ["200 créditos por mes", "10 pedidos activos", "3 Marcas incluidas", "Archivos editables"], popular: true, color: "emerald" },
-                { name: "Enterprise", price: "1490", features: ["300 créditos por mes", "20 pedidos activos", "5 Marcas incluidas", "Archivos editables"], popular: false, color: "pink" },
-              ].map((plan, idx) => (
-                <div key={idx} className={`bg-white/60 backdrop-blur-sm p-10 rounded-[2.5rem] border-2 ${plan.popular ? 'border-emerald-400 scale-105 shadow-2xl relative z-20' : 'border-black shadow-lg'} hover:translate-y-[-10px] transition-all duration-300`}>
-                  {plan.popular && (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-black text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
-                      Más popular
-                    </div>
-                  )}
-
-                  <h3 className="text-2xl font-black text-black mb-1">{plan.name}</h3>
-                  <div className="flex items-baseline gap-2 mb-6">
-                    <span className="text-4xl font-black text-black tracking-tighter">${plan.price}</span>
-                    <div className="text-black/50 leading-none">
-                      <p className="text-xs font-bold">USD</p>
-                      <p className="text-xs font-medium">/mes</p>
-                    </div>
-                  </div>
-
-                  <ul className="space-y-4 mb-10">
-                    {plan.features.map((feature, fIdx) => (
-                      <li key={fIdx} className="flex items-start gap-3">
-                        <div className={`mt-1 text-${plan.color === 'emerald' ? 'emerald' : 'pink'}-500`}>
-                          <Check className="h-4 w-4 stroke-[3px]" />
-                        </div>
-                        <span className="text-sm font-bold text-black/80">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <button className={`agendar-prueba-button w-full py-4 text-xs font-black ${plan.color === 'pink' ? 'before:bg-pink-100 after:border-pink-300' : ''}`}>
-                    Empezar ahora
-                  </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { name: "Valentina Moreno", role: "Head of Marketing - Latam Fintech", img: "https://api.dicebear.com/7.x/pixel-art/svg?seed=Valentina" },
+              { name: "Joseh Burns", role: "Founder - Lupa", img: "https://api.dicebear.com/7.x/pixel-art/svg?seed=Joseh" },
+              { name: "Felipe Santamaría", role: "CEO - Rockstart", img: "https://api.dicebear.com/7.x/pixel-art/svg?seed=Felipe" },
+              { name: "Claudia Garcia", role: "Design Lead - Agora Partnerships", img: "https://api.dicebear.com/7.x/pixel-art/svg?seed=Claudia" }
+            ].map((t, i) => (
+              <div key={i} className="bg-white dark:bg-[#0f172a]/40 p-10 rounded-[2.5rem] border border-black/5 dark:border-white/5 hover:-translate-y-2 transition-all shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_30px_60px_-15px_rgba(255,255,255,0.02)] group relative overflow-hidden backdrop-blur-sm">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/30 to-rose-50/30 dark:from-emerald-600/5 dark:to-rose-600/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                <div className="w-20 h-20 rounded-full border border-black/5 dark:border-white/10 overflow-hidden mb-8 mx-auto relative z-10 p-1 bg-white dark:bg-slate-800 shadow-inner">
+                   <img src={t.img} alt={t.name} className="w-full h-full object-cover rounded-full" />
                 </div>
-              ))}
-            </div>
+                <div className="text-center text-foreground relative z-10">
+                   <h4 className="font-black text-lg">{t.name}</h4>
+                   <p className="text-muted-foreground text-[10px] font-bold uppercase mt-1 leading-tight">{t.role}</p>
+                   <div className="mt-4 flex justify-center gap-1">
+                      {[1, 2, 3, 4, 5].map(s => <Sparkles key={s} className="w-3 h-3 text-emerald-400" />)}
+                   </div>
+                   <p className="text-sm italic text-muted-foreground mt-4 leading-relaxed">"Increíble calidad y velocidad en cada entrega. Grayola ha sido clave para nuestro éxito."</p>
+                </div>
+              </div>
+            ))}
           </div>
-        </motion.section>
+        </div>
+      </section>
 
-        <section className="bg-transparent py-20 px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-white rounded-3xl border-2 border-black p-16 text-center">
-              <h2 className="text-[48px] font-black text-black mb-4">
-                Comienza hoy mismo
-              </h2>
-              <p className="text-xl text-black mb-8">
-                Conoce al instante a tu próximo equipo creativo y diseñemos hoy mismo tu primer pedido en Grayola.
-              </p>
-              <div className="flex flex-col items-center gap-2">
-                <button className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black">
-                  Agendar prueba
-                </button>
-                <div className="flex flex-col items-center">
-                  <p className="text-black">
-                    Agenda y obtén 37 días
-                  </p>
-                  <p className="text-black font-medium">
-                    en tu primer mes
-                  </p>
+      {/* Designer Network Section */}
+      <section className="py-32 bg-transparent px-6 border-b border-border/50">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="bg-pink-50 dark:bg-pink-900/10 rounded-[4rem] border border-black/5 dark:border-white/10 p-12 md:p-24 relative overflow-hidden shadow-2xl">
+             <div className="absolute top-0 right-0 p-12 opacity-5">
+                <Palette className="w-96 h-96 text-pink-600" />
+             </div>
+             <div className="relative z-10 max-w-2xl text-foreground">
+                <p className="text-pink-700 dark:text-pink-400 font-black uppercase tracking-widest text-xs mb-4">PARA DISEÑADORES</p>
+                <h2 className="text-5xl md:text-6xl font-black mb-8 tracking-tighter leading-none">Únete a la <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#EC4899]">red de talentos</span> Grayola</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-16">
+                   {[
+                     { t: "Trabajo 100% remoto", d: "Diseña desde cualquier lugar con horarios flexibles." },
+                     { t: "Proyectos constantes", d: "Flujo continuo de pedidos de empresas reconocidas." },
+                     { t: "Crece profesionalmente", d: "Mejora tu portafolio con marcas reales y feedback directo." },
+                     { t: "Pagos a tiempo", d: "Recibe tu pago de forma puntual y transparente." }
+                   ].map((item, i) => (
+                     <div key={i}>
+                        <h4 className="font-black mb-2">{item.t}</h4>
+                        <p className="text-muted-foreground text-sm font-medium">{item.d}</p>
+                     </div>
+                   ))}
                 </div>
-              </div>
-            </div>
+                <Button className="bg-black text-white dark:bg-white dark:text-black hover:bg-black/90 px-12 py-8 rounded-full font-black text-sm uppercase">Postular como diseñador</Button>
+             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="bg-transparent py-20 px-8">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-[48px] font-black text-black mb-16 text-center">
-              <div className="flex flex-col items-center gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="bg-[#e8ffdb] px-3 py-1 rounded-full border border-black">+4000 proyectos</span>
-                  <span>terminados para 142 empresas</span>
-                </div>
-                <span>alrededor del mundo</span>
+      {/* FAQ Section */}
+      <section className="py-32 bg-transparent px-6" id="faq">
+        <div className="container mx-auto max-w-3xl">
+            <div className="text-center mb-20">
+               <h2 className="text-5xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#EC4899]">Preguntas Frecuentes</h2>
+            </div>
+            <Accordion type="single" collapsible className="space-y-4">
+               {[
+                 { q: "¿Qué diseños están incluidos?", a: "Casi cualquier cosa que tu equipo de diseño necesite: marcas, redes sociales, presentaciones, video, etc." },
+                 { q: "¿Cuántos créditos necesito?", a: "Depende del plan que elijas, cada servicio tiene un costo en créditos claro." },
+                 { q: "¿Quiénes serán mis diseñadores?", a: "Solo trabajamos con el Top 2% de diseñadores mundiales para asegurar calidad." }
+               ].map((faq, i) => (
+                 <AccordionItem key={i} value={`item-${i}`} className="border-none mb-4 group">
+                   <AccordionTrigger className="font-black text-xl hover:no-underline py-8 text-foreground dark:text-white px-8 bg-white/40 dark:bg-slate-900/40 rounded-[2rem] border border-black/5 dark:border-white/5 data-[state=open]:rounded-b-none transition-all shadow-sm">
+                     {faq.q}
+                   </AccordionTrigger>
+                   <AccordionContent className="text-muted-foreground text-lg pb-8 pt-4 px-8 bg-white/40 dark:bg-slate-900/40 rounded-b-[2rem] border-x border-b border-black/5 dark:border-white/5 border-t-none">
+                     {faq.a}
+                   </AccordionContent>
+                 </AccordionItem>
+               ))}
+            </Accordion>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="py-32 bg-transparent px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-pink-50 dark:from-emerald-950 dark:via-background dark:to-pink-950 -z-10"></div>
+        <div className="container mx-auto max-w-4xl text-center border border-black/5 dark:border-white/10 p-16 md:p-24 rounded-[4rem] bg-white dark:bg-slate-900/60 backdrop-blur-2xl shadow-[0_50px_150px_-30px_rgba(0,0,0,0.2)] dark:shadow-[0_50px_150px_-30px_rgba(0,0,0,0.6)] relative z-10 overflow-hidden">
+           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#10B981] to-[#EC4899]"></div>
+           <h2 className="text-5xl md:text-7xl font-black mb-10 tracking-tighter text-foreground leading-[1.05]">Da el salto a un <br /><span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#EC4899] italic">diseño escalable.</span></h2>
+           <p className="text-xl text-muted-foreground mb-16 font-medium max-w-2xl mx-auto">Conoce a tu próximo equipo creativo al instante y diseñemos tu primer pedido hoy mismo.</p>
+           <div className="flex flex-col sm:flex-row justify-center gap-6 items-center">
+              <Button className="agendar-prueba-button px-14 py-8 text-xl">Agendar una reunión</Button>
+              <Button variant="ghost" className="rounded-full px-12 py-8 text-lg font-black hover:bg-primary/10 transition-all group flex items-center gap-2">
+                 Explora GrayolaOS <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+           </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-white dark:bg-background py-24 border-t border-border/50 relative overflow-hidden">
+        <div className="container mx-auto px-6 max-w-7xl relative z-10 text-black dark:text-foreground">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex items-center gap-2 mb-8">
+                <img src="/images/grayola-bird-logo.svg?v=2" className="w-12 h-12" alt="Logo" />
+                <span className="text-3xl font-black tracking-tighter">GRAYOLA</span>
               </div>
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-8">
-
-              <div className="bg-white p-8 rounded-2xl border-2 border-black">
-                <p className="text-xl text-black mb-8">
-                  Lo que más me gusta de trabajar con Grayola es que se puede diseñar cualquier cosa, iterar rápido y lanzar en tiempo récord.
-                </p>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-[#e8ffdb] rounded-full flex items-center justify-center border border-black">
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2C9.79086 2 8 3.79086 8 6C8 8.20914 9.79086 10 12 10C14.2091 10 16 8.20914 16 6C16 3.79086 14.2091 2 12 2Z" fill="black" />
-                      <path d="M12 12C7.58172 12 4 15.5817 4 20V22H20V20C20 15.5817 16.4183 12 12 12Z" fill="black" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-bold text-black">Andrés Bilbao</p>
-                    <p className="text-black">Rappi</p>
-                  </div>
+              <p className="text-muted-foreground max-w-md text-lg mb-10 font-medium">Diseño gráfico y video bajo demanda para empresas en etapa de escalamiento.</p>
+              <div className="flex gap-4">
+                <div className="w-12 h-12 rounded-full bg-white border border-border shadow-sm flex items-center justify-center hover:bg-pink-50 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
+                  <Instagram className="w-6 h-6 text-[#E4405F]" />
                 </div>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl border-2 border-black">
-                <p className="text-xl text-black mb-4">
-                  No queríamos comprometernos con aumentar nuestra nómina de diseñadores inhouse, teniendo en cuenta que el flujo de clientes podía subir y bajar.
-                </p>
-                <p className="text-xl text-black mb-8">
-                  Con Grayola encontramos esa flexibilidad de tener un equipo de diseñadores senior por el precio de uno y con flexibilidad.
-                </p>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-[#e8ffdb] rounded-full flex items-center justify-center border border-black">
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2C9.79086 2 8 3.79086 8 6C8 8.20914 9.79086 10 12 10C14.2091 10 16 8.20914 16 6C16 3.79086 14.2091 2 12 2Z" fill="black" />
-                      <path d="M12 12C7.58172 12 4 15.5817 4 20V22H20V20C20 15.5817 16.4183 12 12 12Z" fill="black" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-bold text-black">Mariana Mejía</p>
-                    <p className="text-black">CEO de Viceversable</p>
-                  </div>
+                <div className="w-12 h-12 rounded-full bg-white border border-border shadow-sm flex items-center justify-center hover:bg-sky-50 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
+                  <Linkedin className="w-6 h-6 text-[#0077B5]" />
+                </div>
+                <div className="w-12 h-12 rounded-full bg-white border border-border shadow-sm flex items-center justify-center hover:bg-gray-50 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
+                  <Github className="w-6 h-6 text-[#333]" />
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-
-        <section className="bg-black py-20 px-4" id="preguntas">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-black text-white mb-4">Preguntas frecuentes</h2>
-            <p className="text-lg text-white">Todo lo que necesitas saber sobre Grayola</p>
-          </div>
-
-          <div className="max-w-3xl mx-auto">
-            <div className="mb-6 flex justify-center">
-              <button className="bg-[#7fff00] hover:bg-[#90ff20] text-black px-6 py-3 text-base font-bold rounded-full border-2 border-b-4 border-black">
-                Comencemos
-              </button>
-            </div>
-
-            <div className="mb-12">
-              <h3 className="text-xl font-bold text-white mb-4">General</h3>
-
-              <Accordion type="single" collapsible className="space-y-4">
-                <AccordionItem value="item-1" className="border border-white/20 rounded-xl px-6 py-2">
-                  <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
-                    ¿Qué diseños están incluidos?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/80">
-                    Básicamente todo lo que le pedirías a tu propio equipo de diseño, desde una impresión o un gráfico digital. Ilustraciones, edición de foto, diseño de marcas, presentaciones, edición de reels e incluso merchandising…. ¡Casi cualquier cosa que te puedas imaginar!
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-2" className="border border-white/20 rounded-xl px-6 py-2">
-                  <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
-                    ¿Para cuantos pedidos alcanza mi suscripción?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/80">
-                    Dependiendo el plan que elijas, tendrás cierta cantidad de créditos disponibles en el mes, podrás revisar los costos en créditos de cada uno de nuestros servicios en este link. ¡Cada mes se recargarán tus créditos de manera automática al renovar nuestra suscripción!
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-3" className="border border-white/20 rounded-xl px-6 py-2">
-                  <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
-                    ¿Avances en 24 a 72 horas? wow!
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/80">
-                    No, no es magia. Gracias a nuestra metodología y a nuestro increible equipo de diseño, trabajaremos arduamente en tu pedidos logrando los mejores tiempos.
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
-
-            <div className="mb-12">
-              <h3 className="text-xl font-bold text-white mb-4">Nuestro equipo</h3>
-
-              <Accordion type="single" collapsible className="space-y-4">
-                <AccordionItem value="item-4" className="border border-white/20 rounded-xl px-6 py-2">
-                  <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
-                    ¿Quienes serán mis diseñadores?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/80">
-                    Nuestros diseñadores cuentan con una amplia variedad de habilidades listas para aplicarlas a tus proyectos. Ya sea que necesites un diseño de Presentaciones o ilustraciones personalizadas para camisetas, nuestro equipo de diseñadores podrán crear todo lo que necesites.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-5" className="border border-white/20 rounded-xl px-6 py-2">
-                  <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
-                    ¿Cómo son elegidos los diseñadores?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/80">
-                    Para garantizar la calidad y la velocidad, cada uno de nuestros diseñadores deben realizar una rigurosa prueba de diseño antes de unirse a nuestro equipo. Solo el Top 2% de nuestros aplicantes son contratados.
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
-
             <div>
-              <h3 className="text-xl font-bold text-white mb-4">Nuestro trabajo</h3>
-
-              <Accordion type="single" collapsible className="space-y-4">
-                <AccordionItem value="item-6" className="border border-white/20 rounded-xl px-6 py-2">
-                  <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
-                    ¿Cuanto tiempo demora una revisión?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/80">
-                    Nos tomaremos un máximo de 72 horas más para enviarte una nueva versión mucho mas ajustada a tus expectativas.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-7" className="border border-white/20 rounded-xl px-6 py-2">
-                  <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
-                    ¿No te gusta el estilo de un diseñador?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/80">
-                    ¡Sin problemas! Háznoslo saber y te los cambiamos por otro diseñador más compatible con tu marca.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-8" className="border border-white/20 rounded-xl px-6 py-2">
-                  <AccordionTrigger className="font-medium text-left text-white hover:no-underline">
-                    ¿Dónde quedan mis archivos?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/80">
-                    Todos tus archivos se almacenarán en nuestra plataforma y podrás acceder a ellos sin limitaciones desde el Dashboard, incluyendo los editables.
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+               <h4 className="font-black text-xs uppercase tracking-[0.3em] mb-8 text-black/40 dark:text-white/40">Recursos</h4>
+               <ul className="space-y-4 text-sm font-black">
+                  <li><Link href="#" className="hover:text-primary transition-colors">Portafolio</Link></li>
+                  <li><Link href="#pricing" className="hover:text-primary transition-colors">Precios</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors">Servicios</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors">Blog</Link></li>
+               </ul>
+            </div>
+            <div>
+               <h4 className="font-black text-xs uppercase tracking-[0.3em] mb-8 text-black/40 dark:text-white/40">Empresa</h4>
+               <ul className="space-y-4 text-sm font-black">
+                  <li><Link href="#" className="hover:text-primary transition-colors">Términos y Condiciones</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors">Política de Privacidad</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors">Carreras</Link></li>
+               </ul>
             </div>
           </div>
-        </section>
-
-        <footer className="bg-black text-white py-16 px-4">
-          <div className="container max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-16">
-              <div>
-                <h3 className="text-2xl font-bold mb-4">
-                  Suscríbete a<br />nuestro newsletter
-                </h3>
-                <div className="flex">
-                  <input
-                    type="email"
-                    placeholder="Tu correo electrónico"
-                    className="py-1.5 px-3 text-sm rounded-l-full bg-gray-800 text-white border-0 focus:outline-none"
-                  />
-                  <button className="bg-lime-400 hover:bg-lime-500 text-black text-sm font-medium rounded-r-full px-3 py-1.5">
-                    Enviar
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-bold mb-4">Grayola</h3>
-                <ul className="space-y-2">
-                  <li><Link href="#" className="text-gray-400 hover:text-white">Grayola for Startups</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-white">Portafolio</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-white">Carreras</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-white">Servicios</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-white">Precios</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-white">Blog</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-white">Free Trial</Link></li>
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-bold mb-4">Recursos</h3>
-                <ul className="space-y-2">
-                  <li><Link href="#" className="text-gray-400 hover:text-white">Grayola para agencias</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-white">Grayola para ecommerce</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-white">Por qué elegir Grayola</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-white">Plantilla de parrilla de contenidos para redes</Link></li>
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-bold mb-4">Servicios</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <ul className="space-y-2">
-                    <li><Link href="#" className="text-gray-400 hover:text-white">Diseño de marca</Link></li>
-                    <li><Link href="#" className="text-gray-400 hover:text-white">Social media</Link></li>
-                    <li><Link href="#" className="text-gray-400 hover:text-white">Presentaciones</Link></li>
-                    <li><Link href="#" className="text-gray-400 hover:text-white">Ilustración</Link></li>
-                  </ul>
-
-                  <ul className="space-y-2">
-                    <li><Link href="#" className="text-gray-400 hover:text-white">Edición de video</Link></li>
-                    <li><Link href="#" className="text-gray-400 hover:text-white">Animación 2D/3D</Link></li>
-                    <li><Link href="#" className="text-gray-400 hover:text-white">Diseño web</Link></li>
-                    <li><Link href="#" className="text-gray-400 hover:text-white">Diseño de producto</Link></li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <p className="text-gray-400 text-sm mb-8 max-w-4xl">
-              <strong className="text-white block mb-4">Grayola es una forma revolucionaria para que las empresas obtengan buen diseño a gran escala.</strong>
-              Confiado por más de 100 empresas ambiciosas, Grayola hace que el diseño sea sin complicaciones para equipos de marketing y creativos. Al combinar el 1% superior del talento creativo de todo el mundo con tecnología específicamente diseñada y la rigurosidad de las operaciones de diseño, Grayola ayuda a marcas ambiciosas a crecer más rápido. Desde su inicio, Grayola ha sido una empresa completamente remota, con más de 15 miembros del equipo trabajando en 2 países y 2 zonas horarias. Grayola es una forma revolucionaria para que las empresas obtengan buen diseño a gran escala.
-            </p>
-
-            <div className="grid md:grid-cols-3 gap-8 mb-12">
-              <div>
-                <p className="text-white font-bold mb-2">Contáctanos</p>
-                <a href="mailto:team@grayola.io" className="text-white font-bold">team@grayola.io</a>
-              </div>
-
-              <div>
-                <p className="text-white font-bold mb-2">Llámanos</p>
-                <a href="tel:+573107370651" className="text-white font-bold">+57 310-7370651</a>
-              </div>
-
-              <div>
-                <p className="text-white font-bold mb-2">Todos nuestros servicios</p>
-                <div className="flex gap-4">
-                  <Link href="#" className="text-white hover:text-lime-400">
-                    <Linkedin className="h-5 w-5" />
-                  </Link>
-                  <Link href="#" className="text-white hover:text-lime-400">
-                    <Instagram className="h-5 w-5" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-              <p className="text-gray-400 text-sm mb-4 md:mb-0">
-                © Grayola LLC {new Date().getFullYear()}. Todos los derechos reservados
-              </p>
-
-              <div className="flex gap-6">
-                <Link href="#" className="text-gray-400 hover:text-white text-sm">
-                  Términos y condiciones
-                </Link>
-                <Link href="#" className="text-gray-400 hover:text-white text-sm">
-                  Política de privacidad
-                </Link>
-              </div>
+          <div className="pt-10 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            <p>&copy; {new Date().getFullYear()} Grayola Agency. Hecho con ❤️ desde Latam para el mundo.</p>
+            <div className="flex gap-8">
+               <Link href="/login" className="hover:text-primary">Login</Link>
+               <Link href="/register" className="hover:text-primary">Registro</Link>
             </div>
           </div>
-        </footer>
-      </div>
+        </div>
+      </footer>
     </div>
   )
-} 
+}
