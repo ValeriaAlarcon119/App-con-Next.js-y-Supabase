@@ -293,7 +293,7 @@ export function Navbar() {
           </div>
           <span className="text-xl font-black tracking-tighter text-black dark:text-white">GRAYOLA</span>
         </Link>
-        <nav className="mx-4 flex-1">
+        <nav className="mx-4 flex-1 hidden lg:flex">
           <ul className="flex gap-2 text-sm font-medium">
             {navigationItems.map((item) => (
               <li key={item.name}>
@@ -524,7 +524,7 @@ export function Navbar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full h-10 w-10 md:hidden hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="rounded-full h-10 w-10 lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle menu</span>

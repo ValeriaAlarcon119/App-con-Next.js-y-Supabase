@@ -16,7 +16,7 @@ export default function HomePage() {
   const yRange = useTransform(scrollYProgress, [0, 1], [0, -100]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-emerald-400 selection:text-black overflow-x-hidden selection:bg-primary/30">
+    <div className="w-full min-h-screen bg-background text-foreground font-sans selection:bg-emerald-400 selection:text-black overflow-x-hidden selection:bg-primary/30 relative">
       {/* Hero Section */}
       <motion.section 
         className="relative pt-12 pb-12 md:pt-20 md:pb-20 overflow-hidden"
@@ -25,7 +25,7 @@ export default function HomePage() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         viewport={{ once: true }}
       >
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-400/10 blur-[150px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] sm:w-[600px] sm:h-[600px] lg:w-[800px] lg:h-[800px] bg-emerald-400/10 blur-[80px] sm:blur-[150px] rounded-full pointer-events-none" />
         
         <div className="container mx-auto px-6 relative z-10 text-center">
           <motion.div
@@ -38,12 +38,13 @@ export default function HomePage() {
             <span className="text-xs font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">GrayolaOS is now available 24/7</span>
           </motion.div>
           
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[1.1] mb-8 text-foreground">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[1.1] mb-8 text-foreground text-center">
             Diseño. Organización.<br />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#EC4899]">
               Evolución Digital.
             </span>
           </h1>
+
           
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
             Centraliza tu marca, conecta la producción y preserva la memoria creativa para moverte rápido sin perder la consistencia.
@@ -72,9 +73,10 @@ export default function HomePage() {
       <section className="py-20" id="features">
         <div className="container mx-auto px-6 max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-5xl md:text-6xl font-black mb-8 tracking-tighter leading-none">Un espacio, <br /><span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#EC4899] font-black italic">poder ilimitado.</span></h2>
-              <p className="text-xl text-muted-foreground mb-12">Gestiona todos tus pedidos a la vez sin caos. Diseñado para equipos de alto rendimiento.</p>
+            <div className="text-center lg:text-left">
+              <h2 className="text-4xl md:text-6xl font-black mb-6 md:mb-8 tracking-tighter leading-none">Un espacio, <br /><span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#EC4899] font-black italic">poder ilimitado.</span></h2>
+              <p className="text-lg md:text-xl text-muted-foreground mb-12">Gestiona todos tus pedidos a la vez sin caos. Diseñado para equipos de alto rendimiento.</p>
+
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
@@ -131,17 +133,17 @@ export default function HomePage() {
             <h2 className="text-5xl font-black mb-6 tracking-tighter">Cómo funciona Grayola</h2>
             <p className="text-white/60 text-lg max-w-xl mx-auto">Un proceso pulido para entregarte calidad en tiempo récord.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
             {[
               { n: 1, t: "Crea un pedido", d: "Completa un formulario corto con todos los detalles. ¡No toma más de 2 minutos!" },
               { n: 2, t: "Asignamos un equipo", d: "Seleccionamos al mejor grupo de especialistas y directores creativos." },
               { n: 3, t: "Entregamos tus diseños", d: "En menos de 48h tendrás las primeras versiones para iterar hasta estar 100% satisfecho." }
             ].map((step, i) => (
-              <div key={i} className="relative p-10 rounded-[3rem] border-2 border-white/20 hover:border-emerald-500 transition-all group overflow-hidden">
-                <div className="absolute -right-4 -bottom-4 text-9xl font-black text-white/5 group-hover:text-emerald-500/10 transition-colors">{step.n}</div>
-                <div className="w-10 h-10 rounded-full border-2 border-emerald-500 flex items-center justify-center font-black text-emerald-500 shrink-0 mb-8">{step.n}</div>
-                <h3 className="text-2xl font-black mb-4 tracking-tight">{step.t}</h3>
-                <p className="text-white/50 leading-relaxed">{step.d}</p>
+              <div key={i} className="relative p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border-2 border-white/20 hover:border-emerald-500 transition-all group overflow-hidden">
+                <div className="absolute -right-4 -bottom-4 text-8xl md:text-9xl font-black text-white/5 group-hover:text-emerald-500/10 transition-colors">{step.n}</div>
+                <div className="w-10 h-10 rounded-full border-2 border-emerald-500 flex items-center justify-center font-black text-emerald-500 shrink-0 mb-6 md:mb-8">{step.n}</div>
+                <h3 className="text-xl md:text-2xl font-black mb-4 tracking-tight">{step.t}</h3>
+                <p className="text-white/50 text-sm md:text-base leading-relaxed">{step.d}</p>
               </div>
             ))}
           </div>
@@ -151,14 +153,16 @@ export default function HomePage() {
       {/* Services Grid */}
       <section className="py-20 bg-transparent overflow-hidden">
         <div className="container mx-auto px-6 max-w-7xl">
-          <div className="flex justify-between items-end mb-12">
-            <div>
-              <h2 className="text-5xl font-black mb-4 tracking-tighter">Servicios que transforman</h2>
+          <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-12 gap-6">
+
+            <div className="text-center md:text-left">
+              <h2 className="text-4xl md:text-5xl font-black mb-4 tracking-tighter">Servicios que transforman</h2>
               <p className="text-muted-foreground">Más de 100 servicios creativos a tu disposición.</p>
             </div>
-            <Button variant="outline" className="rounded-full border-2 border-primary font-black uppercase text-xs px-10 py-6 mb-4 hover:bg-primary hover:text-black">Ver Catálogo</Button>
+
+            <Button variant="outline" className="rounded-full border-2 border-primary font-black uppercase text-[10px] md:text-xs px-6 md:px-10 py-4 md:py-6 mb-4 hover:bg-primary hover:text-black shrink-0">Ver Catálogo</Button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
             {[
               { t: "Brand Design", i: Palette, c: "emerald" },
               { t: "Social Media", i: Share2, c: "pink" },
@@ -178,16 +182,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 bg-transparent px-8">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-[48px] font-black text-foreground mb-16 text-center">
-            <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center gap-2">
-                <span className="bg-primary/20 px-4 py-1.5 rounded-full border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:text-white">+8500 proyectos</span>
-                <span className="dark:text-white">terminados para 142 empresas</span>
+    <section className="py-20 bg-transparent px-4 sm:px-6 md:px-8 overflow-hidden">
+        <div className="max-w-7xl mx-auto w-full">
+          <h2 className="font-black text-foreground mb-16 text-center leading-tight">
+            <div className="flex flex-col items-center gap-6">
+              <div className="flex flex-col md:flex-row items-center gap-4 w-full justify-center">
+                <span className="bg-primary/20 px-5 md:px-6 py-2 rounded-full border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:text-white text-lg sm:text-xl md:text-2xl break-words">+8500 proyectos</span>
+                <span className="dark:text-white text-lg sm:text-xl md:text-2xl text-center">terminados para 142 empresas</span>
               </div>
-              <span className="text-black/60 dark:text-white/60">alrededor del mundo con calidad premium</span>
+              <span className="text-sm sm:text-base md:text-xl text-black/60 dark:text-white/60 text-center max-w-md">alrededor del mundo con calidad premium</span>
             </div>
           </h2>
         </div>
@@ -196,11 +199,11 @@ export default function HomePage() {
       {/* Pricing Section */}
       <section className="py-20 bg-muted/30 border-y border-border/20 px-6" id="pricing">
         <div className="container mx-auto max-w-7xl">
-          <div className="text-center mb-12 text-black dark:text-white">
-            <h2 className="text-6xl font-black mb-4 tracking-tighter dark:text-foreground">Un equipo de diseño on demand</h2>
-            <p className="text-muted-foreground text-xl">Precios transparentes y escalables.</p>
+          <div className="text-center mb-16 md:mb-20 px-4">
+            <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tighter dark:text-foreground leading-none">Un equipo de diseño on demand</h2>
+            <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">Precios transparentes y escalables para cada etapa de tu negocio.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {[
               { n: "Pro", p: "300", f: ["1 Brand", "Brand assets", "File management", "180 credits/sem", "Unlimited projects", "3 team members"] },
               { n: "Business", p: "500", f: ["5 Brands", "Brand assets", "File management", "300 credits/sem", "Unlimited projects", "5 team members"], popular: true },
@@ -270,9 +273,9 @@ export default function HomePage() {
              <div className="absolute top-0 right-0 p-12 opacity-5">
                 <Palette className="w-96 h-96 text-pink-600" />
              </div>
-             <div className="relative z-10 max-w-2xl text-foreground">
+             <div className="relative z-10 max-w-2xl text-foreground text-center md:text-left">
                 <p className="text-pink-700 dark:text-pink-400 font-black uppercase tracking-widest text-xs mb-4">PARA DISEÑADORES</p>
-                <h2 className="text-5xl md:text-6xl font-black mb-8 tracking-tighter leading-none">Únete a la <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#EC4899]">red de talentos</span> Grayola</h2>
+                <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tighter leading-none">Únete a la <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#EC4899]">red de talentos</span> Grayola</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-16">
                    {[
                      { t: "Trabajo 100% remoto", d: "Diseña desde cualquier lugar con horarios flexibles." },
@@ -318,12 +321,12 @@ export default function HomePage() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-32 bg-transparent px-6 relative overflow-hidden">
+      <section className="py-24 md:py-32 bg-transparent px-4 md:px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-pink-50 dark:from-emerald-950 dark:via-background dark:to-pink-950 -z-10"></div>
-        <div className="container mx-auto max-w-4xl text-center border border-black/5 dark:border-white/10 p-16 md:p-24 rounded-[4rem] bg-white dark:bg-slate-900/60 backdrop-blur-2xl shadow-[0_50px_150px_-30px_rgba(0,0,0,0.2)] dark:shadow-[0_50px_150px_-30px_rgba(0,0,0,0.6)] relative z-10 overflow-hidden">
+        <div className="container mx-auto max-w-4xl text-center border border-black/5 dark:border-white/10 p-10 md:p-24 rounded-[3rem] md:rounded-[4rem] bg-white dark:bg-slate-900/60 backdrop-blur-2xl shadow-[0_50px_150px_-30px_rgba(0,0,0,0.2)] dark:shadow-[0_50px_150px_-30px_rgba(0,0,0,0.6)] relative z-10 overflow-hidden">
            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#10B981] to-[#EC4899]"></div>
-           <h2 className="text-5xl md:text-7xl font-black mb-10 tracking-tighter text-foreground leading-[1.05]">Da el salto a un <br /><span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#EC4899] italic">diseño escalable.</span></h2>
-           <p className="text-xl text-muted-foreground mb-16 font-medium max-w-2xl mx-auto">Conoce a tu próximo equipo creativo al instante y diseñemos tu primer pedido hoy mismo.</p>
+           <h2 className="text-4xl md:text-7xl font-black mb-10 tracking-tighter text-foreground leading-[1.05]">Da el salto a un <br /><span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#EC4899] italic">diseño escalable.</span></h2>
+           <p className="text-lg md:text-xl text-muted-foreground mb-12 md:mb-16 font-medium max-w-2xl mx-auto">Conoce a tu próximo equipo creativo al instante y diseñemos tu primer pedido hoy mismo.</p>
            <div className="flex flex-col sm:flex-row justify-center gap-6 items-center">
               <Button className="agendar-prueba-button px-14 py-8 text-xl">Agendar una reunión</Button>
               <Button variant="ghost" className="rounded-full px-12 py-8 text-lg font-black hover:bg-primary/10 transition-all group flex items-center gap-2">
