@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import ClientLogos from "@/components/ClientLogos"
+import { Badge } from '@/components/ui/badge'
 import { ModeToggle } from "@/components/ui/mode-toggle"
 
 export default function HomePage() {
@@ -75,7 +76,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
               <h2 className="text-4xl md:text-6xl font-black mb-6 md:mb-8 tracking-tighter leading-none">Un espacio, <br /><span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#EC4899] font-black italic">poder ilimitado.</span></h2>
-              <p className="text-lg md:text-xl text-muted-foreground mb-12">Gestiona todos tus pedidos a la vez sin caos. Diseñado para equipos de alto rendimiento.</p>
+              <p className="text-lg md:text-xl text-muted-foreground mb-12 mx-auto lg:mx-0">Gestiona todos tus pedidos a la vez sin caos. Diseñado para equipos de alto rendimiento.</p>
 
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -85,8 +86,8 @@ export default function HomePage() {
                   { title: "Memoria Compartida", desc: "Historial y contexto para que el equipo no empiece de cero.", icon: Briefcase, bg: "pink-100" },
                   { title: "Colaboración", desc: "Equipos internos y externos trabajando desde la misma fuente.", icon: Users, bg: "sky-100" }
                 ].map((benefit, i) => (
-                  <div key={i} className={`card-gradient-border bg-${benefit.bg}/60 dark:bg-emerald-950/20 p-8 rounded-[2rem] transition-all hover:shadow-2xl hover:-translate-y-2 group shadow-lg`}>
-                    <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-6 shadow-md transform group-hover:rotate-12 transition-transform border border-black/5 dark:border-white/10">
+                  <div key={i} className={`card-gradient-border bg-${benefit.bg}/60 dark:bg-emerald-950/20 p-8 rounded-[2rem] transition-all hover:shadow-2xl hover:-translate-y-2 group shadow-lg text-center lg:text-left`}>
+                    <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-6 mx-auto lg:mx-0 shadow-md transform group-hover:rotate-12 transition-transform border border-black/5 dark:border-white/10">
                       <benefit.icon className="w-7 h-7 text-black dark:text-white" />
                     </div>
                     <h3 className="font-black text-2xl mb-3 tracking-tighter text-foreground">{benefit.title}</h3>
@@ -139,9 +140,9 @@ export default function HomePage() {
               { n: 2, t: "Asignamos un equipo", d: "Seleccionamos al mejor grupo de especialistas y directores creativos." },
               { n: 3, t: "Entregamos tus diseños", d: "En menos de 48h tendrás las primeras versiones para iterar hasta estar 100% satisfecho." }
             ].map((step, i) => (
-              <div key={i} className="relative p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border-2 border-white/20 hover:border-emerald-500 transition-all group overflow-hidden">
+              <div key={i} className="relative p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border-2 border-white/20 hover:border-emerald-500 transition-all group overflow-hidden text-center md:text-left">
                 <div className="absolute -right-4 -bottom-4 text-8xl md:text-9xl font-black text-white/5 group-hover:text-emerald-500/10 transition-colors">{step.n}</div>
-                <div className="w-10 h-10 rounded-full border-2 border-emerald-500 flex items-center justify-center font-black text-emerald-500 shrink-0 mb-6 md:mb-8">{step.n}</div>
+                <div className="w-10 h-10 rounded-full border-2 border-emerald-500 flex items-center justify-center font-black text-emerald-500 shrink-0 mb-6 mx-auto md:mx-0 md:mb-8">{step.n}</div>
                 <h3 className="text-xl md:text-2xl font-black mb-4 tracking-tight">{step.t}</h3>
                 <p className="text-white/50 text-sm md:text-base leading-relaxed">{step.d}</p>
               </div>
@@ -149,6 +150,52 @@ export default function HomePage() {
           </div>
         </div>
       </motion.section>
+
+      {/* GrayolaOS Hub Section (New Inspiration from Grayola.io) */}
+      <section className="py-24 bg-transparent relative overflow-hidden">
+        <div className="container mx-auto px-6 max-w-7xl relative z-10">
+          <div className="bg-gradient-to-br from-emerald-500/5 via-transparent to-pink-500/5 rounded-[4rem] border border-border/50 p-12 md:p-24 backdrop-blur-3xl overflow-hidden relative group">
+            <div className="absolute -top-32 -right-32 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full group-hover:bg-emerald-500/20 transition-all" />
+            <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-pink-500/10 blur-[100px] rounded-full group-hover:bg-pink-500/20 transition-all" />
+            
+            <div className="grid md:grid-cols-2 gap-16 items-center">
+              <div>
+                <Badge className="bg-primary/20 text-foreground mb-6">GrayolaOS v2.0</Badge>
+                <h2 className="text-5xl md:text-7xl font-black mb-8 tracking-tighter leading-none dark:text-white">Centraliza tu <span className="text-grayola-teal">Memoria Creativa</span></h2>
+                <p className="text-xl text-muted-foreground mb-12">No es solo una plataforma, es el sistema operativo de tu marca. Organiza assets, guía a tu equipo y escala sin fricción.</p>
+                
+                <div className="space-y-6">
+                  {[
+                    { t: "Dashboard en tiempo real", d: "Monitorea cada bit de tu producción creativa instantáneamente." },
+                    { t: "Gestión de Assets", d: "Tus editables y fuentes siempre a un click de distancia." },
+                    { t: "Feedback Colaborativo", d: "Elimina las reuniones interminables con anotaciones directas." }
+                  ].map((feat, i) => (
+                    <div key={i} className="flex gap-4 items-start">
+                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center mt-1">
+                        <Check className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-foreground">{feat.t}</h4>
+                        <p className="text-sm text-muted-foreground">{feat.d}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="relative">
+                <div className="card-gradient-border bg-black/5 dark:bg-white/5 rounded-[3rem] p-4 aspect-square flex items-center justify-center relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <PieChart className="w-48 h-48 text-primary animate-pulse" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+                    <span className="text-6xl font-black dark:text-white">24/7</span>
+                    <span className="font-bold uppercase tracking-widest text-xs text-muted-foreground">Production</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Services Grid */}
       <section className="py-20 bg-transparent overflow-hidden">
@@ -187,10 +234,10 @@ export default function HomePage() {
           <h2 className="font-black text-foreground mb-16 text-center leading-tight">
             <div className="flex flex-col items-center gap-6">
               <div className="flex flex-col md:flex-row items-center gap-4 w-full justify-center">
-                <span className="bg-primary/20 px-5 md:px-6 py-2 rounded-full border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:text-white text-lg sm:text-xl md:text-2xl break-words">+8500 proyectos</span>
-                <span className="dark:text-white text-lg sm:text-xl md:text-2xl text-center">terminados para 142 empresas</span>
+                <span className="bg-primary/20 px-6 py-2.5 rounded-full border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] text-lg sm:text-xl md:text-2xl whitespace-nowrap text-foreground">+8500 proyectos</span>
+                <span className="text-lg sm:text-xl md:text-2xl text-center text-foreground">terminados para 142 empresas</span>
               </div>
-              <span className="text-sm sm:text-base md:text-xl text-black/60 dark:text-white/60 text-center max-w-md">alrededor del mundo con calidad premium</span>
+              <span className="text-sm sm:text-base md:text-xl text-muted-foreground text-center max-w-md">alrededor del mundo con calidad premium</span>
             </div>
           </h2>
         </div>
@@ -340,47 +387,47 @@ export default function HomePage() {
       <footer className="bg-white dark:bg-background py-24 border-t border-border/50 relative overflow-hidden">
         <div className="container mx-auto px-6 max-w-7xl relative z-10 text-black dark:text-foreground">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-2 mb-8">
+            <div className="col-span-1 md:col-span-2 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-2 mb-8">
                 <img src="/images/grayola-bird-logo.svg?v=2" className="w-12 h-12" alt="Logo" />
                 <span className="text-3xl font-black tracking-tighter">GRAYOLA</span>
               </div>
-              <p className="text-muted-foreground max-w-md text-lg mb-10 font-medium">Diseño gráfico y video bajo demanda para empresas en etapa de escalamiento.</p>
-              <div className="flex gap-4">
-                <div className="w-12 h-12 rounded-full bg-white border border-border shadow-sm flex items-center justify-center hover:bg-pink-50 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
+              <p className="text-muted-foreground max-w-md text-lg mb-10 font-medium mx-auto md:mx-0">Diseño gráfico y video bajo demanda para empresas en etapa de escalamiento.</p>
+              <div className="flex justify-center md:justify-start gap-4">
+                <div className="w-12 h-12 rounded-full bg-white dark:bg-slate-800 border border-border shadow-sm flex items-center justify-center hover:bg-pink-50 dark:hover:bg-pink-900/20 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
                   <Instagram className="w-6 h-6 text-[#E4405F]" />
                 </div>
-                <div className="w-12 h-12 rounded-full bg-white border border-border shadow-sm flex items-center justify-center hover:bg-sky-50 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
+                <div className="w-12 h-12 rounded-full bg-white dark:bg-slate-800 border border-border shadow-sm flex items-center justify-center hover:bg-sky-50 dark:hover:bg-sky-900/20 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
                   <Linkedin className="w-6 h-6 text-[#0077B5]" />
                 </div>
-                <div className="w-12 h-12 rounded-full bg-white border border-border shadow-sm flex items-center justify-center hover:bg-gray-50 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
-                  <Github className="w-6 h-6 text-[#333]" />
+                <div className="w-12 h-12 rounded-full bg-white dark:bg-slate-800 border border-border shadow-sm flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
+                  <Github className="w-6 h-6 text-[#333] dark:text-white" />
                 </div>
               </div>
             </div>
-            <div>
-               <h4 className="font-black text-xs uppercase tracking-[0.3em] mb-8 text-black/40 dark:text-white/40">Recursos</h4>
+            <div className="text-center md:text-left">
+               <h4 className="font-black text-xs uppercase tracking-[0.3em] mb-8 text-foreground/40">Recursos</h4>
                <ul className="space-y-4 text-sm font-black">
-                  <li><Link href="#" className="hover:text-primary transition-colors">Portafolio</Link></li>
-                  <li><Link href="#pricing" className="hover:text-primary transition-colors">Precios</Link></li>
-                  <li><Link href="#" className="hover:text-primary transition-colors">Servicios</Link></li>
-                  <li><Link href="#" className="hover:text-primary transition-colors">Blog</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors text-foreground">Portafolio</Link></li>
+                  <li><Link href="#pricing" className="hover:text-primary transition-colors text-foreground">Precios</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors text-foreground">Servicios</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors text-foreground">Blog</Link></li>
                </ul>
             </div>
-            <div>
-               <h4 className="font-black text-xs uppercase tracking-[0.3em] mb-8 text-black/40 dark:text-white/40">Empresa</h4>
+            <div className="text-center md:text-left">
+               <h4 className="font-black text-xs uppercase tracking-[0.3em] mb-8 text-foreground/40">Empresa</h4>
                <ul className="space-y-4 text-sm font-black">
-                  <li><Link href="#" className="hover:text-primary transition-colors">Términos y Condiciones</Link></li>
-                  <li><Link href="#" className="hover:text-primary transition-colors">Política de Privacidad</Link></li>
-                  <li><Link href="#" className="hover:text-primary transition-colors">Carreras</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors text-foreground">Términos y Condiciones</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors text-foreground">Política de Privacidad</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors text-foreground">Carreras</Link></li>
                </ul>
             </div>
           </div>
-          <div className="pt-10 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+          <div className="pt-10 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-center md:text-left">
             <p>&copy; {new Date().getFullYear()} Grayola Agency. Hecho con ❤️ desde Latam para el mundo.</p>
-            <div className="flex gap-8">
-               <Link href="/login" className="hover:text-primary">Login</Link>
-               <Link href="/register" className="hover:text-primary">Registro</Link>
+            <div className="flex justify-center gap-8">
+               <Link href="/login" className="hover:text-primary text-foreground">Login</Link>
+               <Link href="/register" className="hover:text-primary text-foreground">Registro</Link>
             </div>
           </div>
         </div>

@@ -6,50 +6,50 @@ export default function SupportPage() {
   return (
     <div className="container mx-auto px-4 py-8 space-y-8 font-sans">
       <div className="page-header-card">
-        <h1 className="text-4xl font-black text-black flex items-center gap-3">
+        <h1 className="text-3xl md:text-4xl font-black text-foreground flex items-center gap-3">
           <HelpCircle className="h-8 w-8 text-primary" />
           Soporte y Ayuda
         </h1>
-        <p className="text-black/60 mt-2 font-medium">¿Tienes alguna duda o problema? Estamos aquí para ayudarte.</p>
+        <p className="text-muted-foreground mt-2 font-medium">¿Tienes alguna duda o problema? Estamos aquí para ayudarte.</p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">
-        <Card className="rounded-3xl border-2 border-black overflow-hidden shadow-lg bg-white group hover:border-primary transition-colors">
+        <Card className="rounded-3xl border-2 border-border overflow-hidden shadow-lg bg-card group hover:border-primary transition-all">
           <CardHeader>
-            <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center border-2 border-black mb-4 group-hover:scale-110 transition-transform">
-              <MessageCircle className="h-6 w-6 text-black" />
+            <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center border-2 border-border mb-4 group-hover:scale-110 transition-transform">
+              <MessageCircle className="h-6 w-6 text-foreground" />
             </div>
-            <CardTitle className="text-xl font-black">Chat en vivo</CardTitle>
-            <CardDescription className="text-black/60 font-medium">Hablemos ahora mismo.</CardDescription>
+            <CardTitle className="text-xl font-black text-foreground">Chat en vivo</CardTitle>
+            <CardDescription className="text-muted-foreground font-medium">Hablemos ahora mismo.</CardDescription>
           </CardHeader>
           <CardContent>
-            <button className="agendar-prueba-button w-full py-4 text-xs">Iniciar Chat</button>
+            <button className="agendar-prueba-button w-full py-4 text-xs uppercase tracking-widest">Iniciar Chat</button>
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border-2 border-black overflow-hidden shadow-lg bg-white group hover:border-primary transition-colors">
+        <Card className="rounded-3xl border-2 border-border overflow-hidden shadow-lg bg-card group hover:border-primary transition-all">
           <CardHeader>
-            <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center border-2 border-black mb-4 group-hover:scale-110 transition-transform">
-              <Mail className="h-6 w-6 text-black" />
+            <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center border-2 border-border mb-4 group-hover:scale-110 transition-transform">
+              <Mail className="h-6 w-6 text-foreground" />
             </div>
-            <CardTitle className="text-xl font-black">Correo electrónico</CardTitle>
-            <CardDescription className="text-black/60 font-medium">Te responderemos en 24h.</CardDescription>
+            <CardTitle className="text-xl font-black text-foreground">Correo electrónico</CardTitle>
+            <CardDescription className="text-muted-foreground font-medium">Te responderemos en 24h.</CardDescription>
           </CardHeader>
           <CardContent>
-            <button className="bg-white hover:bg-black/5 text-black w-full py-4 text-xs font-black border-2 border-black rounded-full transition-all">hola@grayola.com</button>
+            <button className="bg-card hover:bg-black/5 dark:hover:bg-white/5 text-foreground w-full py-4 text-xs font-black border-2 border-border rounded-full transition-all tracking-widest uppercase">hola@grayola.com</button>
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border-2 border-black overflow-hidden shadow-lg bg-white group hover:border-primary transition-colors">
+        <Card className="rounded-3xl border-2 border-border overflow-hidden shadow-lg bg-card group hover:border-primary transition-all">
           <CardHeader>
-            <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center border-2 border-black mb-4 group-hover:scale-110 transition-transform">
-              <Phone className="h-6 w-6 text-black" />
+            <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center border-2 border-border mb-4 group-hover:scale-110 transition-transform">
+              <Phone className="h-6 w-6 text-foreground" />
             </div>
-            <CardTitle className="text-xl font-black">Centro de Ayuda</CardTitle>
-            <CardDescription className="text-black/60 font-medium">Preguntas frecuentes y tutoriales.</CardDescription>
+            <CardTitle className="text-xl font-black text-foreground">Centro de Ayuda</CardTitle>
+            <CardDescription className="text-muted-foreground font-medium">Preguntas frecuentes y tutoriales.</CardDescription>
           </CardHeader>
           <CardContent>
-            <button className="bg-white hover:bg-black/5 text-black w-full py-4 text-xs font-black border-2 border-black rounded-full transition-all">Ir al Centro</button>
+            <button className="bg-card hover:bg-black/5 dark:hover:bg-white/5 text-foreground w-full py-4 text-xs font-black border-2 border-border rounded-full transition-all tracking-widest uppercase">Ir al Centro</button>
           </CardContent>
         </Card>
       </div>

@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import ClientLogos from "@/components/ClientLogos"
+import { Badge } from "@/components/ui/badge"
 import { ModeToggle } from "@/components/ui/mode-toggle"
 
 export default function LandingPage() {
@@ -149,8 +150,8 @@ export default function LandingPage() {
               { title: "Memoria Compartida", desc: "Historial y contexto para que el equipo no empiece de cero.", icon: Briefcase, bg: "pink-100", border: "#f472b6" },
               { title: "Colaboración", desc: "Equipos internos y externos trabajando desde la misma fuente.", icon: Users, bg: "sky-100", border: "#38bdf8" }
             ].map((benefit, i) => (
-              <div key={i} className={`card-gradient-border bg-${benefit.bg}/40 p-8 rounded-[2rem] transition-all hover:shadow-2xl hover:-translate-y-2 group shadow-lg`}>
-                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-md transform group-hover:rotate-12 transition-transform">
+              <div key={i} className={`card-gradient-border bg-${benefit.bg}/40 p-8 rounded-[2rem] transition-all hover:shadow-2xl hover:-translate-y-2 group shadow-lg text-center md:text-left`}>
+                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-6 mx-auto md:mx-0 shadow-md transform group-hover:rotate-12 transition-transform">
                   <benefit.icon className="w-7 h-7 text-black" />
                 </div>
                 <h3 className="font-black text-2xl mb-3 tracking-tighter">{benefit.title}</h3>
@@ -161,63 +162,97 @@ export default function LandingPage() {
         </div>
       </motion.section>
 
-      {/* Process Section */}
       <motion.section className="py-24 bg-black text-white rounded-[4rem] mx-4 my-8 relative overflow-hidden">
         <div className="container mx-auto px-6 max-w-7xl relative z-10">
           <div className="grid md:grid-cols-2 gap-16 items-center">
-            <div>
-              <h2 className="text-5xl font-black mb-8 leading-tight tracking-tighter">Gestiona todos tus pedidos a la vez <span className="text-emerald-400">sin caos.</span></h2>
-              <div className="space-y-6">
+            <div className="text-center md:text-left">
+              <h2 className="text-5xl font-black mb-10 leading-[1.1] tracking-tighter italic">Gestiona tus pedidos <br /><span className="text-emerald-400 not-italic">sin fricción.</span></h2>
+              <div className="space-y-8">
                 {[
                   { n: "1", t: "Crea un pedido", d: "Completa un formulario corto con todos los detalles. ¡No toma más de 2 minutos!" },
                   { n: "2", t: "Asignamos un equipo", d: "Seleccionamos al mejor grupo de especialistas y directores creativos." },
                   { n: "3", t: "Entregamos tus diseños", d: "En menos de 48h tendrás las primeras versiones para iterar hasta estar 100% satisfecho." }
                 ].map((step, i) => (
-                  <div key={i} className="flex gap-6 items-start">
-                    <div className="w-10 h-10 rounded-full border-2 border-emerald-400 flex items-center justify-center font-black text-emerald-400 shrink-0">{step.n}</div>
+                  <div key={i} className="flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left group">
+                    <div className="w-12 h-12 rounded-full border-2 border-emerald-400/50 flex items-center justify-center font-black text-emerald-400 shrink-0 mx-auto md:mx-0 group-hover:border-emerald-400 transition-colors">{step.n}</div>
                     <div>
-                      <h4 className="text-xl font-bold mb-1">{step.t}</h4>
-                      <p className="text-gray-400 text-sm">{step.d}</p>
+                      <h4 className="text-xl font-bold mb-2 group-hover:text-emerald-400 transition-colors tracking-tight">{step.t}</h4>
+                      <p className="text-gray-400 text-sm leading-relaxed">{step.d}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-4 group relative overflow-hidden dark:shadow-[0_0_50px_-12px_rgba(16,185,129,0.3)]">
-               <div className="aspect-video bg-gray-900 rounded-3xl overflow-hidden relative shadow-2xl">
-                  {/* Decorative Floating Icons */}
-                  <div className="absolute top-4 left-4 z-20 flex gap-2">
-                     <div className="p-2 bg-pink-500/20 rounded-lg border border-pink-500/30 backdrop-blur-sm animate-bounce">
-                        <Palette className="w-4 h-4 text-pink-400" />
-                     </div>
-                     <div className="p-2 bg-emerald-500/20 rounded-lg border border-emerald-500/30 backdrop-blur-sm animate-pulse">
-                        <Zap className="w-4 h-4 text-emerald-400" />
-                     </div>
-                  </div>
-                  <div className="absolute bottom-4 right-4 z-20 p-3 bg-white/10 rounded-full border border-white/20 backdrop-blur-md animate-float">
-                     <PieChart className="w-5 h-5 text-white" />
-                  </div>
-                  
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[3rem] p-4 group relative overflow-hidden shadow-2xl">
+               <div className="aspect-square bg-gray-900 rounded-[2.5rem] overflow-hidden relative">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 to-transparent"></div>
                   <img 
                     src="/images/dashboard-preview.png" 
                     alt="GrayolaOS Dashboard Preview" 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 opacity-90"
+                    className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-1000"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                  
-                  {/* Dark mode 'light effect' overlay */}
-                  <div className="absolute inset-0 bg-emerald-500/5 dark:bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-24 h-24 rounded-full bg-emerald-500/20 backdrop-blur-md flex items-center justify-center border border-emerald-500/30 animate-pulse">
+                      <Palette className="w-10 h-10 text-emerald-400" />
+                    </div>
+                  </div>
                </div>
             </div>
           </div>
         </div>
       </motion.section>
 
+      {/* GrayolaOS Hub Section (New Inspiration from Grayola.io) */}
+      <section className="py-24 bg-transparent relative overflow-hidden">
+        <div className="container mx-auto px-6 max-w-7xl relative z-10">
+          <div className="bg-gradient-to-br from-emerald-500/5 via-transparent to-pink-500/5 rounded-[4rem] border border-border/50 p-12 md:p-24 backdrop-blur-3xl overflow-hidden relative group">
+            <div className="absolute -top-32 -right-32 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full group-hover:bg-emerald-500/20 transition-all" />
+            <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-pink-500/10 blur-[100px] rounded-full group-hover:bg-pink-500/20 transition-all" />
+            
+            <div className="grid md:grid-cols-2 gap-16 items-center">
+              <div>
+                <Badge className="bg-primary/20 text-foreground mb-6">GrayolaOS Hub</Badge>
+                <h2 className="text-5xl md:text-7xl font-black mb-8 tracking-tighter leading-none text-foreground">Tu Memoria <br /><span className="text-grayola-teal italic">Creativa</span></h2>
+                <p className="text-xl text-muted-foreground mb-12 max-w-lg">No es solo una plataforma, es el sistema operativo de tu marca. Organiza assets, guía a tu equipo y escala sin fricción.</p>
+                
+                <div className="space-y-6">
+                  {[
+                    { t: "Dashboard en tiempo real", d: "Monitorea cada bit de tu producción creativa instantáneamente." },
+                    { t: "Gestión de Assets", d: "Tus editables y fuentes siempre a un click de distancia." },
+                    { t: "Feedback Colaborativo", d: "Elimina las reuniones interminables con anotaciones directas." }
+                  ].map((feat, i) => (
+                    <div key={i} className="flex gap-4 items-start">
+                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center mt-1">
+                        <Check className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-foreground tracking-tight">{feat.t}</h4>
+                        <p className="text-sm text-muted-foreground">{feat.d}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="relative">
+                <div className="card-gradient-border bg-black/5 dark:bg-white/5 rounded-[3rem] p-4 aspect-square flex items-center justify-center relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <PieChart className="w-48 h-48 text-primary animate-float" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+                    <span className="text-6xl font-black text-foreground">24/7</span>
+                    <span className="font-black uppercase tracking-widest text-xs text-muted-foreground">Production</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Services Section */}
       <section className="py-24 bg-transparent px-6">
         <div className="container mx-auto max-w-7xl">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
-            <div className="max-w-2xl">
+          <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-8">
+            <div className="max-w-2xl text-center md:text-left">
               <h2 className="text-5xl font-black mb-6 tracking-tighter">Todo en un solo lugar.</h2>
               <p className="text-muted-foreground text-lg">Explora más de 100 servicios de diseño disponibles con nuestra suscripción.</p>
             </div>
@@ -232,27 +267,26 @@ export default function LandingPage() {
               { t: "2D Animation", i: Sparkles, c: "emerald" },
               { t: "Illustration", i: Palette, c: "pink" }
             ].map((s, i) => (
-              <div key={i} className={`card-gradient-border bg-${s.c}-100/40 p-8 rounded-[2.5rem] text-center hover:bg-white hover:shadow-2xl transition-all group cursor-default shadow-md hover:-translate-y-2`}>
-                <div className={`bg-white w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-${s.c}-500 transition-all shadow-sm`}>
-                  <s.i className="w-7 h-7 text-black group-hover:text-white" />
+              <div key={i} className={`card-gradient-border bg-${s.c}-100/40 p-8 rounded-[2.5rem] text-center hover:bg-white dark:hover:bg-slate-900/50 hover:shadow-2xl transition-all group cursor-default shadow-md hover:-translate-y-2`}>
+                <div className={`bg-white dark:bg-slate-800 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-${s.c}-500 transition-all shadow-sm`}>
+                  <s.i className="w-7 h-7 text-black dark:text-white group-hover:text-white" />
                 </div>
-                <h4 className="font-black text-xs uppercase tracking-tighter text-black">{s.t}</h4>
+                <h4 className="font-black text-xs uppercase tracking-tighter text-foreground">{s.t}</h4>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 bg-transparent px-8">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-[48px] font-black text-black mb-16 text-center">
-            <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center gap-2">
-                <span className="bg-primary/20 px-4 py-1.5 rounded-full border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">+8500 proyectos</span>
-                <span>terminados para 142 empresas</span>
+      <section className="py-20 bg-transparent px-4">
+        <div className="max-w-7xl mx-auto w-full">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-foreground mb-16 text-center leading-tight">
+            <div className="flex flex-col items-center gap-6">
+              <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
+                <span className="bg-primary/20 px-6 py-2.5 rounded-full border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">+8500 proyectos</span>
+                <span className="text-foreground">terminados para 142 empresas</span>
               </div>
-              <span className="text-black/60">alrededor del mundo con calidad premium</span>
+              <span className="text-muted-foreground text-base md:text-xl">alrededor del mundo con calidad premium</span>
             </div>
           </h2>
         </div>
@@ -409,8 +443,8 @@ export default function LandingPage() {
       {/* Final CTA Section */}
       <section className="py-24 bg-transparent px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-pink-50 -z-10"></div>
-        <div className="container mx-auto max-w-4xl text-center border-4 border-black p-16 rounded-[4rem] bg-white shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] relative z-10">
-           <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tighter">Sign up and upload your first request</h2>
+        <div className="container mx-auto max-w-4xl text-center border-4 border-black dark:border-white p-10 md:p-16 rounded-[3rem] md:rounded-[4rem] bg-white dark:bg-slate-900 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] dark:shadow-[12px_12px_0px_0px_rgba(255,255,255,0.1)] relative z-10 transition-colors">
+           <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tighter text-foreground">Sign up and upload your first request</h2>
            <p className="text-xl text-muted-foreground mb-12">Meet your next creative team instantly and let's design your first order on Grayola today.</p>
            <div className="flex flex-col sm:flex-row justify-center gap-6">
               <Button className="agendar-prueba-button px-10 py-7 text-lg">Schedule a meeting</Button>
@@ -423,47 +457,47 @@ export default function LandingPage() {
       <footer className="bg-white py-16 border-t border-border/50 relative overflow-hidden">
         <div className="container mx-auto px-6 max-w-7xl relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-2 mb-6">
+            <div className="col-span-1 md:col-span-2 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-2 mb-6">
                 <img src="/images/grayola-bird-logo.svg?v=2" className="w-10 h-10" alt="Logo" />
                 <span className="text-2xl font-black tracking-tighter">GRAYOLA</span>
               </div>
-              <p className="text-muted-foreground max-w-md text-sm mb-8">Diseño gráfico y video bajo demanda para empresas en etapa de escalamiento.</p>
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-white border border-border shadow-sm flex items-center justify-center hover:bg-pink-50 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
+              <p className="text-muted-foreground max-w-md text-sm mb-8 mx-auto md:mx-0">Diseño gráfico y video bajo demanda para empresas en etapa de escalamiento.</p>
+              <div className="flex justify-center md:justify-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-border shadow-sm flex items-center justify-center hover:bg-pink-50 dark:hover:bg-pink-900/20 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
                   <Instagram className="w-5 h-5 text-[#E4405F]" />
                 </div>
-                <div className="w-10 h-10 rounded-full bg-white border border-border shadow-sm flex items-center justify-center hover:bg-sky-50 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
+                <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-border shadow-sm flex items-center justify-center hover:bg-sky-50 dark:hover:bg-sky-900/20 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
                   <Linkedin className="w-5 h-5 text-[#0077B5]" />
                 </div>
-                <div className="w-10 h-10 rounded-full bg-white border border-border shadow-sm flex items-center justify-center hover:bg-gray-50 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
-                  <Github className="w-5 h-5 text-[#333]" />
+                <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-border shadow-sm flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-all group scale-100 hover:scale-110 active:scale-95">
+                  <Github className="w-5 h-5 text-[#333] dark:text-white" />
                 </div>
               </div>
             </div>
-            <div>
-               <h4 className="font-black text-sm uppercase tracking-widest mb-6 text-black/50">Recursos</h4>
+            <div className="text-center md:text-left">
+               <h4 className="font-black text-sm uppercase tracking-widest mb-6 text-foreground/50">Recursos</h4>
                <ul className="space-y-4 text-sm font-bold">
-                  <li><Link href="#" className="hover:text-primary transition-colors">Portafolio</Link></li>
-                  <li><Link href="#pricing" className="hover:text-primary transition-colors">Precios</Link></li>
-                  <li><Link href="#" className="hover:text-primary transition-colors">Servicios</Link></li>
-                  <li><Link href="#" className="hover:text-primary transition-colors">Blog</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors text-foreground">Portafolio</Link></li>
+                  <li><Link href="#pricing" className="hover:text-primary transition-colors text-foreground">Precios</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors text-foreground">Servicios</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors text-foreground">Blog</Link></li>
                </ul>
             </div>
-            <div>
-               <h4 className="font-black text-sm uppercase tracking-widest mb-6 text-black/50">Empresa</h4>
+            <div className="text-center md:text-left">
+               <h4 className="font-black text-sm uppercase tracking-widest mb-6 text-foreground/50">Empresa</h4>
                <ul className="space-y-4 text-sm font-bold">
-                  <li><Link href="#" className="hover:text-primary transition-colors">Términos y Condiciones</Link></li>
-                  <li><Link href="#" className="hover:text-primary transition-colors">Política de Privacidad</Link></li>
-                  <li><Link href="#" className="hover:text-primary transition-colors">Carreras</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors text-foreground">Términos y Condiciones</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors text-foreground">Política de Privacidad</Link></li>
+                  <li><Link href="#" className="hover:text-primary transition-colors text-foreground">Carreras</Link></li>
                </ul>
             </div>
           </div>
-          <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-bold text-muted-foreground">
+          <div className="pt-10 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-center md:text-left">
             <p>&copy; {new Date().getFullYear()} Grayola Agency. Hecho con ❤️ desde Latam para el mundo.</p>
-            <div className="flex gap-6">
-               <Link href="/login">Login</Link>
-               <Link href="/register">Registro</Link>
+            <div className="flex justify-center gap-8">
+               <Link href="/login" className="hover:text-primary text-foreground">Login</Link>
+               <Link href="/register" className="hover:text-primary text-foreground">Registro</Link>
             </div>
           </div>
         </div>

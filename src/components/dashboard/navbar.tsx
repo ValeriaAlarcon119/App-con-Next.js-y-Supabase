@@ -50,6 +50,7 @@ export function Navbar() {
   const { theme, setTheme } = useTheme()
   const [userRole, setUserRole] = useState<string>('')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
@@ -519,7 +520,7 @@ export function Navbar() {
             </DropdownMenu>
           )}
 
-          <Sheet>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="ghost"
@@ -530,7 +531,7 @@ export function Navbar() {
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="pr-0">
+            <SheetContent side="left" className="pr-0 bg-white dark:bg-slate-950 border-r dark:border-white/10 text-foreground">
               <div className="px-2 mb-6 flex items-center justify-center">
                 <Image
                   src="/logo.png"
@@ -557,6 +558,7 @@ export function Navbar() {
                             <Link
                               key={item.name}
                               href={item.href}
+                              onClick={() => setIsSheetOpen(false)}
                               className={cn(
                                 "pl-6 pr-2 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
                                 pathname === item.href
