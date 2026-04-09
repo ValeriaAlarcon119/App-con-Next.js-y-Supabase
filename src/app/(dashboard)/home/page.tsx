@@ -384,8 +384,8 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-background py-24 border-t border-border/50 relative overflow-hidden">
-        <div className="container mx-auto px-6 max-w-7xl relative z-10 text-black dark:text-foreground">
+      <footer className="bg-white dark:bg-slate-950 py-20 border-t border-border/50 relative overflow-hidden transition-colors">
+        <div className="container mx-auto px-6 max-w-7xl relative z-10 text-foreground">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
             <div className="col-span-1 md:col-span-2 text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start gap-2 mb-8">

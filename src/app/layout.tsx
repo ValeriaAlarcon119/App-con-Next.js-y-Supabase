@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat } from 'next/font/google'
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "sonner"
 import { AuthProvider } from "@/hooks/use-auth"
 
 const montserrat = Montserrat({ 
@@ -39,7 +39,7 @@ export default function RootLayout({
             <div className="min-h-screen bg-background">
               {children}
             </div>
-            <Toaster />
+            <Toaster position="top-center" richColors closeButton />
           </ThemeProvider>
         </AuthProvider>
       </body>

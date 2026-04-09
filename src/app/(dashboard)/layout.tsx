@@ -9,9 +9,9 @@ export default function DashboardLayout({
 }) {
   return (
     <ProtectedRoute>
-      <div className="min-h-screen w-full">
+      <div className="min-h-screen w-full overflow-x-hidden relative">
         <Navbar />
-        <main className="w-full">
+        <main className="w-full overflow-x-hidden">
           {children}
         </main>
       </div>

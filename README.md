@@ -1,22 +1,35 @@
 # Grayola Premium - Plataforma de Gestión de Diseño as a Service (DaaS)
 
+![Grayola Banner](public/images/dashboard-preview.png)
+
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://appfullstack.netlify.app)
 
-Esta es una aplicación fullstack empresarial diseñada para la gestión ágil de proyectos de diseño, optimizando la colaboración entre directores, creativos y clientes finales.
+Esta es una aplicación fullstack empresarial de alto rendimiento diseñada para la gestión ágil de proyectos de diseño. Optimiza la colaboración entre directores creativos, diseñadores y clientes finales mediante un flujo de trabajo centralizado y una interfaz premium.
 
 🔗 **[Acceder a la Plataforma en Producción (Netlify)](https://appfullstack.netlify.app)**
 
 ---
 
+## 🚀 Tecnologías Destacadas
+
+![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
+![React](https://img.shields.io/badge/React-18-blue?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)
+![Supabase](https://img.shields.io/badge/Supabase-BaaS-3ECF8E?style=for-the-badge&logo=supabase)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-336791?style=for-the-badge&logo=postgresql)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-Animations-ff69b4?style=for-the-badge&logo=framer-motion)
+
+---
+
 ## 📋 Tabla de Contenidos
-- [Propuesta de Valor](#-propuesta-de-valor)
-- [Arquitectura y Stack Tecnológico](#-arquitectura-y-stack-tecnológico)
-- [Gestión de Roles y Seguridad (RLS)](#-gestión-de-roles-y-seguridad-rls)
-- [Experiencia de Usuario (UI/UX)](#-experiencia-de-usuario-uiux)
-- [Instalación y Configuración](#-instalación-y-configuración)
-- [Credenciales de Acceso (Demo)](#-credenciales-de-acceso-demo)
-- [Estructura del Proyecto](#-estructura-del-proyecto)
-- [Roadmap de Desarrollo](#-roadmap-de-desarrollo)
+- [🎯 Propuesta de Valor](#-propuesta-de-valor)
+- [🔄 Flujo Completo del Proyecto](#-flujo-completo-del-proyecto)
+- [🧱 Arquitectura y Estructura](#-arquitectura-y-estructura)
+- [🛡️ Roles y Permisos (Seguridad RLS)](#-roles-y-permisos-seguridad-rls)
+- [🎨 Experiencia de Usuario (UI/UX)](#-experiencia-de-usuario-uiux)
+- [🚀 Instalación](#-instalación)
+- [🔐 Credenciales Demo](#-credenciales-demo)
 
 ---
 
@@ -29,35 +42,38 @@ Grayola democratiza el acceso a servicios de diseño de alta calidad mediante un
 
 ---
 
-## 🛠 Arquitectura y Stack Tecnológico
+## 🔄 Flujo Completo del Proyecto
 
-La aplicación ha sido construida siguiendo los estándares más modernos de desarrollo web para garantizar escalabilidad y rendimiento:
+La plataforma gestiona el ciclo de vida completo de una solicitud creativa:
 
-### Frontend
-- **Framework**: [Next.js 14](https://nextjs.org/) con App Router para renderizado optimizado por el servidor.
-- **Lenguaje**: [TypeScript](https://www.typescriptlang.org/) para un desarrollo robusto y tipado estricto.
-- **Estética (UI)**: [Tailwind CSS](https://tailwindcss.com/) + [ShadCN UI](https://ui.shadcn.com/) + Dark Mode nativo.
-- **Animaciones**: Micro-interacciones con Framer Motion y transiciones suaves de CSS.
-
-### Backend & Seguridad
-- **BaaS**: [Supabase](https://supabase.com/) para gestión de base de datos, auth y storage.
-- **Data Layer**: PostgreSQL bajo políticas de **Row Level Security (RLS)**.
-- **Auth**: Supabase Auth con soporte para metadatos personalizados de roles.
-- **Storage**: Amazon S3 (vía Supabase) para almacenamiento de archivos pesados de diseño.
+1.  **Creación del Pedido (Briefing)**: El **Cliente** o el **Project Manager** crea un nuevo proyecto completando un formulario detallado con objetivos, requisitos y adjuntando archivos iniciales.
+2.  **Asignación Estratégica**: El **Project Manager** revisa la solicitud y asigna el proyecto al **Diseñador** más apto dentro del equipo.
+3.  **Desarrollo Creativo**: El **Diseñador** recibe una notificación en tiempo real, accede al proyecto y comienza a trabajar en las piezas solicitadas.
+4.  **Entrega y Revisión**: El diseñador sube las propuestas al módulo de documentos del proyecto. El cliente es notificado para revisar.
+5.  **Iteración / Aprobación**: El cliente puede solicitar ajustes o aprobar la entrega final. Todo el historial de cambios queda registrado para futura referencia.
 
 ---
 
-## 🛡 Gestión de Roles y Seguridad (RLS)
+## 🛡️ Roles y Permisos (Seguridad RLS)
 
-La seguridad es el núcleo de Grayola. Los datos están protegidos a nivel de base de datos, lo que significa que un usuario no puede acceder a información que no le pertenece, incluso si intenta manipular el frontend.
+El sistema utiliza **Row Level Security (RLS)** de PostgreSQL para garantizar que la privacidad de los datos sea absoluta.
 
-| Rol | Alcance de Permisos | Visibilidad de Datos |
-|-----|-------------------|----------------------|
-| **Project Manager** | Gestión total (CRUD) | Proyectos totales, usuarios y documentos globales. |
-| **Diseñador** | Colaboración y Avances | Solo proyectos donde está explícitamente asignado. |
-| **Cliente** | Solicitud y Revisión | Solo proyectos que él mismo ha creado. |
+| Rol | Icono | Alcance de Permisos | Visibilidad |
+|:--- |:---:|:--- |:---|
+| **Project Manager** | 🛡️ | Control total del ecosistema Grayola. | Puede ver/editar/borrar todos los proyectos y usuarios. |
+| **Diseñador** | 🎨 | Ejecución técnica y carga de archivos. | Solo ve proyectos asignados a su perfil. |
+| **Cliente** | 🏢 | Creación de solicitudes y revisión. | Solo ve los proyectos que él mismo ha creado. |
 
-> **Nota Técnica**: El sistema utiliza políticas de Supabase RLS vinculadas al `auth.uid()`, garantizando que las consultas SQL solo devuelvan los registros permitidos para el usuario autenticado.
+---
+
+## 🛠️ Herramientas de Desarrollo
+
+- **Radix UI & Shadcn/UI**: Componentes de interfaz accesibles y altamente personalizables.
+- **Lucide React**: Set de iconos consistentes para una navegación intuitiva.
+- **Next Themes**: Gestión impecable de Dark Mode y Light Mode.
+- **Date-fns**: Localización y formateo de fechas en español.
+- **UUID**: Identificadores únicos universales para transacciones seguras.
+- **Sonner**: Notificaciones tipo toast modernas y no intrusivas.
 
 ---
 
@@ -65,36 +81,30 @@ La seguridad es el núcleo de Grayola. Los datos están protegidos a nivel de ba
 
 La plataforma cuenta con una interfaz **Premium SaaS** diseñada para la claridad visual:
 - **Dashboard Dinámico**: Estadísticas en tiempo real basadas en el rol del usuario conectado.
-- **Vistas Duales**: Los proyectos se pueden visualizar en formato de tarjetas (Gallery) o Lista, adaptándose a la preferencia del usuario.
-- **Feedback Continuo**: Sistema de notificaciones integradas para avisar sobre nuevos proyectos o cambios de estado.
-- **Diseño Adaptativo**: Experiencia optimizada para móviles, tablets y monitores ultrawide.
+- **Vistas Duales**: Visualización en formato de **Tarjetas (Gallery)** o **Lista**, adaptándose a la preferencia del usuario.
+- **Notificaciones Push-like**: Sistema integrado que alerta sobre nuevos proyectos o cambios de estado instantáneamente.
+- **Diseño Adaptativo**: Optimizado para una experiencia fluida en smartphones, tablets y monitores ultrawide.
 
 ---
 
 ## 🚀 Instalación y Configuración
 
-Si deseas ejecutar este proyecto localmente:
-
-### 1. Requisitos Previos
-- Node.js v18+
-- Un proyecto en Supabase con las tablas configuradas.
-
-### 2. Clonado e Instalación
+### 1. Clonado e Instalación
 ```bash
 git clone https://github.com/ValeriaAlarcon119/App-con-Next.js-y-Supabase.git
 cd aplicacion-fullstack
 npm install
 ```
 
-### 3. Variables de Entorno
-Crea un archivo `.env.local` con las siguientes llaves (idénticas a las del despliegue en Netlify):
+### 2. Variables de Entorno
+Crea un archivo `.env.local`:
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://qlrenpzpcwzbztnrzbfw.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-### 4. Lanzamiento
+### 3. Lanzamiento
 ```bash
 npm run dev
 ```
@@ -103,15 +113,11 @@ npm run dev
 
 ## 🔐 Credenciales de Acceso (Demo)
 
-Para facilitar la revisión por parte de reclutadores y entusiastas, la aplicación cuenta con botones de **Auto-llenado** en la página de Login con los siguientes perfiles:
-
 | Perfil | Email | Contraseña |
-|-----|-------|------|
+|:--- |:---|:---|
 | **Project Manager** | `marian45@gmail.com` | `password123` |
 | **Diseñador** | `designer3@grayola.com` | `password123` |
 | **Cliente Externo** | `prueba1@gmail.com` | `password123` |
-
-*Accede a [login](https://appfullstack.netlify.app/login) para probar la experiencia de cada rol.*
 
 ---
 
@@ -120,33 +126,19 @@ Para facilitar la revisión por parte de reclutadores y entusiastas, la aplicaci
 ```
 src/
 ├── app/               # App Router: Rutas, Layouts y Server Components
-│   ├── (auth)/        # Login, Registro y Lógica de acceso
-│   └── (dashboard)/   # Gestión de Proyectos, Documentos y Análisis
-├── components/        # UI Atoms & Complex Molecules (Cards, Forms, Nav)
-├── hooks/             # use-auth, use-projects y utilidades reactivas
-├── lib/               # Configuración de Supabase Client y Helpers de Utils
-└── storage/           # Lógica para la gestión de archivos en la nube
+│   ├── (auth)/        # Autenticación y acceso
+│   └── (dashboard)/   # Módulos de Proyectos, Documentos y Billing
+├── components/        # Componentes UI reutilizables (Shadcn + Custom)
+├── hooks/             # Lógica reactiva (Autenticación, validación)
+├── lib/               # Clientes de servicios externos (Supabase)
+└── types/             # Definiciones de TypeScript para el modelo de datos
 ```
-
----
-
-## 📅 Roadmap de Desarrollo
-
-- [x] Implementación core de CRUD de Proyectos.
-- [x] Gestión de Documentos vinculada a Proyectos.
-- [x] Seguridad RLS robusta en Supabase.
-- [x] Diseño Premium SaaS Responsivo.
-- [ ] Implementación de Dashboards con gráficas avanzadas.
-- [ ] Sistema de comentarios real-time en proyectos.
-- [ ] Integración con Slack/WhatsApp para notificaciones de diseño.
 
 ---
 
 ## 📧 Contacto
 
-Desarrollado con pasión por el diseño y la tecnología:
-
 **Valeria Alarcón**  
 *Front-end & Product Developer*  
 📩 [valeriaalarocn119@gmail.com](mailto:valeriaalarocn119@gmail.com)  
-🌎 [LinkedIn Portfolio](https://www.linkedin.com/in/valeria-alarcon-andrade-45663a233/)
+🌎 [LinkedIn Profile](https://www.linkedin.com/in/valeria-alarcon-andrade-45663a233/)

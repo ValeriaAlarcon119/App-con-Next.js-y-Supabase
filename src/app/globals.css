@@ -94,9 +94,17 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
-  body {
+  html, body {
     @apply bg-background text-foreground;
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    touch-action: pan-y;
   }
 }
 
@@ -289,7 +297,7 @@
   
   /* Banner Header Global para páginas (Dashboard, Projects, Documents, etc) */
   .page-header-card {
-    @apply relative overflow-hidden p-6 md:p-8 rounded-3xl transition-all duration-300;
+    @apply relative overflow-hidden p-5 md:p-8 rounded-2xl md:rounded-3xl transition-all duration-300;
     /* Light Mode: Gradiente verde a rosadito (un poquito más oscuro para que resalte) */
     @apply bg-gradient-to-r from-emerald-100/80 via-white to-pink-100/80 shadow-md shadow-primary/10;
   }
@@ -303,6 +311,7 @@
   .card-gradient-border {
     position: relative;
     border: 0 !important; /* Evitar conflictos con bordes de tailwind */
+    @apply rounded-[1.5rem] md:rounded-[2rem];
   }
   
   .card-gradient-border::after {

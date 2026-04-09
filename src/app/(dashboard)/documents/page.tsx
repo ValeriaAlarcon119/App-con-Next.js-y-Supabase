@@ -25,9 +25,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ListFilter, LayoutGrid } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
+import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface FileObject {
@@ -553,75 +557,136 @@ export default function DocumentsPage() {
       )}
       
       {filteredDocuments.length > 0 ? (
-        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {filteredDocuments.map((doc, index) => {
-            const extension = getFileExtension(doc.name);
-            const fileType = doc.type || getFileTypeFromName(doc.name);
-            const displayName = getFileNameWithoutExtension(doc.name);
+        <Tabs defaultValue="grid" className="w-full">
+          <div className="flex justify-between items-center mb-6">
+            <TabsList className="bg-muted p-1.5 rounded-xl border border-border shadow-inner h-12">
+              <TabsTrigger value="grid" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground transition-all font-medium h-full">
+                <LayoutGrid className="h-4 w-4 mr-2" />
+                Tarjetas
+              </TabsTrigger>
+              <TabsTrigger value="list" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground transition-all font-medium h-full">
+                <ListFilter className="h-4 w-4 mr-2" />
+                Lista
+              </TabsTrigger>
+            </TabsList>
             
-            return (
-              <Card key={index} className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-primary/50 transition-all group flex flex-col h-[280px]">
-                <CardContent className="p-5 flex flex-col items-center justify-center flex-grow">
-                  <div className="mb-4 bg-muted p-4 rounded-2xl group-hover:bg-primary/10 transition-colors">
-                    {getDocumentIcon(fileType, extension)}
-                  </div>
-                  <div className="w-full text-center mt-2 px-2">
-                    <CardTitle className="text-sm font-bold line-clamp-1 text-foreground" title={displayName?.replace(/}/g, "") || 'Archivo sin nombre'}>
-                      {displayName?.replace(/}/g, "") || 'Archivo sin nombre'}
-                    </CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground flex items-center mt-2 justify-center truncate">
-                      <Folder className="h-3 w-3 mr-1.5 shrink-0" /> 
-                      <span className="truncate">{doc.projectTitle?.replace(/}/g, "") || 'Sin proyecto'}</span>
-                    </CardDescription>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-4 bg-muted/20 border-t border-border flex justify-between gap-3 mt-auto">
-                {doc.url ? (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 rounded-xl bg-background shadow-sm hover:bg-primary hover:text-primary-foreground border-border/50 hover:border-primary transition-all text-xs font-semibold h-9"
-                      onClick={() => handleViewDocument(doc)}
-                      title="Ver archivo"
-                    >
-                      <Eye className="h-3.5 w-3.5 mr-1.5" />
-                      Visualizar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 rounded-xl bg-background shadow-sm hover:bg-emerald-500 hover:text-white border-border/50 hover:border-emerald-500 transition-all text-xs font-semibold h-9"
-                      onClick={() => handleDownload(doc)}
-                      title="Descargar archivo"
-                    >
-                      <Download className="h-3.5 w-3.5 mr-1.5" />
-                      Descargar
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full rounded-xl bg-background shadow-sm text-muted-foreground opacity-50 cursor-not-allowed border-border/50 h-9"
-                    onClick={() => 
-                      toast({
-                        title: "Error",
-                        description: "Este archivo no tiene una URL de descarga",
-                        variant: "destructive",
-                      })
-                    }
-                    title="No disponible"
-                  >
-                    <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
-                    No disponible
-                  </Button>
-                )}
-              </CardFooter>
-              </Card>
-            );
-          })}
-        </div>
+            <p className="text-xs text-muted-foreground font-medium hidden sm:block">
+              {filteredDocuments.length} documentos encontrados
+            </p>
+          </div>
+
+          <TabsContent value="grid" className="mt-0">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            >
+              {filteredDocuments.map((doc, index) => {
+                const extension = getFileExtension(doc.name);
+                const fileType = doc.type || getFileTypeFromName(doc.name);
+                const displayName = getFileNameWithoutExtension(doc.name);
+                
+                return (
+                  <Card key={index} className="bg-card border border-border rounded-[1.5rem] overflow-hidden shadow-sm hover:shadow-lg hover:border-primary/50 transition-all group flex flex-col h-[280px]">
+                    <CardContent className="p-5 flex flex-col items-center justify-center flex-grow relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="mb-4 bg-muted p-5 rounded-2xl group-hover:scale-110 transition-transform duration-300 relative z-10">
+                        {getDocumentIcon(fileType, extension)}
+                      </div>
+                      <div className="w-full text-center mt-2 px-2 relative z-10">
+                        <CardTitle className="text-sm font-bold line-clamp-1 text-foreground" title={displayName?.replace(/}/g, "") || 'Archivo'}>
+                          {displayName?.replace(/}/g, "") || 'Archivo'}
+                        </CardTitle>
+                        <CardDescription className="text-[10px] text-muted-foreground flex items-center mt-2 justify-center truncate uppercase tracking-widest font-bold">
+                          <Folder className="h-3 w-3 mr-1.5 shrink-0 text-primary" /> 
+                          <span className="truncate">{doc.projectTitle?.replace(/}/g, "") || 'Sin proyecto'}</span>
+                        </CardDescription>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="p-3 bg-muted/30 border-t border-border flex justify-between gap-2 mt-auto">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex-1 rounded-xl hover:bg-primary/10 hover:text-primary transition-all text-[10px] font-bold h-9"
+                        onClick={() => handleViewDocument(doc)}
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1.5" />
+                        VER
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex-1 rounded-xl hover:bg-emerald-500/10 hover:text-emerald-500 transition-all text-[10px] font-bold h-9"
+                        onClick={() => handleDownload(doc)}
+                      >
+                        <Download className="h-3.5 w-3.5 mr-1.5" />
+                        BAJAR
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="list" className="mt-0">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-card border border-border rounded-[1.5rem] overflow-hidden shadow-sm"
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-muted/50 text-muted-foreground text-[10px] uppercase font-bold tracking-widest border-b border-border">
+                    <tr>
+                      <th className="px-6 py-4">Nombre del Documento</th>
+                      <th className="px-6 py-4">Proyecto Asociado</th>
+                      <th className="px-6 py-4 hidden sm:table-cell">Tamaño</th>
+                      <th className="px-6 py-4 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {filteredDocuments.map((doc, index) => (
+                      <tr key={index} className="hover:bg-muted/30 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-muted p-2 rounded-lg">
+                              {getDocumentIcon(doc.type, getFileExtension(doc.name))}
+                            </div>
+                            <div>
+                              <p className="font-bold text-foreground line-clamp-1">
+                                {getFileNameWithoutExtension(doc.name).replace(/}/g, "")}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground uppercase">{getFileExtension(doc.name)}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge variant="outline" className="bg-muted/50 border-border text-[10px] uppercase font-bold text-muted-foreground">
+                            {doc.projectTitle?.replace(/}/g, "") || 'General'}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 hidden sm:table-cell text-xs text-muted-foreground">
+                          {formatFileSize(doc.size)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex justify-end gap-2">
+                            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary" onClick={() => handleViewDocument(doc)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-emerald-500/10 hover:text-emerald-500" onClick={() => handleDownload(doc)}>
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          </TabsContent>
+        </Tabs>
       ) : (
         <div className="flex flex-col items-center justify-center py-16 text-center bg-card border border-border rounded-3xl p-8 shadow-sm">
           <div className="bg-muted p-6 rounded-full mb-4">

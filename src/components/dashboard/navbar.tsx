@@ -255,8 +255,8 @@ export function Navbar() {
     const role = userRole.toLowerCase()
     if (role === 'cliente') return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
     if (role === 'diseñador') return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
-    if (role === 'administrador' || role === 'project manager') return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-    return 'bg-primary/5 text-primary hover:bg-primary/10'
+    if (role === 'administrador' || role === 'project manager' || role === 'project_manager') return 'bg-[#00D084] text-black font-bold shadow-sm'
+    return 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
   }
   
   const navigationItems = [
@@ -284,7 +284,7 @@ export function Navbar() {
   return (
     <div className="border-b shadow-sm dark:shadow-gray-800/10 dark:bg-black font-sans">
       <div className="flex h-16 items-center px-4 md:px-6">
-        <Link href="/dashboard" className="flex items-center gap-2 mr-6 no-underline">
+        <Link href="/" className="flex items-center gap-2 mr-6 no-underline">
           <div className="w-10 h-10 flex items-center justify-center translate-y-[6px]">
             <img 
               src="/images/grayola-bird-logo.svg?v=2"
@@ -342,7 +342,7 @@ export function Navbar() {
               </Button>
               
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-grayola-darkblue rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 bg-white dark:bg-grayola-darkblue rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                   <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                     <h3 className="font-medium">Notificaciones</h3>
                     {notifications.filter(n => !n.read).length > 0 && (
@@ -455,19 +455,19 @@ export function Navbar() {
                         : user.email?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col items-start text-xs leading-none gap-1">
+                  <div className="hidden md:flex flex-col items-start text-xs leading-none gap-1">
                     <span className="font-medium group-hover:text-gray-900 dark:group-hover:text-white">
                       {user.user_metadata?.name
                         ? user.user_metadata.name
                         : user.email?.split("@")[0]}
                     </span>
-                    <Badge variant="secondary" className="px-1.5 text-[10px] h-4 shadow-sm">
+                    <Badge variant="secondary" className={cn("px-1.5 text-[10px] h-4 shadow-sm", getRoleBadgeClass())}>
                       {translateRole(displayRole)}
                     </Badge>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-56 rounded-xl font-sans">
+              <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-56 rounded-xl font-sans">
                 <DropdownMenuLabel className="group flex flex-col items-center space-y-1 text-center font-sans">
                   <p className="text-sm font-medium leading-none font-sans">
                     {user?.user_metadata?.name || 'Usuario'}
@@ -531,52 +531,49 @@ export function Navbar() {
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="pr-0 bg-white dark:bg-slate-950 border-r dark:border-white/10 text-foreground">
-              <div className="px-2 mb-6 flex items-center justify-center">
-                <Image
-                  src="/logo.png"
-                  width={200}
-                  height={60}
-                  alt="Logo"
-                  priority
-                  className="h-auto"
-                />
+            <SheetContent side="left" className="w-[85vw] sm:w-[350px] p-0 bg-white dark:bg-black border-r border-border font-sans">
+              <div className="p-6 border-b border-border flex items-center gap-2">
+                 <img src="/images/grayola-bird-logo.svg?v=2" alt="Logo" className="w-8 h-8" />
+                 <span className="text-xl font-black tracking-tighter">GRAYOLA</span>
               </div>
-              <ScrollArea className="my-4 h-[calc(100vh-8rem)] pb-10">
-                <div className="pl-4 pr-6">
-                  <Accordion
-                    type="single"
-                    collapsible
-                    className="w-full"
-                    defaultValue="item-1"
-                  >
-                    <AccordionItem value="item-1" className="border-none">
-                      <AccordionTrigger className="py-2 text-sm hover:no-underline hover:bg-gray-100 dark:hover:bg-gray-800 px-2 rounded-md">Navegación</AccordionTrigger>
-                      <AccordionContent>
-                        <div className="flex flex-col space-y-1 pl-2">
-                          {navigationItems.map((item) => (
-                            <Link
-                              key={item.name}
-                              href={item.href}
-                              onClick={() => setIsSheetOpen(false)}
-                              className={cn(
-                                "pl-6 pr-2 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
-                                pathname === item.href
-                                  ? "bg-grayola-lime/20 text-black dark:text-white font-medium"
-                                  : "text-gray-700 dark:text-gray-200"
-                              )}
-                            >
-                              <div className="flex items-center">
-                                {item.icon && <div className="mr-2 h-4 w-4">{item.icon}</div>}
-                                <span>{item.name}</span>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </div>
+              <ScrollArea className="h-full">
+                <nav className="p-4 space-y-2">
+                  {navigationItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsSheetOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 no-underline",
+                        pathname === item.href 
+                          ? "bg-primary/20 text-black dark:text-white font-bold" 
+                          : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                      )}
+                    >
+                      {item.icon}
+                      <span>{item.name}</span>
+                    </Link>
+                  ))}
+                  <div className="pt-6 border-t border-border mt-6">
+                     <p className="text-[10px] text-zinc-400 uppercase tracking-widest px-4 mb-4">Ajustes Rápidos</p>
+                     <Button 
+                       variant="ghost" 
+                       className="w-full justify-start gap-3 rounded-2xl text-zinc-500"
+                       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                     >
+                        {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                        Modo {theme === 'dark' ? 'Claro' : 'Oscuro'}
+                     </Button>
+                     <Button 
+                       variant="ghost" 
+                       className="w-full justify-start gap-3 rounded-2xl text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                       onClick={handleSignOut}
+                     >
+                        <LogOut className="h-5 w-5" />
+                        Cerrar Sesión
+                     </Button>
+                  </div>
+                </nav>
               </ScrollArea>
             </SheetContent>
           </Sheet>

@@ -454,8 +454,8 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-white py-16 border-t border-border/50 relative overflow-hidden">
-        <div className="container mx-auto px-6 max-w-7xl relative z-10">
+      <footer className="bg-white dark:bg-slate-950 py-16 border-t border-border/50 relative overflow-hidden transition-colors">
+        <div className="container mx-auto px-6 max-w-7xl relative z-10 text-foreground">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="col-span-1 md:col-span-2 text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start gap-2 mb-6">
@@ -494,7 +494,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="pt-10 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-center md:text-left">
-            <p>&copy; {new Date().getFullYear()} Grayola Agency. Hecho con ❤️ desde Latam para el mundo.</p>
+            <p>&copy; {new Date().getFullYear()} Grayola Agency. Hecho con ❤️ desde LATAM para el mundo.</p>
             <div className="flex justify-center gap-8">
                <Link href="/login" className="hover:text-primary text-foreground">Login</Link>
                <Link href="/register" className="hover:text-primary text-foreground">Registro</Link>

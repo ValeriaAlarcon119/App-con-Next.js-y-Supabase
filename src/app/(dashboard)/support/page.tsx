@@ -5,8 +5,8 @@ import { MessageCircle, HelpCircle, Mail, Phone, ExternalLink } from "lucide-rea
 export default function SupportPage() {
   return (
     <div className="container mx-auto px-4 py-8 space-y-8 font-sans">
-      <div className="page-header-card">
-        <h1 className="text-3xl md:text-4xl font-black text-foreground flex items-center gap-3">
+      <div className="page-header-card flex flex-col items-center text-center md:items-start md:text-left transition-all">
+        <h1 className="text-3xl md:text-4xl font-black text-foreground flex flex-col md:flex-row items-center gap-3">
           <HelpCircle className="h-8 w-8 text-primary" />
           Soporte y Ayuda
         </h1>

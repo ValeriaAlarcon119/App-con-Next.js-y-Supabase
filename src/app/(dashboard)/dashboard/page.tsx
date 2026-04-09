@@ -26,6 +26,21 @@ import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { 
+  BarChart as ReBarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as ReTooltip, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell,
+  AreaChart,
+  Area
+} from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Project {
   id: string;
@@ -166,6 +181,36 @@ export default function DashboardPage() {
     )
   }
 
+  const getChartData = () => {
+    const statusCounts = projects.reduce((acc: any, p) => {
+      const status = p.status || 'pendiente';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.keys(statusCounts).map(key => ({
+      name: getDisplayStatus(key),
+      value: statusCounts[key],
+      color: key === 'pendiente' ? '#FBBF24' :
+             key === 'en progreso' ? '#38BDF8' :
+             key === 'completado' ? '#10B981' :
+             key === 'retrasado' ? '#F43F5E' : '#94A3B8'
+    }));
+  };
+
+  // Datos simulados de actividad para el AreaChart (línea de tiempo)
+  const activityData = [
+    { name: 'Lun', valor: 4 },
+    { name: 'Mar', valor: 7 },
+    { name: 'Mie', valor: 5 },
+    { name: 'Jue', valor: 9 },
+    { name: 'Vie', valor: 12 },
+    { name: 'Sab', valor: 8 },
+    { name: 'Dom', valor: 10 },
+  ];
+
+  const chartData = getChartData();
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-8 font-sans transition-colors duration-300">
       {/* Header Banner */}
@@ -187,7 +232,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
+      >
         {/* Documentos */}
         <Card className="transition-all hover:shadow-lg bg-card/60 backdrop-blur-sm border border-border/50 dark:border-border rounded-3xl overflow-hidden hover:-translate-y-1 hover:border-primary/50 dark:hover:border-primary/50 group">
           <CardContent className="p-6 flex gap-4 items-center h-full">
@@ -249,7 +298,82 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
+
+      {/* Secciones de Gráficos */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="grid gap-6 md:grid-cols-2"
+      >
+        <Card className="bg-card/60 backdrop-blur-sm border border-border rounded-3xl overflow-hidden shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold">Estado de Proyectos</CardTitle>
+            <CardDescription>Distribución porcentual por categoría</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <ReTooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card/60 backdrop-blur-md border border-border/50 rounded-[2.5rem] overflow-hidden shadow-2xl hover:border-primary/30 transition-all group">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold tracking-tight">Actividad en Tiempo Real</CardTitle>
+            <CardDescription>Flujo de trabajo semanal de GrayolaOS</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px] w-full p-0 pr-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={activityData}>
+                <defs>
+                  <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" opacity={0.1} />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 12, fill: '#888' }} 
+                  dy={10}
+                />
+                <YAxis hide />
+                <ReTooltip 
+                  contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px', color: '#fff' }}
+                  itemStyle={{ color: '#10B981' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="valor" 
+                  stroke="#10B981" 
+                  strokeWidth={4}
+                  fillOpacity={1} 
+                  fill="url(#colorVal)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       <Tabs defaultValue="resumen" className="mt-8">
         <div className="flex justify-between items-center mb-6">
@@ -306,18 +430,7 @@ export default function DashboardPage() {
                         <p className="text-sm font-semibold truncate text-foreground">{project.title}</p>
                         <p className="text-xs text-muted-foreground">{formatDate(project.created_at)}</p>
                       </div>
-                      <Badge 
-                        variant="outline" 
-                        className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border-transparent ${
-                          project.status === 'pendiente' ? 'bg-yellow-500/10 text-yellow-500' :
-                          project.status === 'en progreso' ? 'bg-blue-500/10 text-blue-500' :
-                          project.status === 'completado' ? 'bg-emerald-500/10 text-emerald-500' :
-                          project.status === 'retrasado' ? 'bg-red-500/10 text-red-500' :
-                          'bg-muted text-muted-foreground'
-                        }`}
-                      >
-                        {getDisplayStatus(project.status)}
-                      </Badge>
+                      {renderStatusIndicator(project.status)}
                     </div>
                   )) : (
                      <p className="text-sm text-muted-foreground text-center py-4">No tienes proyectos asignados aún.</p>
@@ -581,6 +694,43 @@ function getFileIcon(type: string) {
       return <FileText className="h-4 w-4 text-blue-500" />;
     default:
       return <File className="h-4 w-4 text-zinc-500" />;
+  }
+}
+
+function renderStatusIndicator(status: string) {
+  const s = status?.toLowerCase() || 'pendiente';
+  const iconClass = "h-3 w-3 mr-1";
+  
+  switch (s) {
+    case 'pendiente':
+      return (
+        <motion.div animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 2, repeat: Infinity }} className="flex items-center text-[9px] font-black uppercase tracking-tighter text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+          <AlertCircle className={iconClass} /> Pendiente
+        </motion.div>
+      )
+    case 'en progreso':
+      return (
+        <div className="flex items-center text-[9px] font-black uppercase tracking-tighter text-sky-500 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20">
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }}>
+            <RefreshCw className={iconClass} />
+          </motion.div>
+          Progreso
+        </div>
+      )
+    case 'completado':
+      return (
+        <div className="flex items-center text-[9px] font-black uppercase tracking-tighter text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+          <CheckCircle className={iconClass} /> Hecho
+        </div>
+      )
+    case 'retrasado':
+      return (
+        <motion.div animate={{ x: [-1, 1, -1] }} transition={{ duration: 4, repeat: Infinity }} className="flex items-center text-[9px] font-black uppercase tracking-tighter text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
+          <AlertCircle className={iconClass} /> Alerta
+        </motion.div>
+      )
+    default:
+      return <span className="text-[9px] uppercase opacity-50">{s}</span>
   }
 }
 

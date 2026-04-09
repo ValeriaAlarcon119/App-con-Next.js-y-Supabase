@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { 
   Plus, Search, Filter, FileText, User, Calendar, Clock, 
-  CheckCircle, Edit, Trash2, Eye, AlertCircle, MoreHorizontal,
+  CheckCircle, Edit, Trash2, Eye, AlertCircle, MoreHorizontal, LayoutDashboard,
   RefreshCw, ListFilter, ChevronDown, X, Tag, Briefcase, PenLine, PlusCircle, Edit2, Upload, FileUp, Paperclip, 
   File, Loader2, FileImage, FileVideo, FileCode, Download, Building2, Paintbrush, ShieldCheck, FolderOpen, Pencil, Files, Save
 } from 'lucide-react'
@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { motion, AnimatePresence } from 'framer-motion'
 
 import {
   Dialog,
@@ -170,6 +171,7 @@ export default function ProjectsPage() {
   const [creatorFilter, setCreatorFilter] = useState<string | null>(null)
   const [designerFilter, setDesignerFilter] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [designers, setDesigners] = useState<UserData[]>([])
   const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [createProgress, setCreateProgress] = useState(0)
@@ -343,20 +345,22 @@ const fetchProjects = async () => {
   const createProject = async () => {
     try {
       setIsCreatingProject(true);
-      setCreateProgress(10);
+      const toastId = toast.loading('Iniciando creación de proyecto...', {
+        description: 'Preparando activos en GrayolaOS'
+      })
+      
+      if (titleCheckTimeout) {
+        clearTimeout(titleCheckTimeout);
+      }
+      setIsTitleCheckPending(false);
 
       if (formData.assigned_to === "unassigned") {
-        toast({
-          title: "Error",
-          description: "Debe seleccionar un diseñador para el proyecto",
-          variant: "destructive",
-        });
+        toast.error('Error', { id: toastId, description: "Debe seleccionar un diseñador para el proyecto" });
         setIsCreatingProject(false);
         return;
       }
       
-      console.log("Archivos a subir:", formData.files);
-      setCreateProgress(20);
+      toast.loading('Analizando documentos...', { id: toastId, description: 'Preparando metadatos' })
       
       const { data: projectData, error } = await supabase
         .from('projects')
@@ -372,29 +376,25 @@ const fetchProjects = async () => {
         .select();
 
       if (error) {
-        console.error('Error creating project:', error)
-        toast({
-          title: "Error",
-          description: error.message || "No se pudo crear el proyecto. Verifica los permisos de tu rol.",
-          variant: "destructive",
-        })
+        toast.error('Error', { id: toastId, description: error.message });
         throw error
       }
       
-      setCreateProgress(40);
       const newProjectId = projectData?.[0]?.id;
-      console.log("Proyecto creado con ID:", newProjectId);
       
       if (formData.files.length > 0 && newProjectId) {
-        setUploadingFiles(true);
-        setCreateProgress(50);
-        
-        const successfullyUploadedFiles = await Promise.all(formData.files.map(async (file) => {
+        const successfullyUploadedFiles = await Promise.all(formData.files.map(async (file, index) => {
           const safeFileName = sanitizeFileName(file.name);
           const filePath = `projects/${newProjectId}/${safeFileName}`;
           
           try {
-            const { data, error: uploadError } = await supabase.storage
+            const progress = Math.round(((index + 1) / formData.files.length) * 100);
+            toast.loading(`Subiendo activos... ${progress}%`, { 
+              id: toastId,
+              description: `Finalizado: ${file.name}`
+            })
+
+            const { error: uploadError } = await supabase.storage
               .from('documents')
               .upload(filePath, file.file instanceof Blob ? file.file : new Blob([]), {
                 cacheControl: '3600',
@@ -420,31 +420,18 @@ const fetchProjects = async () => {
 
         const validFiles = successfullyUploadedFiles.filter(Boolean);
 
-        const { error: updateError } = await supabase
+        await supabase
           .from('projects')
-          .update({
-            files: validFiles
-          })
+          .update({ files: validFiles })
           .eq('id', newProjectId);
-        
-        if (updateError) {
-          console.error('Error updating project with files:', updateError);
-          toast({
-            title: "Advertencia",
-            description: "Se creó el proyecto pero hubo un problema al guardar los archivos",
-            variant: "destructive",
-          });
-        } else {
-          console.log('Proyecto actualizado con archivos:', validFiles);
-        }
-        
-        setUploadingFiles(false);
       }
 
-      setCreateProgress(95);
-      console.log("Actualizando lista de proyectos");
       await fetchProjects();
-      setCreateProgress(100);
+      
+      toast.success('¡Dossier creado con éxito!', { 
+        id: toastId,
+        description: `El proyecto "${formData.title}" ya está activo.`
+      })
       
       setFormData({
         title: '',
@@ -453,28 +440,13 @@ const fetchProjects = async () => {
         files: []
       });
       
-      toast({
-        title: "Éxito",
-        description: "Proyecto creado correctamente",
-        className: "bg-green-100 border-green-500 text-green-800",
-      });
-      
       setDialogOpen(false);
     } catch (error: any) {
       console.error('Error creating project:', error);
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo crear el proyecto. Verifica los permisos de tu rol.",
-        variant: "destructive",
-      });
+      toast.error('Error', { description: error.message || "No se pudo crear el proyecto." });
     } finally {
-      console.log("Finalizando proceso...");
-      setTimeout(() => {
-        setIsCreatingProject(false);
-        setCreateProgress(0);
-        setFileProgress(0);
-        console.log("Estado de creación reseteado");
-      }, 500);
+      setIsCreatingProject(false);
+      setCreateProgress(0);
     }
   }
 
@@ -525,7 +497,12 @@ const fetchProjects = async () => {
         } finally {
           setIsTitleCheckPending(false)
         }
-      }, 500)
+      }, 600)
+      
+      // Timeout de seguridad: Si en 3 segundos no responde, desbloquear
+      setTimeout(() => {
+        setIsTitleCheckPending(false);
+      }, 3000);
       
       setTitleCheckTimeout(timeout)
     } else if (name === 'title' && !value.trim()) {
@@ -543,64 +520,97 @@ const fetchProjects = async () => {
   }
 
   const getStatusBadge = (status?: string) => {
-    if (!status) {
-      return (
-        <Badge variant="outline" className="capitalize" title="Sin estado">
-          <span className="w-2 h-2 rounded-full bg-gray-400 mr-1"></span>
-        </Badge>
-      )
-    }
-
-    switch (status.toLowerCase()) {
+    const s = status?.toLowerCase() || 'pendiente';
+    
+    const iconClass = "h-3.5 w-3.5 mr-1.5";
+    
+    switch (s) {
       case 'pendiente':
         return (
-          <Badge variant="outline" title="Pendiente" className="status-badge-pending capitalize bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400">
-            <AlertCircle className="h-3 w-3" />
-          </Badge>
+          <motion.div
+            animate={{ opacity: [0.7, 1, 0.7] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm cursor-help"
+            title="Sujeto a revisión"
+          >
+            <AlertCircle className={iconClass} />
+            Pendiente
+          </motion.div>
         )
       case 'en progreso':
         return (
-          <Badge variant="outline" title="En progreso" className="status-badge-in-progress capitalize bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400">
-            <RefreshCw className="h-3 w-3 animate-spin" />
-          </Badge>
+          <div className="inline-flex items-center px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400 text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm">
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }}>
+              <RefreshCw className={iconClass} />
+            </motion.div>
+            En Progreso
+          </div>
         )
       case 'completado':
         return (
-          <Badge variant="outline" title="Completado" className="status-badge-completed capitalize bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400">
-            <CheckCircle className="h-3 w-3" />
-          </Badge>
+          <motion.div 
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm"
+          >
+            <CheckCircle className={iconClass} />
+            Completado
+          </motion.div>
         )
       case 'retrasado':
         return (
-          <Badge variant="outline" title="Retrasado" className="status-badge-delayed capitalize bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400">
-            <AlertCircle className="h-3 w-3" />
-          </Badge>
+          <motion.div 
+            animate={{ x: [-1, 1, -1] }}
+            transition={{ duration: 5, repeat: Infinity }}
+            className="inline-flex items-center px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm"
+          >
+            <AlertCircle className={iconClass} />
+            Retrasado
+          </motion.div>
         )
       default:
+        return <Badge variant="outline" className="text-[10px] uppercase">{s}</Badge>
+    }
+  }
+
+  const getRoleBadge = (role: string) => {
+    switch (role?.toLowerCase()) {
+      case 'project_manager':
         return (
-          <Badge variant="outline" title={status} className="capitalize">
-            {status}
-          </Badge>
+          <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#10b981]/15 border border-[#10b981]/30 text-[#10b981] text-[9px] font-black uppercase tracking-tighter shadow-sm backdrop-blur-md">
+            <ShieldCheck className="h-3 w-3 mr-1" />
+            Gerente de Proyecto
+          </div>
         )
+      case 'designer':
+        return (
+          <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-violet-500/15 border border-violet-500/30 text-violet-600 dark:text-violet-400 text-[9px] font-black uppercase tracking-tighter shadow-sm backdrop-blur-md">
+            <Paintbrush className="h-3 w-3 mr-1" />
+            Diseñador
+          </div>
+        )
+      case 'client':
+        return (
+          <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-sky-500/15 border border-sky-500/30 text-sky-600 dark:text-sky-400 text-[9px] font-black uppercase tracking-tighter shadow-sm backdrop-blur-md">
+            <User className="h-3 w-3 mr-1" />
+            Cliente
+          </div>
+        )
+      default:
+        return <Badge variant="outline" className="rounded-full text-[9px] uppercase px-2 py-0.5">Usuario</Badge>
     }
   }
 
   const filteredProjects = projects.filter(project => {
-    const matchesSearch = !searchTerm.trim() || 
-      project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (project.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase().trim();
+    // Búsqueda inteligente solicitada: que el título inicie con las letras digitadas
+    const matchesSearch = !term || 
+      project.title.toLowerCase().startsWith(term) ||
+      project.title.toLowerCase().split(' ').some(word => word.startsWith(term));
     
-    const matchesStatus = 
-      !statusFilter || 
-      (project.status?.toLowerCase() === statusFilter.toLowerCase());
-    
-    const matchesCreator = 
-      !creatorFilter || 
-      project.created_by_email === creatorFilter;
-    
-    const matchesDesigner = 
-      !designerFilter || 
-      project.assigned_to_email === designerFilter;
+    const matchesStatus = !statusFilter || (project.status?.toLowerCase() === statusFilter.toLowerCase());
+    const matchesCreator = !creatorFilter || project.created_by_email === creatorFilter;
+    const matchesDesigner = !designerFilter || project.assigned_to_email === designerFilter;
     
     return matchesSearch && matchesStatus && matchesCreator && matchesDesigner;
   });
@@ -801,7 +811,7 @@ const viewProjectDetails = (project: Project) => {
                 <Trash2 className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl">
+            <DialogContent className="w-[95vw] sm:max-w-[425px] font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl p-4 sm:p-6">
               <DialogHeader>
                 <DialogTitle className="text-xl font-bold">Confirmar eliminación</DialogTitle>
                 <DialogDescription className="text-zinc-500 dark:text-zinc-400">
@@ -1148,14 +1158,16 @@ const handleEditProject = async (project: Project) => {
       
       const uploadedNewFiles: FileObject[] = [];
       
-      setFileProgress(0);
+      setEditProgress(10);
       for (let i = 0; i < newFiles.length; i++) {
         const file = newFiles[i];
         
         try {
           if (file.file) {
-            const progress = Math.round(((i + 1) / newFiles.length) * 100);
-            setFileProgress(progress);
+            // Actualizar progreso por archivo
+            const fileProgressFraction = (1 / newFiles.length) * 80;
+            const currentBaseProgress = 10 + (i * fileProgressFraction);
+            setEditProgress(Math.round(currentBaseProgress));
             
             const safeFileName = sanitizeFileName(file.name);
             const filePath = `projects/${pendingEditChanges.id}/${safeFileName}`;
@@ -1181,6 +1193,9 @@ const handleEditProject = async (project: Project) => {
             
             const fileUrl = supabase.storage.from('documents').getPublicUrl(filePath).data.publicUrl;
             
+            // Incrementar progreso después de subir este archivo
+            setEditProgress(Math.round(currentBaseProgress + fileProgressFraction));
+
             console.log('Archivo nuevo subido exitosamente:', {
               name: file.name, 
               path: filePath,
@@ -1223,7 +1238,9 @@ const handleEditProject = async (project: Project) => {
         throw updateError;
       }
       
+      setEditProgress(95);
       await fetchProjects();
+      setEditProgress(100);
       
       if (viewingProject && viewingProject.id === pendingEditChanges.id) {
         console.log('⭐ Actualizando vista de detalles con la información más reciente');
@@ -1329,8 +1346,11 @@ const handleEditProject = async (project: Project) => {
         variant: "destructive",
       });
     } finally {
-      setIsEditingProject(false);
-      setFileProgress(0);
+      setTimeout(() => {
+        setIsEditingProject(false);
+        setEditProgress(0);
+        setFileProgress(0);
+      }, 500);
     }
   };
 
@@ -1691,24 +1711,24 @@ function getFileIcon(type: string) {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-background font-sans text-foreground pb-20 transition-colors duration-300">
-      <div className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
+    <div className="min-h-[calc(100vh-4rem)] bg-background font-sans text-foreground pb-20 transition-colors duration-300 overflow-x-hidden w-full relative">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8 space-y-8 overflow-x-hidden">
         {/* Header Premium SaaS */}
-        <div className="page-header-card">
-          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/10 blur-[100px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2" />
+        <div className="page-header-card relative overflow-hidden">
+          <div className="hidden sm:block absolute top-0 right-0 w-[300px] h-[300px] bg-primary/20 blur-[80px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2 opacity-50" />
           
-          <div className="relative flex flex-col items-start justify-between gap-6 md:flex-row md:items-center z-10">
-            <div>
-              <h1 className="text-4xl font-extrabold tracking-tight text-foreground mb-2 flex items-center gap-3 transition-colors">
-                <Briefcase className="h-8 w-8 text-primary" />
-                Panel de Proyectos
+          <div className="relative flex flex-col items-center text-center md:items-start md:text-left justify-between gap-6 md:flex-row md:items-center z-10">
+            <div className="flex flex-col items-center md:items-start max-w-full overflow-hidden">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-foreground mb-2 flex items-center gap-3 transition-colors">
+                <Briefcase className="h-7 w-7 md:h-8 md:w-8 text-primary shrink-0" />
+                <span className="truncate">Panel de Proyectos</span>
               </h1>
               
-              <div className="flex items-center gap-3 mt-3">
+              <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 mt-3">
                 <Badge className="bg-muted text-muted-foreground hover:bg-muted/80 border-none px-3 py-1 transition-colors">
                   {projects.length} {projects.length === 1 ? 'proyecto' : 'proyectos'} totales
                 </Badge>
-                <span className="inline-flex items-center gap-1.5 bg-primary/20 text-black py-1 px-3 rounded-full text-xs font-bold shadow-sm transition-colors border border-black dark:border-transparent">
+                <span className="inline-flex items-center gap-1.5 bg-[#00D084] text-black py-1 px-3 rounded-full text-[10px] sm:text-xs font-bold shadow-sm transition-colors border border-black/10">
                   <ShieldCheck className="h-3 w-3" />
                   {isProjectManager ? "Gerente de Proyecto" : isClient ? "Cliente VIP" : "Diseñador"}
                 </span>
@@ -1717,7 +1737,7 @@ function getFileIcon(type: string) {
 
             {canCreate && (
               <Button
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-6 text-sm font-bold rounded-2xl shadow-md transition-all hover:shadow-lg hover:-translate-y-1"
+                className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-6 text-sm font-bold rounded-2xl shadow-md transition-all hover:shadow-lg hover:-translate-y-1"
                 onClick={() => setDialogOpen(true)}
               >
                 <Plus className="h-5 w-5 mr-2" />
@@ -1728,7 +1748,7 @@ function getFileIcon(type: string) {
         </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl p-4 sm:p-6">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-xl font-bold">
                   <Briefcase className="h-5 w-5 text-primary" />
@@ -1875,11 +1895,11 @@ function getFileIcon(type: string) {
 
       <Tabs defaultValue="grid" className="w-full">
         <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
               <Button 
                 variant="outline" 
-                className="bg-card border border-border hover:bg-muted text-foreground h-12 px-4 rounded-xl shadow-sm transition-all"
+                className="bg-card border border-border hover:bg-muted text-foreground h-12 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center sm:justify-start"
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <Filter className="h-4 w-4 text-primary" />
@@ -1891,7 +1911,7 @@ function getFileIcon(type: string) {
                 )}
               </Button>
               
-              <div className="relative w-full md:w-80">
+              <div className="relative flex-1 md:w-80">
                 <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Buscar proyectos por nombre..."
@@ -1902,17 +1922,17 @@ function getFileIcon(type: string) {
               </div>
             </div>
 
-            <TabsList className="bg-muted p-1.5 rounded-xl border border-border shadow-inner h-12 hidden md:flex">
-              <TabsTrigger value="grid" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground transition-all font-medium h-full">
-                <div className="flex items-center gap-2">
-                  <Tag className="h-4 w-4" />
-                  <span className="hidden sm:inline">Tarjetas</span>
+            <TabsList className="bg-muted p-1.5 rounded-xl border border-border shadow-inner h-12 flex w-full md:w-auto">
+              <TabsTrigger value="grid" className="flex-1 md:flex-none rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground transition-all font-medium h-full">
+                <div className="flex items-center gap-2 justify-center">
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span className="inline sm:inline">Tarjetas</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="list" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground transition-all font-medium h-full">
-                <div className="flex items-center gap-2">
+              <TabsTrigger value="list" className="flex-1 md:flex-none rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground transition-all font-medium h-full">
+                <div className="flex items-center gap-2 justify-center">
                   <ListFilter className="h-4 w-4" />
-                  <span className="hidden sm:inline">Lista</span>
+                  <span className="inline sm:inline">Lista</span>
                 </div>
               </TabsTrigger>
             </TabsList>
@@ -2081,27 +2101,27 @@ function getFileIcon(type: string) {
                       <span>{project.files?.length || 0} adjuntos</span>
                     </div>
                     
-                    <div className="flex gap-1.5">
+                    <div className="flex flex-wrap gap-2 justify-end">
                       {renderActionButtons(project)}
                     </div>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="col-span-full flex flex-col items-center justify-center py-24 text-center bg-muted/30 rounded-3xl border border-border backdrop-blur-sm">
-                <div className="bg-muted p-6 rounded-full mb-6 relative">
-                  <div className="absolute inset-0 bg-primary/10 rounded-full animate-ping opacity-50"></div>
-                  <Briefcase className="h-10 w-10 text-muted-foreground relative z-10" />
+              <div className="col-span-full flex flex-col items-center justify-center py-24 text-center bg-card/40 rounded-3xl border-2 border-dashed border-border/50 backdrop-blur-md">
+                <div className="bg-primary/10 p-6 rounded-full mb-6 relative">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-30"></div>
+                  <Search className="h-10 w-10 text-primary relative z-10" />
                 </div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">No se encontraron proyectos</h3>
+                <h3 className="text-2xl font-bold text-foreground mb-2">No hay resultados</h3>
                 <p className="text-muted-foreground max-w-md">
-                  {searchTerm || statusFilter || creatorFilter || designerFilter 
-                    ? "Al parecer ningún proyecto coincide con los filtros aplicados." 
+                  {searchTerm.trim() 
+                    ? `No hay disponible un proyecto que inicie con "${searchTerm}".`
                     : "Aún no hay proyectos en el sistema. Crea tu primer proyecto para comenzar a colaborar."}
                 </p>
                 {canCreate && !searchTerm && !statusFilter && !creatorFilter && !designerFilter && (
                   <Button 
-                    className="mt-8 bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 rounded-2xl font-bold text-sm shadow-[0_0_20px_rgba(204,255,0,0.15)] transition-all hover:-translate-y-1 hover:shadow-lg"
+                    className="mt-8 bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 rounded-2xl font-bold text-sm shadow-lg transition-all hover:-translate-y-1"
                     onClick={() => setDialogOpen(true)}
                   >
                     <Plus className="mr-2 h-5 w-5" />
@@ -2167,17 +2187,17 @@ function getFileIcon(type: string) {
                       </tr>
                     ))
                   ) : (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-24 text-center">
+                    <tr className="border-none">
+                      <td colSpan={7} className="px-6 py-24 text-center bg-card/20">
                         <div className="flex flex-col items-center justify-center">
-                          <div className="bg-muted p-6 rounded-full mb-6 relative">
-                            <div className="absolute inset-0 bg-primary/10 rounded-full animate-ping opacity-50"></div>
-                            <Briefcase className="h-10 w-10 text-muted-foreground relative z-10" />
+                          <div className="bg-primary/10 p-6 rounded-full mb-6 relative">
+                            <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-30"></div>
+                            <Search className="h-10 w-10 text-primary relative z-10" />
                           </div>
-                          <h3 className="text-xl font-bold text-foreground mb-2">No se encontraron proyectos</h3>
+                          <h3 className="text-xl font-bold text-foreground mb-2">No hay resultados</h3>
                           <p className="text-muted-foreground max-w-sm">
-                            {searchTerm || statusFilter || creatorFilter || designerFilter 
-                              ? "Cero coincidencias con tus filtros actuales." 
+                            {searchTerm.trim() 
+                              ? `No hay disponible un proyecto que inicie con "${searchTerm}".`
                               : "Tu lista está vacía actualmente. Comienza agregando uno nuevo."}
                           </p>
                         </div>
@@ -2193,78 +2213,155 @@ function getFileIcon(type: string) {
       </div>
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl">
-          {viewingProject && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
-                  <Briefcase className="h-6 w-6 text-primary" />
-                  {viewingProject.title}
-                </DialogTitle>
-                <div className="flex items-center gap-2 mt-2">
+        <DialogContent className="w-[98vw] max-w-4xl max-h-[92vh] overflow-hidden p-0 rounded-3xl border-none shadow-2xl bg-zinc-950/95 backdrop-blur-2xl text-white font-sans">
+          <AnimatePresence>
+            {viewingProject && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="flex flex-col h-full max-h-[92vh]"
+              >
+                {/* Header Cinemático */}
+                <div className="relative h-48 sm:h-64 overflow-hidden shrink-0">
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent z-20" />
+                  <div className="absolute inset-0 bg-primary/20 mix-blend-overlay z-10" />
+                  <div className="absolute top-6 left-6 z-30 flex gap-2">
                     {getStatusBadge(viewingProject.status)}
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                    Última actualización: {formatDate(viewingProject.updated_at)}
-                  </span>
-                </div>
-              </DialogHeader>
-              
-              <div className="py-4">
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="font-bold mb-2 text-foreground">Descripción</h3>
-                    <p className="text-sm text-muted-foreground bg-muted p-4 rounded-2xl shadow-sm border border-border">
-                      {viewingProject.description || "Sin descripción"}
-                    </p>
+                    <Badge variant="outline" className="bg-black/40 backdrop-blur-md border-white/10 text-[10px] uppercase tracking-tighter py-1 font-bold">
+                      ID: #{viewingProject.id.slice(0, 8)}
+                    </Badge>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-muted p-4 rounded-2xl shadow-sm border border-border">
-                      <h3 className="font-bold mb-3 text-foreground">Creado por</h3>
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center border border-border">
-                          <User className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-foreground">{viewingProject.created_by_email || 'No asignado'}</p>
-                          <p className="text-xs text-muted-foreground uppercase tracking-widest">{viewingProject.created_by_role || 'Usuario'}</p>
-                        </div>
-                      </div>
-                    </div>
-              
-                    <div className="bg-muted p-4 rounded-2xl shadow-sm border border-border">
-                      <h3 className="font-bold mb-3 text-foreground">Asignado a</h3>
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center border border-border">
-                          <User className="h-5 w-5 text-primary" />
-                          </div>
-                        <div>
-                          <p className="text-sm font-bold text-foreground">{viewingProject.assigned_to_email || 'No asignado'}</p>
-                          <p className="text-xs text-muted-foreground uppercase tracking-widest">{viewingProject.assigned_to_role || 'Diseñador'}</p>
-                        </div>
-                    </div>
+                  <div className="absolute bottom-6 left-6 z-30 right-6">
+                    <motion.h2 
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="text-3xl sm:text-5xl font-black tracking-tight leading-tight"
+                    >
+                      {viewingProject.title}
+                    </motion.h2>
+                    <p className="text-zinc-400 text-xs sm:text-sm mt-2 flex items-center gap-2">
+                      <Calendar className="h-3 w-3" /> Actualizado el {formatDate(viewingProject.updated_at)}
+                    </p>
                   </div>
-              </div>
-              
-                  <div>
-                    <h3 className="font-bold mb-3 text-foreground">Archivos del proyecto</h3>
-                    {viewingProject.files && viewingProject.files.length > 0 ? (
-                      renderFileCards(viewingProject.files)
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground bg-muted p-4 rounded-2xl shadow-sm border border-border">
-                        No hay archivos adjuntos
+                </div>
+
+                {/* Contenido Dossier */}
+                <div className="flex-grow overflow-y-auto p-6 sm:p-10 space-y-10 custom-scrollbar">
+                  <motion.section 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-4">Resumen Ejecutivo</h3>
+                    <p className="text-zinc-300 text-lg leading-relaxed font-medium">
+                      {viewingProject.description || "Sin descripción de dossier proporcionada."}
+                    </p>
+                  </motion.section>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                      className="bg-zinc-900/50 rounded-3xl p-6 border border-white/5 hover:border-primary/20 transition-colors"
+                    >
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-6 flex items-center gap-2">
+                        <Users className="h-3 w-3" /> Equipo Responsable
+                      </h3>
+                      <div className="space-y-6">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-12 w-12 border-2 border-primary/20">
+                            <AvatarFallback className="bg-primary/10 text-primary font-black uppercase text-sm">
+                              {viewingProject.created_by_email?.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-bold text-white">{viewingProject.created_by_email?.split('@')[0]}</p>
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Cliente / Originador</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-12 w-12 border-2 border-emerald-500/20">
+                            <AvatarFallback className="bg-emerald-500/10 text-emerald-500 font-black uppercase text-sm">
+                              {viewingProject.assigned_to_email?.charAt(0) || '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-bold text-white">{viewingProject.assigned_to_email?.split('@')[0] || 'Sin Asignar'}</p>
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Lead Creative</p>
+                          </div>
+                        </div>
                       </div>
-                    )}
+                    </motion.div>
+
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="bg-zinc-900/50 rounded-3xl p-6 border border-white/5 hover:border-primary/20 transition-colors"
+                    >
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-6 flex items-center gap-2">
+                        <Files className="h-3 w-3" /> Repositorio Digital
+                      </h3>
+                      <div className="space-y-3">
+                        {viewingProject.files && viewingProject.files.length > 0 ? (
+                          viewingProject.files.slice(0, 3).map((file: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 group hover:bg-white/10 transition-all cursor-pointer">
+                              <div className="flex items-center gap-3">
+                                {getFileIcon(file.name || file.path)}
+                                <span className="text-xs font-bold text-zinc-300 truncate max-w-[120px]">{file.name || "Archivo"}</span>
+                              </div>
+                              <Download className="h-3 w-3 text-zinc-600 group-hover:text-primary transition-colors" />
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-6 text-zinc-600 text-[10px] uppercase font-bold">Sin activos digitales</div>
+                        )}
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6 }}
+                    className="pt-6 border-t border-white/5 flex flex-wrap gap-4"
+                  >
+                    <Button 
+                      className="flex-1 min-w-[160px] h-14 bg-primary hover:bg-primary/90 text-black font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-xl shadow-primary/10 transition-all hover:-translate-y-1"
+                      onClick={() => {
+                        setEditingProject(viewingProject);
+                        setEditFormData({
+                          title: viewingProject.title,
+                          description: viewingProject.description,
+                          assigned_to: viewingProject.assigned_to || '',
+                          files: viewingProject.files || []
+                        });
+                        setEditDialogOpen(true);
+                      }}
+                    >
+                      Modificar Assets
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      className="flex-1 min-w-[160px] h-14 border-white/10 hover:bg-white/5 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all"
+                      onClick={() => setViewDialogOpen(false)}
+                    >
+                      Cerrar Archivo
+                    </Button>
+                  </motion.div>
                 </div>
-                </div>
-              </div>
-            </>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </DialogContent>
       </Dialog>
 
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[425px] font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Confirmar actualización</DialogTitle>
             <DialogDescription className="text-zinc-500 dark:text-zinc-400">
@@ -2292,7 +2389,7 @@ function getFileIcon(type: string) {
       </Dialog>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto font-sans bg-card/95 backdrop-blur-xl border border-border text-foreground rounded-3xl shadow-2xl p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl font-bold">
               <Edit className="h-5 w-5 text-primary" />
