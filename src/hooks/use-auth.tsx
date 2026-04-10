@@ -27,16 +27,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Obtener la sesión activa
     const getInitialSession = async () => {
+      console.log("Iniciando AuthProvider...")
       setIsLoading(true)
+      
+      // Seguridad: Forzar salida de carga tras 6 segundos si Supabase no responde
+      const timer = setTimeout(() => {
+        if (isLoading) {
+          console.warn("AuthProvider: Timeout alcanzado - Forzando fin de carga")
+          setIsLoading(false)
+        }
+      }, 6000)
+
       try {
+        console.log("Obteniendo sesión de Supabase...")
         const { data: { session } } = await supabase.auth.getSession()
+        console.log("Sesión obtenida:", session ? "Sí" : "No")
         
         if (session) {
           await getUserData(session.user.id)
         }
         
-        // Establecer escucha para cambios en la autenticación
         const { data: { subscription } } = await supabase.auth.onAuthStateChange(async (event, session) => {
+          console.log("Cambio de estado auth:", event)
           if (session) {
             await getUserData(session.user.id)
           } else {
@@ -48,9 +60,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           subscription.unsubscribe()
         }
       } catch (error) {
+        console.error("Error en AuthProvider:", error)
         setUser(null)
       } finally {
+        clearTimeout(timer)
         setIsLoading(false)
+        console.log("AuthProvider finalizado")
       }
     }
 
@@ -175,4 +190,4 @@ export const useAuth = () => {
     throw new Error('useAuth debe ser usado dentro de un AuthProvider')
   }
   return context
-} 
+}

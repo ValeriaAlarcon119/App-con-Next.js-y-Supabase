@@ -248,16 +248,24 @@ export default function ProjectsPage() {
   const [fileProgress, setFileProgress] = useState(0)
 
   useEffect(() => {
-    if (authLoading) return; // FIX BÚG DE RECARGA: Esperar a que la sesión cargue
+    // Seguridad: Si después de 8 segundos seguimos cargando, forzar la vista
+    const forceTimer = setTimeout(() => {
+      if (loading) {
+        console.warn("ProjectsPage: Forzando fin de carga por timeout");
+        setLoading(false);
+      }
+    }, 8000);
+
+    if (authLoading) {
+      console.log("ProjectsPage: Esperando a la sesión auth...");
+      return;
+    }
+    
+    console.log("ProjectsPage: Iniciando carga de datos...");
     fetchProjects()
     fetchDesigners()
-    console.log("Rol del usuario:", user?.role)
-    console.log("¿Es diseñador?:", isDesigner)
-    console.log("¿Es cliente?:", isClient)
-    console.log("¿Es project manager?:", isProjectManager)
-    console.log("¿Puede crear?:", canCreate)
-    console.log("¿Puede editar?:", canEdit)
-    console.log("¿Puede eliminar?:", canDelete)
+    
+    return () => clearTimeout(forceTimer);
   }, [user?.role, user?.id, authLoading])
 
   const fetchDesigners = async () => {
@@ -288,10 +296,12 @@ export default function ProjectsPage() {
 
 const fetchProjects = async () => {
   try {
+    console.log('fetchProjects: Iniciando...');
     setLoading(true);
     
-    // Obtenemos todos los usuarios para mapear creadores y diseñadores y evitar errores de Foreing Key en Supabase Cloud
-    const { data: usersData } = await supabase.from('users').select('id, email, role');
+    const { data: usersData, error: uError } = await supabase.from('users').select('id, email, role');
+    if (uError) console.error('Error fetching users:', uError);
+    
     const usersMap = new Map();
     if (usersData) {
       usersData.forEach(u => usersMap.set(u.id, u));
@@ -302,13 +312,13 @@ const fetchProjects = async () => {
       .select('*')
       .order('created_at', { ascending: false });
 
-    // Aplicar filtros según rol - ahora más robusto con el ID de usuario resuelto
     if (isClient && user?.id) {
       query = query.eq('created_by', user.id);
     } else if (isDesigner && user?.id) {
       query = query.eq('assigned_to', user.id);
     }
 
+    console.log('fetchProjects: Consultando proyectos...');
     const { data: projectsData, error: projectsError } = await query;
     
     if (projectsError) throw projectsError;
@@ -328,17 +338,13 @@ const fetchProjects = async () => {
         }
       });
 
-      console.log('Proyectos cargados exitosamente:', projectsWithStatus);
+      console.log('fetchProjects: Proyectos cargados:', projectsWithStatus.length);
       setProjects(projectsWithStatus);
     }
   } catch (error: any) {
     console.error('Error fetching projects:', error);
-    toast({
-      title: "Error al cargar proyectos",
-      description: error.message || "No se pudieron obtener los datos de proyecto.",
-      variant: "destructive",
-    });
   } finally {
+    console.log('fetchProjects: Finalizado');
     setLoading(false);
   }
 };
